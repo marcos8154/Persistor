@@ -17,6 +17,6 @@ public class Teste {
     
     private void Start()
     {
-        
+        System.out.println("test.Teste.Start()");
     }
 }
