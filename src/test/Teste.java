@@ -10,5 +10,8 @@ package test;
  * @author Marcos Vinícius
  */
 public class Teste {
-    
+    private void Ha()
+    {
+        
+    }
 }
