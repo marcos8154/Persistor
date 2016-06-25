@@ -17,6 +17,6 @@ public class Teste {
     
     private void Start()
     {
-        System.err.println("Hahah");
+        
     }
 }
