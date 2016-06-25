@@ -17,7 +17,7 @@ public class Teste {
     
     private void Start()
     {
-        System.err.println("Hahaha"); 
+        
         System.out.println("test.Teste.Start()");
     }
 }
