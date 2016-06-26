@@ -2,5 +2,5 @@ package enums;
 
 public enum MatchMode
 {
-	ANYWHERE, END, START, EXACT;
+    ANYWHERE, END, START, EXACT;
 }

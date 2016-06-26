@@ -1,104 +1,123 @@
 package generalClasses;
 
-public class DBConfig 
-{
-	private DB_TYPE db_type;
-	private String host;
-	private String database;
-	private String user;
-	private String password;
-	private int port;
-	
-	private int minPoolSize = 3;
-	private int acquireIncrement = 1;
-	private int maxPoolSize = 20;
-	private int maxStatements = 180;
+public class DBConfig {
 
-	public int getMinPoolSize() {
-		return minPoolSize;
-	}
+    private DB_TYPE db_type;
+    private String host;
+    private String database;
+    private String user;
+    private String password;
+    private int port;
 
-	public void setMinPoolSize(int minPoolSize) {
-		this.minPoolSize = minPoolSize;
-	}
+    private int minPoolSize = 3;
+    private int acquireIncrement = 1;
+    private int maxPoolSize = 20;
+    private int maxStatements = 180;
 
-	public int getAcquireIncrement() {
-		return acquireIncrement;
-	}
+    public int getMinPoolSize()
+    {
+        return minPoolSize;
+    }
 
-	public void setAcquireIncrement(int acquireIncrement) {
-		this.acquireIncrement = acquireIncrement;
-	}
+    public void setMinPoolSize(int minPoolSize)
+    {
+        this.minPoolSize = minPoolSize;
+    }
 
-	public int getMaxPoolSize() {
-		return maxPoolSize;
-	}
+    public int getAcquireIncrement()
+    {
+        return acquireIncrement;
+    }
 
-	public void setMaxPoolSize(int maxPoolSize) {
-		this.maxPoolSize = maxPoolSize;
-	}
+    public void setAcquireIncrement(int acquireIncrement)
+    {
+        this.acquireIncrement = acquireIncrement;
+    }
 
-	public int getMaxStatements() {
-		return maxStatements;
-	}
+    public int getMaxPoolSize()
+    {
+        return maxPoolSize;
+    }
 
-	public void setMaxStatements(int maxStatements) {
-		this.maxStatements = maxStatements;
-	}
+    public void setMaxPoolSize(int maxPoolSize)
+    {
+        this.maxPoolSize = maxPoolSize;
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public int getMaxStatements()
+    {
+        return maxStatements;
+    }
 
-	public void setPort(int port) {
-		this.port = port;
-	}
+    public void setMaxStatements(int maxStatements)
+    {
+        this.maxStatements = maxStatements;
+    }
 
-	public DB_TYPE getDb_type() {
-		return db_type;
-	}
+    public int getPort()
+    {
+        return port;
+    }
 
-	public void setDb_type(DB_TYPE db_type) {
-		this.db_type = db_type;
-	}
+    public void setPort(int port)
+    {
+        this.port = port;
+    }
 
-	public String getHost() {
-		return host;
-	}
+    public DB_TYPE getDb_type()
+    {
+        return db_type;
+    }
 
-	public void setHost(String host) {
-		this.host = host;
-	}
+    public void setDb_type(DB_TYPE db_type)
+    {
+        this.db_type = db_type;
+    }
 
-	public String getDatabase() {
-		return database;
-	}
+    public String getHost()
+    {
+        return host;
+    }
 
-	public void setDatabase(String database) {
-		this.database = database;
-	}
+    public void setHost(String host)
+    {
+        this.host = host;
+    }
 
-	public String getUser() {
-		return user;
-	}
+    public String getDatabase()
+    {
+        return database;
+    }
 
-	public void setUser(String user) {
-		this.user = user;
-	}
+    public void setDatabase(String database)
+    {
+        this.database = database;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public String getUser()
+    {
+        return user;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+    public void setUser(String user)
+    {
+        this.user = user;
+    }
 
-	public enum DB_TYPE
-	{
-		MySQL,
-		PostgreSQL,
-		FirebirdSQL,
-		SQLServer
-	}
+    public String getPassword()
+    {
+        return password;
+    }
+
+    public void setPassword(String password)
+    {
+        this.password = password;
+    }
+
+    public enum DB_TYPE {
+        MySQL,
+        PostgreSQL,
+        FirebirdSQL,
+        SQLServer
+    }
 }

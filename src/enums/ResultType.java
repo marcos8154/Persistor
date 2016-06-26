@@ -1,6 +1,6 @@
 package enums;
 
-public enum ResultType 
+public enum ResultType
 {
-	UNIQUE, MULTIPLE;
+    UNIQUE, MULTIPLE;
 }

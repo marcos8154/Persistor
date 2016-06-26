@@ -10,10 +10,14 @@ import enums.LOAD;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface OneToMany 
+public @interface OneToMany
 {
-	String source();
-	String target();	
-	JOIN_TYPE join_type();
-	LOAD load();
+
+    String source();
+
+    String target();
+
+    JOIN_TYPE join_type();
+
+    LOAD load();
 }

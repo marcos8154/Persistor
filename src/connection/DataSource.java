@@ -9,15 +9,16 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import generalClasses.DBConfig;
 
-public class DataSource {
+public class DataSource
+{
 
-    private static DataSource     datasource;
+    private static DataSource datasource;
     private ComboPooledDataSource cpds;
 
-    private DataSource(DBConfig config) throws IOException, SQLException, PropertyVetoException 
+    private DataSource(DBConfig config) throws IOException, SQLException, PropertyVetoException
     {
-    
-    	cpds = new ComboPooledDataSource();
+
+        cpds = new ComboPooledDataSource();
         cpds.setDriverClass(decodeDriver(config)); //loads the jdbc driver
         cpds.setJdbcUrl(dataBaseURL(config));
         cpds.setUser(config.getUser());
@@ -27,49 +28,59 @@ public class DataSource {
         cpds.setMinPoolSize(config.getMinPoolSize());
         cpds.setAcquireIncrement(config.getAcquireIncrement());
         cpds.setMaxPoolSize(config.getMaxPoolSize());
-        cpds.setMaxStatements(config.getMaxStatements()); 
+        cpds.setMaxStatements(config.getMaxStatements());
 
     }
 
-    public static DataSource getInstance(DBConfig config) throws IOException, SQLException, PropertyVetoException {
-        if (datasource == null) 
+    public static DataSource getInstance(DBConfig config) throws IOException, SQLException, PropertyVetoException
+    {
+        if (datasource == null)
         {
-            datasource = new DataSource(config);  
+            datasource = new DataSource(config);
             return datasource;
-            
+
         } else
         {
             return datasource;
         }
     }
 
-    public Connection getConnection() throws SQLException {
+    public Connection getConnection() throws SQLException
+    {
         return this.cpds.getConnection();
     }
 
-	private String dataBaseURL(DBConfig config)
-	{
-		switch(config.getDb_type())
-		{
-			case MySQL: return "jdbc:mysql://"+config.getHost()+":"+config.getPort()+"/" + config.getDatabase();
-			case PostgreSQL: return "jdbc:postgresql://"+config.getHost()+":"+config.getPort()+"/"+config.getDatabase();
-			case SQLServer: return "jdbc:sqlserver://"+config.getHost()+":"+config.getPort()+";" + "databaseName="+config.getDatabase()+";user="+config.getUser()+";password="+config.getPassword()+";";
-			case FirebirdSQL: return "org.firebirdsql.jdbc.FBDrive";
-		}
-		
-		return null;
-	}
-	
-	private String decodeDriver(DBConfig config)
-	{
-		switch(config.getDb_type())
-		{
-			case MySQL: return "com.mysql.jdbc.Driver";
-			case PostgreSQL: return "org.postgresql.Driver";
-			case SQLServer: return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-			case FirebirdSQL: return "org.firebirdsql.jdbc.FBDrive";
-		}
-		
-		return null;
-	}
+    private String dataBaseURL(DBConfig config)
+    {
+        switch (config.getDb_type())
+        {
+            case MySQL:
+                return "jdbc:mysql://" + config.getHost() + ":" + config.getPort() + "/" + config.getDatabase();
+            case PostgreSQL:
+                return "jdbc:postgresql://" + config.getHost() + ":" + config.getPort() + "/" + config.getDatabase();
+            case SQLServer:
+                return "jdbc:sqlserver://" + config.getHost() + ":" + config.getPort() + ";" + "databaseName=" + config.getDatabase() + ";user=" + config.getUser() + ";password=" + config.getPassword() + ";";
+            case FirebirdSQL:
+                return "org.firebirdsql.jdbc.FBDrive";
+        }
+
+        return null;
+    }
+
+    private String decodeDriver(DBConfig config)
+    {
+        switch (config.getDb_type())
+        {
+            case MySQL:
+                return "com.mysql.jdbc.Driver";
+            case PostgreSQL:
+                return "org.postgresql.Driver";
+            case SQLServer:
+                return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+            case FirebirdSQL:
+                return "org.firebirdsql.jdbc.FBDrive";
+        }
+
+        return null;
+    }
 }

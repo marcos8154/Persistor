@@ -2,5 +2,5 @@ package enums;
 
 public enum LOAD
 {
-	AUTO, MANUAL;
+    AUTO, MANUAL;
 }

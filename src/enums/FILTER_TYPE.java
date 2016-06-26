@@ -1,6 +1,6 @@
 package enums;
 
-public enum FILTER_TYPE 
+public enum FILTER_TYPE
 {
-	WHERE, AND, OR;
+    WHERE, AND, OR;
 }

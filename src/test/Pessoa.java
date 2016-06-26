@@ -29,87 +29,107 @@ public class Pessoa extends Entity {
     private Profissao profissao = new Profissao();
     private Veiculo veiculo = new Veiculo();
 
-    public int getVeiculo_id() {
+    public int getVeiculo_id()
+    {
         return veiculo_id;
     }
 
-    public void setVeiculo_id(int veiculo_id) {
+    public void setVeiculo_id(int veiculo_id)
+    {
         this.veiculo_id = veiculo_id;
     }
 
-    public int getProfissao_id() {
+    public int getProfissao_id()
+    {
         return profissao_id;
     }
 
-    public void setProfissao_id(int profissao_id) {
+    public void setProfissao_id(int profissao_id)
+    {
         this.profissao_id = profissao_id;
     }
 
     @OneToOne(source = "profissao_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
-    public Profissao getProfissao() {
+    public Profissao getProfissao()
+    {
         return profissao;
     }
 
-    public void setProfissao(Profissao profissao) {
+    public void setProfissao(Profissao profissao)
+    {
         this.profissao = profissao;
     }
 
     @OneToOne(source = "veiculo_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
-    public Veiculo getVeiculo() {
+    public Veiculo getVeiculo()
+    {
         return veiculo;
     }
 
-    public void setVeiculo(Veiculo veiculo) {
+    public void setVeiculo(Veiculo veiculo)
+    {
         this.veiculo = veiculo;
     }
 
     @PrimaryKey
-    public int getId() {
+    public int getId()
+    {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(int id)
+    {
         this.id = id;
     }
 
-    public String getNome() {
+    public String getNome()
+    {
         return nome;
     }
 
-    public void setNome(String nome) {
+    public void setNome(String nome)
+    {
         this.nome = nome;
     }
 
-    public String getTelefone() {
+    public String getTelefone()
+    {
         return telefone;
     }
 
-    public void setTelefone(String telefone) {
+    public void setTelefone(String telefone)
+    {
         this.telefone = telefone;
     }
 
-    public String getEmail() {
+    public String getEmail()
+    {
         return email;
     }
 
-    public void setEmail(String email) {
+    public void setEmail(String email)
+    {
         this.email = email;
     }
 
-    public String getEndereco() {
+    public String getEndereco()
+    {
         return endereco;
     }
 
-    public void setEndereco(String endereco) {
+    public void setEndereco(String endereco)
+    {
         this.endereco = endereco;
     }
 
     @Version
-    public int getVersion() {
+    public int getVersion()
+    {
         return version;
     }
 
-    public void setVersion(int version) {
+    public void setVersion(int version)
+    {
         this.version = version;
     }
 

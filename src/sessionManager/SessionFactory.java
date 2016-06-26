@@ -20,8 +20,8 @@ import enums.ResultType;
 import generalClasses.DBConfig;
 import interfaces.ISession;
 
-public class SessionFactory implements ISession {
-
+public class SessionFactory implements ISession
+{
     public Connection connection;
     DBConfig config;
 
@@ -29,57 +29,75 @@ public class SessionFactory implements ISession {
     {
         this.connection = connectiion;
     }
-    
-    public SessionFactory(DBConfig config) {
-        try {
+
+    public SessionFactory(DBConfig config)
+    {
+        try
+        {
             connection = DataSource.getInstance(config).getConnection();
             this.config = config;
             connection.setAutoCommit(false);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: error at: \n" + ex.getMessage());
         }
     }
 
-    private void clostSTMT(Statement statement) {
-        try {
+    private void clostSTMT(Statement statement)
+    {
+        try
+        {
             statement.close();
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: error at: \n" + ex.getMessage());
         }
     }
 
-    private void closePS(PreparedStatement ps) {
-        try {
+    private void closePS(PreparedStatement ps)
+    {
+        try
+        {
             ps.close();
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.out.println(ex.getMessage());
         }
     }
 
-    private boolean isNumber(Method method) {
-        if (method.getReturnType() == int.class) {
+    private boolean isNumber(Method method)
+    {
+        if (method.getReturnType() == int.class)
+        {
             return true;
         }
-        if (method.getReturnType() == double.class) {
+        if (method.getReturnType() == double.class)
+        {
             return true;
         }
-        if (method.getReturnType() == float.class) {
+        if (method.getReturnType() == float.class)
+        {
             return true;
         }
-        if (method.getReturnType() == short.class) {
+        if (method.getReturnType() == short.class)
+        {
             return true;
         }
-        if (method.getReturnType() == long.class) {
+        if (method.getReturnType() == long.class)
+        {
             return true;
         }
 
         return false;
     }
 
-    private boolean extendsEntity(Class cls) {
-        for (Field field : cls.getFields()) {
-            if (field.getName() == "saved") {
+    private boolean extendsEntity(Class cls)
+    {
+        for (Field field : cls.getFields())
+        {
+            if (field.getName() == "saved")
+            {
                 return true;
             }
         }
@@ -87,16 +105,20 @@ public class SessionFactory implements ISession {
         return false;
     }
 
-    private boolean methodHasValue(Object obj, String methodName) {
-        try {
+    private boolean methodHasValue(Object obj, String methodName)
+    {
+        try
+        {
             Method method = obj.getClass().getMethod(methodName.replace("set", "get"));
             Object value = method.invoke(obj);
 
-            if (value != null && (int) value != 0) {
+            if (value != null && (int) value != 0)
+            {
                 return true;
             }
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println(ex.getMessage());
         }
 
@@ -104,23 +126,28 @@ public class SessionFactory implements ISession {
     }
 
     @Override
-    public void save(Object obj) {
+    public void save(Object obj)
+    {
         PreparedStatement preparedStatement = null;
 
-        try {
-
+        try
+        {
             Class cls = obj.getClass();
 
-            if (!extendsEntity(cls)) {
+            if (!extendsEntity(cls))
+            {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
             }
 
-            for (Method method : cls.getMethods()) {
-                if (method.isAnnotationPresent(OneToOne.class)) {
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
                     Object object = method.invoke(obj);
 
-                    if (object == null) {
+                    if (object == null)
+                    {
                         continue;
                     }
 
@@ -128,14 +155,15 @@ public class SessionFactory implements ISession {
 
                     String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
 
-                    if (methodHasValue(obj, field)) {
+                    if (methodHasValue(obj, field))
+                    {
                         continue;
                     }
 
                     SessionFactory session = new SessionFactory(this.connection);
 
                     session.save(object);
-                  //  session.commit();
+                    //  session.commit();
 
                     SQL_Helper helper = new SQL_Helper();
                     Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
@@ -153,64 +181,78 @@ public class SessionFactory implements ISession {
 
             int parameterIndex = 1;
 
-            for (Method method : cls.getMethods()) {
-                if (method.isAnnotationPresent(PrimaryKey.class)) {
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(PrimaryKey.class))
+                {
                     continue;
                 }
-                if (method.isAnnotationPresent(OneToOne.class)) {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
                     continue;
                 }
 
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class")) {
-                    if (method.isAnnotationPresent(Version.class)) {
+                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                {
+                    if (method.isAnnotationPresent(Version.class))
+                    {
                         preparedStatement.setInt(parameterIndex, 1);
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == boolean.class) {
+                    if (method.getReturnType() == boolean.class)
+                    {
                         preparedStatement.setBoolean(parameterIndex, (boolean) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
-                    if (method.getReturnType() == int.class) {
+                    if (method.getReturnType() == int.class)
+                    {
                         preparedStatement.setInt(parameterIndex, (int) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
-                    if (method.getReturnType() == double.class) {
+                    if (method.getReturnType() == double.class)
+                    {
                         preparedStatement.setDouble(parameterIndex, (double) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
-                    if (method.getReturnType() == String.class) {
+                    if (method.getReturnType() == String.class)
+                    {
                         preparedStatement.setString(parameterIndex, (String) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
-                    if (method.getReturnType() == short.class) {
+                    if (method.getReturnType() == short.class)
+                    {
                         preparedStatement.setShort(parameterIndex, (short) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
-                    if (method.getReturnType() == long.class) {
+                    if (method.getReturnType() == long.class)
+                    {
                         preparedStatement.setLong(parameterIndex, (long) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
-                    if (method.getReturnType() == float.class) {
+                    if (method.getReturnType() == float.class)
+                    {
                         preparedStatement.setFloat(parameterIndex, (float) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
-                    if (method.getReturnType() == byte.class) {
+                    if (method.getReturnType() == byte.class)
+                    {
                         preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
                     //if (method.getReturnType() == byte.class){ preparedStatement.setByte(parameterIndex, (byte)method.invoke(obj)); parameterIndex ++; continue;}
 
-                    if (method.getReturnType() == Date.class) {
+                    if (method.getReturnType() == Date.class)
+                    {
                         Date date = (java.util.Date) method.invoke(obj);
                         java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
 
@@ -219,7 +261,6 @@ public class SessionFactory implements ISession {
 
                         preparedStatement.setDate(parameterIndex, dt, calendar);
                         parameterIndex++;
-                        continue;
                     }
                 }
             }
@@ -232,25 +273,29 @@ public class SessionFactory implements ISession {
 
             lastID(obj);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: save error at: \n");
             ex.printStackTrace();
             rollback();
-        } finally {
+        } finally
+        {
             closePS(preparedStatement);
         }
     }
 
     //UPDATE WITH AND CONDITIONS
     @Override
-    public void update(Object obj, String andCondition) {
+    public void update(Object obj, String andCondition)
+    {
         PreparedStatement preparedStatement = null;
-        try {
-
+        try
+        {
             SQL_Helper sql_Helper = new SQL_Helper();
             sql_Helper.prepareUpdate(obj, connection);
 
-            if (sql_Helper.updateStatus == 0) {
+            if (sql_Helper.updateStatus == 0)
+            {
                 isVersionViolation = true;
                 return;
             }
@@ -258,11 +303,14 @@ public class SessionFactory implements ISession {
             Class cls = obj.getClass();
             String sqlBase = sql_Helper.getSqlBase();
 
-            for (Method method : cls.getMethods()) {
-                if (method.isAnnotationPresent(OneToOne.class)) {
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
                     Object object = method.invoke(obj);
 
-                    if (object == null) {
+                    if (object == null)
+                    {
                         continue;
                     }
 
@@ -270,14 +318,15 @@ public class SessionFactory implements ISession {
 
                     String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
 
-                    if (methodHasValue(obj, field)) {
+                    if (methodHasValue(obj, field))
+                    {
                         continue;
                     }
 
                     SessionFactory session = new SessionFactory(this.connection);
 
                     session.update(object);
-                 //   session.commit();
+                    //   session.commit();
 
                     SQL_Helper helper = new SQL_Helper();
                     Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
@@ -287,7 +336,8 @@ public class SessionFactory implements ISession {
                 }
             }
 
-            if (!extendsEntity(cls)) {
+            if (!extendsEntity(cls))
+            {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
             }
@@ -298,17 +348,22 @@ public class SessionFactory implements ISession {
 
             int parameterIndex = 1;
 
-            for (Method method : cls.getMethods()) {
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class")) {
-                    if (method.isAnnotationPresent(PrimaryKey.class)) {
+            for (Method method : cls.getMethods())
+            {
+                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                {
+                    if (method.isAnnotationPresent(PrimaryKey.class))
+                    {
                         continue;
                     }
 
-                    if (method.isAnnotationPresent(OneToOne.class)) {
+                    if (method.isAnnotationPresent(OneToOne.class))
+                    {
                         continue;
                     }
 
-                    if (method.isAnnotationPresent(Version.class)) {
+                    if (method.isAnnotationPresent(Version.class))
+                    {
                         System.out.println(method.getName());
                         int version = Integer.parseInt(method.invoke(obj).toString());
                         preparedStatement.setInt(parameterIndex, (version + 1));
@@ -316,56 +371,64 @@ public class SessionFactory implements ISession {
                         continue;
                     }
 
-                    if (method.getReturnType() == boolean.class) {
+                    if (method.getReturnType() == boolean.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setBoolean(parameterIndex, (boolean) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == int.class) {
+                    if (method.getReturnType() == int.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setInt(parameterIndex, (int) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == double.class) {
+                    if (method.getReturnType() == double.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setDouble(parameterIndex, (double) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == String.class) {
+                    if (method.getReturnType() == String.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setString(parameterIndex, (String) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == short.class) {
+                    if (method.getReturnType() == short.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setShort(parameterIndex, (short) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == long.class) {
+                    if (method.getReturnType() == long.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setLong(parameterIndex, (long) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == float.class) {
+                    if (method.getReturnType() == float.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setFloat(parameterIndex, (float) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == byte.class) {
+                    if (method.getReturnType() == byte.class)
+                    {
                         System.out.println(method.getName());
                         preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
                         parameterIndex++;
@@ -373,7 +436,8 @@ public class SessionFactory implements ISession {
                     }
                     //if (method.getReturnType() == byte.class){ preparedStatement.setByte(parameterIndex, (byte)method.invoke(obj)); parameterIndex ++; continue;}
 
-                    if (method.getReturnType() == Date.class) {
+                    if (method.getReturnType() == Date.class)
+                    {
                         Date date = (java.util.Date) method.invoke(obj);
                         java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
 
@@ -394,10 +458,12 @@ public class SessionFactory implements ISession {
 
             System.out.println("Persistor: \n " + sqlBase);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             rollback();
             System.err.println("Persistor: update error at: \n" + ex.getMessage());
-        } finally {
+        } finally
+        {
             closePS(preparedStatement);
         }
     }
@@ -405,17 +471,28 @@ public class SessionFactory implements ISession {
     public boolean isVersionViolation = false;
 
     @Override
-    public void update(Object obj) {
+    public void update(Object obj)
+    {
         PreparedStatement preparedStatement = null;
-        try {
+        try
+        {
 
             Class cls = obj.getClass();
 
-            for (Method method : cls.getMethods()) {
-                if (method.isAnnotationPresent(OneToOne.class)) {
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return;
+            }
+
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
                     Object object = method.invoke(obj);
 
-                    if (object == null) {
+                    if (object == null)
+                    {
                         continue;
                     }
 
@@ -423,14 +500,15 @@ public class SessionFactory implements ISession {
 
                     String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
 
-                    if (methodHasValue(obj, field)) {
+                    if (methodHasValue(obj, field))
+                    {
                         continue;
                     }
 
                     SessionFactory session = new SessionFactory(this.connection);
 
                     session.update(object);
-                  //  session.commit();
+                    //  session.commit();
 
                     SQL_Helper helper = new SQL_Helper();
                     Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
@@ -443,88 +521,98 @@ public class SessionFactory implements ISession {
             SQL_Helper sql_Helper = new SQL_Helper();
             sql_Helper.prepareUpdate(obj, connection);
 
-            if (sql_Helper.updateStatus == 0) {
+            if (sql_Helper.updateStatus == 0)
+            {
                 isVersionViolation = true;
                 return;
             }
 
             String sqlBase = sql_Helper.getSqlBase();
 
-            if (!extendsEntity(cls)) {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return;
-            }
-
             preparedStatement = connection.prepareStatement(sqlBase);
 
             int parameterIndex = 1;
 
-            for (Method method : cls.getMethods()) {
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class")) {
-                    if (method.isAnnotationPresent(PrimaryKey.class)) {
+            for (Method method : cls.getMethods())
+            {
+                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                {
+                    if (method.isAnnotationPresent(PrimaryKey.class))
+                    {
                         continue;
                     }
-                    if (method.isAnnotationPresent(OneToOne.class)) {
+                    if (method.isAnnotationPresent(OneToOne.class))
+                    {
                         continue;
                     }
 
-                    if (method.isAnnotationPresent(Version.class)) {
+                    if (method.isAnnotationPresent(Version.class))
+                    {
                         int version = Integer.parseInt(method.invoke(obj).toString());
                         preparedStatement.setInt(parameterIndex, (version + 1));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == boolean.class) {
+                    if (method.getReturnType() == boolean.class)
+                    {
                         preparedStatement.setBoolean(parameterIndex, (boolean) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == int.class) {
+                    if (method.getReturnType() == int.class)
+                    {
                         preparedStatement.setInt(parameterIndex, (int) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == double.class) {
+                    if (method.getReturnType() == double.class)
+                    {
                         preparedStatement.setDouble(parameterIndex, (double) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == String.class) {
+                    if (method.getReturnType() == String.class)
+                    {
                         preparedStatement.setString(parameterIndex, (String) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == short.class) {
+                    if (method.getReturnType() == short.class)
+                    {
                         preparedStatement.setShort(parameterIndex, (short) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == long.class) {
+                    if (method.getReturnType() == long.class)
+                    {
                         preparedStatement.setLong(parameterIndex, (long) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == float.class) {
+                    if (method.getReturnType() == float.class)
+                    {
                         preparedStatement.setFloat(parameterIndex, (float) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
 
-                    if (method.getReturnType() == byte.class) {
+                    if (method.getReturnType() == byte.class)
+                    {
                         preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
                     //if (method.getReturnType() == byte.class){ preparedStatement.setByte(parameterIndex, (byte)method.invoke(obj)); parameterIndex ++; continue;}
 
-                    if (method.getReturnType() == Date.class) {
+                    if (method.getReturnType() == Date.class)
+                    {
                         Date date = (java.util.Date) method.invoke(obj);
                         java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
 
@@ -545,19 +633,23 @@ public class SessionFactory implements ISession {
 
             System.out.println("Persistor: \n " + sqlBase);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: update error at: \n" + ex.getMessage());
             rollback();
-        } finally {
+        } finally
+        {
             closePS(preparedStatement);
         }
     }
 
     //DELETE WITH AND CONDITIONS
     @Override
-    public void delete(Object obj, String andCondition) {
+    public void delete(Object obj, String andCondition)
+    {
         PreparedStatement preparedStatement = null;
-        try {
+        try
+        {
             Class cls = obj.getClass();
 
             SQL_Helper sql_helper = new SQL_Helper();
@@ -566,7 +658,8 @@ public class SessionFactory implements ISession {
 
             sqlBase += " AND " + andCondition;
 
-            if (!extendsEntity(cls)) {
+            if (!extendsEntity(cls))
+            {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
             }
@@ -579,18 +672,22 @@ public class SessionFactory implements ISession {
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(obj, true);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             rollback();
             System.err.println("Persistor: delete error at: \n" + ex.getMessage());
-        } finally {
+        } finally
+        {
             closePS(preparedStatement);
         }
     }
 
     @Override
-    public void delete(Object obj) {
+    public void delete(Object obj)
+    {
         PreparedStatement preparedStatement = null;
-        try {
+        try
+        {
             Class cls = obj.getClass();
 
             SQL_Helper sql_helper = new SQL_Helper();
@@ -598,7 +695,8 @@ public class SessionFactory implements ISession {
 
             String sqlBase = sql_helper.getSqlBase();
 
-            if (!extendsEntity(cls)) {
+            if (!extendsEntity(cls))
+            {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
             }
@@ -611,21 +709,31 @@ public class SessionFactory implements ISession {
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(obj, true);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             rollback();
             System.err.println("Persistor: delete error at: \n" + ex.getMessage());
-        } finally {
+        } finally
+        {
             closePS(preparedStatement);
         }
     }
 
     @Override
-    public void onID(Object obj, int id) {
+    public void onID(Object obj, int id)
+    {
         Statement statement = null;
 
-        try {
+        try
+        {
 
             Class cls = obj.getClass();
+
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return;
+            }
 
             String primaryKeyName = "";
 
@@ -633,13 +741,16 @@ public class SessionFactory implements ISession {
 
             List<Object> objectsToJoin = new ArrayList<>();
 
-            for (Method method : cls.getMethods()) {
-                if (method.isAnnotationPresent(OneToOne.class)) {
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
                     Object object = method.invoke(obj);
 
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
 
-                    if (oneToOne.load() == LOAD.MANUAL) {
+                    if (oneToOne.load() == LOAD.MANUAL)
+                    {
                         continue;
                     }
 
@@ -652,7 +763,8 @@ public class SessionFactory implements ISession {
                 }
             }
 
-            if (join.joinCount > 0) {
+            if (join.joinCount > 0)
+            {
                 SQL_Helper helper = new SQL_Helper();
                 String pkName = helper.getPrimaryKeyFieldName(obj);
                 join.addFinalCondition("WHERE " + cls.getSimpleName() + "." + pkName + " = " + id);
@@ -661,7 +773,8 @@ public class SessionFactory implements ISession {
 
                 join.getResultObj(obj);
 
-                for (Object object : objectsToJoin) {
+                for (Object object : objectsToJoin)
+                {
                     join.getResultObj(object);
 
                     Method method = obj.getClass().getMethod("set" + object.getClass().getSimpleName(), object.getClass());
@@ -673,17 +786,20 @@ public class SessionFactory implements ISession {
                 return;
             }
 
-            for (Method method : cls.getMethods()) {
-                if (method.isAnnotationPresent(PrimaryKey.class)) {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class")) {
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(PrimaryKey.class))
+                {
+                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    {
                         primaryKeyName = method.getName().replace("get", "");
+                        break;
                     }
-
-                    continue;
                 }
             }
 
-            if (!extendsEntity(cls)) {
+            if (!extendsEntity(cls))
+            {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
             }
@@ -695,12 +811,16 @@ public class SessionFactory implements ISession {
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
-            while (resultSet.next()) {
-                for (Method method : cls.getMethods()) {
-                    if (method.getName().contains("set") && !method.getName().contains("class Test") && !method.getName().contains("Class")) {
+            while (resultSet.next())
+            {
+                for (Method method : cls.getMethods())
+                {
+                    if (method.getName().contains("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    {
                         Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
 
-                        if (oneToOneMtd.isAnnotationPresent(OneToOne.class)) {
+                        if (oneToOneMtd.isAnnotationPresent(OneToOne.class))
+                        {
                             continue;
                         }
 
@@ -711,20 +831,26 @@ public class SessionFactory implements ISession {
 
             System.out.println("Persistor: \n " + sqlBase);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
-        } finally {
-            if (statement != null) {
+        } finally
+        {
+            if (statement != null)
+            {
                 clostSTMT(statement);
             }
         }
     }
 
     @Override
-    public void commit() {
-        try {
+    public void commit()
+    {
+        try
+        {
             connection.commit();
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: commit error at: \n" + ex.getMessage());
             System.err.println("Executing rollback...");
 
@@ -733,33 +859,42 @@ public class SessionFactory implements ISession {
     }
 
     @Override
-    public void close() {
-        try {
+    public void close()
+    {
+        try
+        {
             connection.close();
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: close session error at: \n" + ex.getMessage());
         }
     }
 
     @Override
-    public void rollback() {
-        try {
+    public void rollback()
+    {
+        try
+        {
             System.out.println("Rollbacking...");
             connection.rollback();
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor rollback error at: \n" + ex.getMessage());
         }
     }
 
-    private void lastID(Object obj) {
+    private void lastID(Object obj)
+    {
         Statement statement = null;
-        try {
+        try
+        {
             Class cls = obj.getClass();
             SQL_Helper sql_helper = new SQL_Helper();
 
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(obj);
 
-            if (!extendsEntity(cls)) {
+            if (!extendsEntity(cls))
+            {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
             }
@@ -772,27 +907,33 @@ public class SessionFactory implements ISession {
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
-            while (resultSet.next()) {
+            while (resultSet.next())
+            {
                 String field = ("set" + primaryKeyName);
                 Method method = obj.getClass().getMethod(field, int.class);
                 method.invoke(obj, resultSet.getObject(primaryKeyName));
             }
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: error at: \n" + ex.getMessage());
-        } finally {
+        } finally
+        {
             this.clostSTMT(statement);
         }
     }
 
     @Override
-    public Criteria createCriteria(Object obj, ResultType result_type) {
+    public Criteria createCriteria(Object obj, ResultType result_type)
+    {
         Criteria criteria = null;
 
-        try {
+        try
+        {
             criteria = new Criteria(connection, obj, result_type);
 
-        } catch (Exception ex) {
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: create criteria error at \n");
             ex.printStackTrace();
         }
