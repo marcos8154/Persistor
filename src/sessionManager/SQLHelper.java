@@ -10,7 +10,7 @@ import annotations.OneToOne;
 import annotations.PrimaryKey;
 import annotations.Version;
 
-public class SQL_Helper
+public class SQLHelper
 {
     private String sqlBase = "";
     private String columns = "";

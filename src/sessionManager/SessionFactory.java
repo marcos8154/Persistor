@@ -165,7 +165,7 @@ public class SessionFactory implements ISession
                     session.save(object);
                     //  session.commit();
 
-                    SQL_Helper helper = new SQL_Helper();
+                    SQLHelper helper = new SQLHelper();
                     Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
 
                     Method mtd = obj.getClass().getMethod(field, int.class);
@@ -173,7 +173,7 @@ public class SessionFactory implements ISession
                 }
             }
 
-            SQL_Helper sql_Helper = new SQL_Helper();
+            SQLHelper sql_Helper = new SQLHelper();
             sql_Helper.prepareInsert(obj);
             String sqlBase = sql_Helper.getSqlBase();
 
@@ -291,7 +291,7 @@ public class SessionFactory implements ISession
         PreparedStatement preparedStatement = null;
         try
         {
-            SQL_Helper sql_Helper = new SQL_Helper();
+            SQLHelper sql_Helper = new SQLHelper();
             sql_Helper.prepareUpdate(obj, connection);
 
             if (sql_Helper.updateStatus == 0)
@@ -328,7 +328,7 @@ public class SessionFactory implements ISession
                     session.update(object);
                     //   session.commit();
 
-                    SQL_Helper helper = new SQL_Helper();
+                    SQLHelper helper = new SQLHelper();
                     Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
 
                     Method mtd = obj.getClass().getMethod(field, int.class);
@@ -510,7 +510,7 @@ public class SessionFactory implements ISession
                     session.update(object);
                     //  session.commit();
 
-                    SQL_Helper helper = new SQL_Helper();
+                    SQLHelper helper = new SQLHelper();
                     Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
 
                     Method mtd = obj.getClass().getMethod(field, int.class);
@@ -518,7 +518,7 @@ public class SessionFactory implements ISession
                 }
             }
 
-            SQL_Helper sql_Helper = new SQL_Helper();
+            SQLHelper sql_Helper = new SQLHelper();
             sql_Helper.prepareUpdate(obj, connection);
 
             if (sql_Helper.updateStatus == 0)
@@ -652,7 +652,7 @@ public class SessionFactory implements ISession
         {
             Class cls = obj.getClass();
 
-            SQL_Helper sql_helper = new SQL_Helper();
+            SQLHelper sql_helper = new SQLHelper();
             sql_helper.prepareDelete(obj);
             String sqlBase = sql_helper.getSqlBase();
 
@@ -690,7 +690,7 @@ public class SessionFactory implements ISession
         {
             Class cls = obj.getClass();
 
-            SQL_Helper sql_helper = new SQL_Helper();
+            SQLHelper sql_helper = new SQLHelper();
             sql_helper.prepareDelete(obj);
 
             String sqlBase = sql_helper.getSqlBase();
@@ -765,7 +765,7 @@ public class SessionFactory implements ISession
 
             if (join.joinCount > 0)
             {
-                SQL_Helper helper = new SQL_Helper();
+                SQLHelper helper = new SQLHelper();
                 String pkName = helper.getPrimaryKeyFieldName(obj);
                 join.addFinalCondition("WHERE " + cls.getSimpleName() + "." + pkName + " = " + id);
 
@@ -889,7 +889,7 @@ public class SessionFactory implements ISession
         try
         {
             Class cls = obj.getClass();
-            SQL_Helper sql_helper = new SQL_Helper();
+            SQLHelper sql_helper = new SQLHelper();
 
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(obj);
 

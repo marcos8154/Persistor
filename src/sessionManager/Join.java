@@ -66,7 +66,7 @@ public class Join implements IJoin
         {
             Class cls = obj.getClass();
 
-            SQL_Helper helper = new SQL_Helper();
+            SQLHelper helper = new SQLHelper();
             String[] fields = helper.getFields(obj).split(",");
 
             String primaryKeyName = cls.getSimpleName() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName();
@@ -118,7 +118,7 @@ public class Join implements IJoin
                     Constructor ctor = obj.getClass().getConstructor();
                     otherObj = ctor.newInstance();
                     Class cls = otherObj.getClass();
-                    SQL_Helper helper = new SQL_Helper();
+                    SQLHelper helper = new SQLHelper();
                     String tableName = cls.getSimpleName();
 
                     for (Method method : cls.getMethods())
