@@ -98,7 +98,7 @@ public class Join implements IJoin
         baseQ = baseQ.substring(0, baseQ.length() - 2);
         baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName() + "\n" + mountedQuery.trim();
 
-        mountedQuery = baseQ + "\n\n";
+        mountedQuery = baseQ + "\n";
 
         Connection connection;
         Statement statement;

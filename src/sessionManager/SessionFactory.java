@@ -826,8 +826,7 @@ public class SessionFactory implements ISession
 
                 join.Execute(this);
 
-              //  join.getResultObj(obj);
-
+                join.getResultObj(obj);
                 for (JoinableObject object : objectsToJoin)
                 {
                     if (object.result_type == ResultType.UNIQUE)
@@ -841,9 +840,12 @@ public class SessionFactory implements ISession
                     if (object.result_type == ResultType.MULTIPLE)
                     {
                         Class clss = object.objectToJoin.getClass();
-   
+
                         Field f = clss.getField("ResultList");
-                        f.set(object.objectToJoin, join.getResultList(object.objectToJoin));
+                        f.set(object.objectToJoin, join.getList(object.objectToJoin));
+
+                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(obj, object.objectToJoin);
                     }
 
                 }
