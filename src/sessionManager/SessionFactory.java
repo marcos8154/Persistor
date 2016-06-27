@@ -150,12 +150,6 @@ public class SessionFactory implements ISession
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
                     Object object = method.invoke(obj);
-
-                    if (object == null)
-                    {
-                        continue;
-                    }
-
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
 
                     String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
@@ -163,6 +157,15 @@ public class SessionFactory implements ISession
                     if (methodHasValue(obj, field))
                     {
                         continue;
+                    }
+
+                    if (object == null)
+                    {
+                        Class clss = Class.forName(method.getReturnType().getName());
+
+                        java.lang.reflect.Constructor ctor = clss.getConstructor();
+
+                        object = ctor.newInstance();
                     }
 
                     SessionFactory session = new SessionFactory(this.connection);

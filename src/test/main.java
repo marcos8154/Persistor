@@ -8,22 +8,14 @@ public class main
     public static void main(String[] args)
     {
         Pessoa pessoa = new Pessoa();
-        pessoa.setNome("Teste OneToMany");
+        pessoa.setNome("outrs iclusao");
+        
+        pessoa.setVeiculo_id(1);
         
         SessionFactory session = new ConfigureSession().getMySQLSession();
        
-        session.onID(pessoa, 1);
-        
-        System.out.println(pessoa.getNome());
-        
-        for(Object obj : pessoa.getProfissao().ResultList)
-        {
-            Profissao prof = (Profissao)obj;
-            
-            System.out.println(prof.getDescricao());
-        }
-        
-        
+       session.save(pessoa);
+session.commit();
         session.close();
     }
 }
