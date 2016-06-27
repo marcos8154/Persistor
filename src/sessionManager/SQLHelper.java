@@ -1,5 +1,6 @@
 package sessionManager;
 
+import annotations.OneToMany;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -75,18 +76,13 @@ public class SQLHelper
         String fields = "";
 
         for (Method method : cls.getMethods())
-        {
-            if (method.isAnnotationPresent(OneToOne.class))
-            {
-                continue;
-            }
-            if (method.isAnnotationPresent(PrimaryKey.class))
-            {
-                continue;
-            }
-
+        {   
             if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
             {
+                if (method.isAnnotationPresent(OneToOne.class))continue;
+                if (method.isAnnotationPresent(PrimaryKey.class)) continue;
+                if(method.isAnnotationPresent(OneToMany.class)) continue;
+                
                 String name = method.getName().replace("get", "");
                 fields += name.toLowerCase() + ",";
             }
@@ -337,22 +333,16 @@ public class SQLHelper
     {
         try
         {
-
             Class cls = obj.getClass();
 
             String sql = "insert into " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " (";
             String parameters = "";
             for (Method method : cls.getMethods())
             {
-                if (method.isAnnotationPresent(PrimaryKey.class))
-                {
-                    continue;
-                }
-                if (method.isAnnotationPresent(OneToOne.class))
-                {
-                    continue;
-                }
-
+                if (method.isAnnotationPresent(PrimaryKey.class))continue;
+                if (method.isAnnotationPresent(OneToOne.class)) continue;
+                if (method.isAnnotationPresent(OneToMany.class)) continue;
+                
                 if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
                     sql += method.getName().replace("get", "") + ", ";

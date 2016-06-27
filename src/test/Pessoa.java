@@ -6,11 +6,13 @@
 package test;
 
 import abstractClasses.Entity;
+import annotations.OneToMany;
 import annotations.OneToOne;
 import annotations.PrimaryKey;
 import annotations.Version;
 import enums.JOIN_TYPE;
 import enums.LOAD;
+import java.io.FileInputStream;
 
 /**
  *
@@ -25,31 +27,11 @@ public class Pessoa extends Entity {
     private String endereco;
     private int version;
     private int veiculo_id;
-    private int profissao_id;
-    private Profissao profissao = new Profissao();
-    private Veiculo veiculo = new Veiculo();
 
-    public int getVeiculo_id()
-    {
-        return veiculo_id;
-    }
+    private Veiculo veiculo;
+    private Profissao profissao;
 
-    public void setVeiculo_id(int veiculo_id)
-    {
-        this.veiculo_id = veiculo_id;
-    }
-
-    public int getProfissao_id()
-    {
-        return profissao_id;
-    }
-
-    public void setProfissao_id(int profissao_id)
-    {
-        this.profissao_id = profissao_id;
-    }
-
-    @OneToOne(source = "profissao_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
+    @OneToMany(source = "id", target = "pessoa_id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
     public Profissao getProfissao()
     {
         return profissao;
@@ -58,6 +40,16 @@ public class Pessoa extends Entity {
     public void setProfissao(Profissao profissao)
     {
         this.profissao = profissao;
+    }
+    
+    public int getVeiculo_id()
+    {
+        return veiculo_id;
+    }
+
+    public void setVeiculo_id(int veiculo_id)
+    {
+        this.veiculo_id = veiculo_id;
     }
 
     @OneToOne(source = "veiculo_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)

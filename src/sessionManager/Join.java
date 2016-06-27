@@ -364,9 +364,15 @@ public class Join implements IJoin
     }
 
     @Override
-    public List<Object> getResultList(Object obj)
+    public List<Object> getResultList(Object object)
     {
-
+        List<Object> returnList = new ArrayList<>();
+        
+        for(Object obj : resultList)
+        {
+            if(obj.getClass() == object.getClass()) returnList.add(obj);
+        }
+        
         return resultList;
     }
 }

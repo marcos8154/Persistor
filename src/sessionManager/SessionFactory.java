@@ -1,5 +1,6 @@
 package sessionManager;
 
+import annotations.OneToMany;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -18,10 +19,14 @@ import connection.DataSource;
 import enums.LOAD;
 import enums.ResultType;
 import generalClasses.DBConfig;
+import generalClasses.JoinableObject;
 import interfaces.ISession;
+import java.io.FileInputStream;
+import jdk.nashorn.internal.objects.annotations.Constructor;
 
 public class SessionFactory implements ISession
 {
+
     public Connection connection;
     DBConfig config;
 
@@ -191,6 +196,10 @@ public class SessionFactory implements ISession
                 {
                     continue;
                 }
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    continue;
+                }
 
                 if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
@@ -246,6 +255,13 @@ public class SessionFactory implements ISession
                     if (method.getReturnType() == byte.class)
                     {
                         preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
+                        parameterIndex++;
+                        continue;
+                    }
+
+                    if (method.getReturnType() == FileInputStream.class)
+                    {
+                        preparedStatement.setBinaryStream(parameterIndex, (FileInputStream) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
@@ -739,14 +755,19 @@ public class SessionFactory implements ISession
 
             Join join = new Join(obj);
 
-            List<Object> objectsToJoin = new ArrayList<>();
+            List<JoinableObject> objectsToJoin = new ArrayList<>();
 
             for (Method method : cls.getMethods())
             {
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
-                    Object object = method.invoke(obj);
+                    Class clss = Class.forName(method.getReturnType().getName());
 
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+
+                    Object object = ctor.newInstance();
+
+                    // object.getClass().newInstance();
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
 
                     if (oneToOne.load() == LOAD.MANUAL)
@@ -759,7 +780,41 @@ public class SessionFactory implements ISession
 
                     join.addJoin(oneToOne.join_type(), object, sourceName + " = " + targetName);
 
-                    objectsToJoin.add(object);
+                    JoinableObject objToJoin = new JoinableObject();
+
+                    objToJoin.result_type = ResultType.UNIQUE;
+                    objToJoin.objectToJoin = object;
+
+                    objectsToJoin.add(objToJoin);
+                }
+
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    Class clss = Class.forName(method.getReturnType().getName());
+
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+
+                    Object object = ctor.newInstance();
+
+                    // object.getClass().newInstance();
+                    OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+
+                    if (oneToMany.load() == LOAD.MANUAL)
+                    {
+                        continue;
+                    }
+
+                    String sourceName = cls.getSimpleName() + "." + oneToMany.source();
+                    String targetName = object.getClass().getSimpleName() + "." + oneToMany.target();
+
+                    join.addJoin(oneToMany.join_type(), object, sourceName + " = " + targetName);
+
+                    JoinableObject objToJoin = new JoinableObject();
+
+                    objToJoin.result_type = ResultType.MULTIPLE;
+                    objToJoin.objectToJoin = object;
+
+                    objectsToJoin.add(objToJoin);
                 }
             }
 
@@ -771,14 +826,26 @@ public class SessionFactory implements ISession
 
                 join.Execute(this);
 
-                join.getResultObj(obj);
+              //  join.getResultObj(obj);
 
-                for (Object object : objectsToJoin)
+                for (JoinableObject object : objectsToJoin)
                 {
-                    join.getResultObj(object);
+                    if (object.result_type == ResultType.UNIQUE)
+                    {
+                        join.getResultObj(object.objectToJoin);
 
-                    Method method = obj.getClass().getMethod("set" + object.getClass().getSimpleName(), object.getClass());
-                    method.invoke(obj, object);
+                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(obj, object.objectToJoin);
+                    }
+
+                    if (object.result_type == ResultType.MULTIPLE)
+                    {
+                        Class clss = object.objectToJoin.getClass();
+   
+                        Field f = clss.getField("ResultList");
+                        f.set(object.objectToJoin, join.getResultList(object.objectToJoin));
+                    }
+
                 }
 
                 System.out.println("Persistor: \n" + join.mountedQuery);
