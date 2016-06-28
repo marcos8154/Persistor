@@ -1,5 +1,7 @@
 package generalClasses;
 
+import enums.DB_TYPE;
+
 public class DBConfig {
 
     private DB_TYPE db_type;
@@ -112,12 +114,5 @@ public class DBConfig {
     public void setPassword(String password)
     {
         this.password = password;
-    }
-
-    public enum DB_TYPE {
-        MySQL,
-        PostgreSQL,
-        FirebirdSQL,
-        SQLServer
     }
 }

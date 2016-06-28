@@ -1,5 +1,6 @@
 package test;
 
+import enums.DB_TYPE;
 import generalClasses.DBConfig;
 import sessionManager.SessionFactory;
 
@@ -10,7 +11,7 @@ public class ConfigureSession
     {
         DBConfig config = new DBConfig();
 
-        config.setDb_type(DBConfig.DB_TYPE.MySQL);
+        config.setDb_type(DB_TYPE.MySQL);
         config.setHost("localhost");
         config.setDatabase("cadastro");
         config.setPort(3306);
@@ -26,7 +27,7 @@ public class ConfigureSession
     {
         DBConfig config = new DBConfig();
 
-        config.setDb_type(DBConfig.DB_TYPE.PostgreSQL);
+        config.setDb_type(DB_TYPE.PostgreSQL);
         config.setHost("localhost");
         config.setDatabase("cadastro");
         config.setPort(5432);

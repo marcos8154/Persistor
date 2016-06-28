@@ -15,6 +15,7 @@ import enums.ResultType;
 import generalClasses.Expressions;
 import generalClasses.Util;
 import interfaces.ICriteria;
+import sessionManager.SessionFactory;
 
 public class Criteria implements ICriteria
 {

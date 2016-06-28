@@ -1,11 +1,7 @@
 package test;
 
 import abstractClasses.Entity;
-import annotations.OneToMany;
-import annotations.OneToOne;
 import annotations.PrimaryKey;
-import enums.JOIN_TYPE;
-import enums.LOAD;
 
 public class Profissao extends Entity
 {

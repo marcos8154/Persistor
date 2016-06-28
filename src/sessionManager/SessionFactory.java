@@ -22,7 +22,6 @@ import generalClasses.DBConfig;
 import generalClasses.JoinableObject;
 import interfaces.ISession;
 import java.io.FileInputStream;
-import jdk.nashorn.internal.objects.annotations.Constructor;
 
 public class SessionFactory implements ISession
 {
