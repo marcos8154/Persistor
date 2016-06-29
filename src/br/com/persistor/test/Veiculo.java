@@ -14,6 +14,11 @@ import br.com.persistor.annotations.PrimaryKey;
  */
 public class Veiculo extends Entity
 {
+    public <T> T vai()
+    {
+        return (T) new Pessoa();
+    }
+    
     private int id;
     private String nome;
 

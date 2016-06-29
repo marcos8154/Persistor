@@ -77,11 +77,6 @@ public class Criteria implements ICriteria
         }
     }
 
-    public void Ha()
-    {
-        System.out.println("Haou");
-    }
-
     @Override
     public void execute(SessionFactory sessionFactory)
     {
@@ -95,7 +90,7 @@ public class Criteria implements ICriteria
             Field fieldMQ = clss.getField("mountedQuery");
             fieldMQ.set(obj, query);
 
-            List<Object> rList = new ArrayList<Object>();
+            List<Object> rList = new ArrayList<>();
             Object ob = obj;
             Class cls = ob.getClass();
 
@@ -119,10 +114,7 @@ public class Criteria implements ICriteria
                         String name = (method.getName().replace("get", "")).toLowerCase();
                         String fieldName = method.getName().replace("get", "set");
 
-                        if (method.isAnnotationPresent(OneToOne.class))
-                        {
-                            continue;
-                        }
+                        if (method.isAnnotationPresent(OneToOne.class));
 
                         if (method.getReturnType() == boolean.class)
                         {
