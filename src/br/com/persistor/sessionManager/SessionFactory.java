@@ -25,7 +25,6 @@ import java.io.FileInputStream;
 
 public class SessionFactory implements ISession
 {
-
     public Connection connection;
     DBConfig config;
 
@@ -776,7 +775,7 @@ public class SessionFactory implements ISession
                     {
                         continue;
                     }
-
+                    
                     String sourceName = cls.getSimpleName() + "." + oneToOne.source();
                     String targetName = object.getClass().getSimpleName() + "." + oneToOne.target();
 
@@ -994,6 +993,17 @@ public class SessionFactory implements ISession
         }
     }
 
+    private void Cancelar()
+    {
+        try
+        {
+            
+        }catch(Exception ex)
+        {
+            
+        }
+    }
+    
     @Override
     public Criteria createCriteria(Object obj, ResultType result_type)
     {
