@@ -9,25 +9,17 @@ public class main
     public static void main(String[] args)
     {
         SessionFactory session = new ConfigureSession().getMySQLSession();
+            
+        Pessoa pessoa  = new Pessoa();
         
-//        Profissao profissao = new Profissao();
-//        
-//        profissao.setDescricao("Técnico de redes");
-//        
-//        profissao.setPessoa_id(2);
-//        
-//        session.save(profissao);
-//        session.commit();
+        pessoa.setId(2);
+        pessoa.setVersion(4);
+        pessoa.setNome("Alterando...");
         
-        Pessoa pessoa = new Pessoa();
+        pessoa.setVeiculo_id(1);
         
-        session.createCriteria(pessoa, ResultType.MULTIPLE).execute(session);
-        
-        for(Object obj : pessoa.ResultList)
-        {
-            Pessoa p = (Pessoa)obj;
-            System.out.println(p.getNome());
-        }
+        session.update(pessoa);
+        session.commit();
         
         session.close();
     }

@@ -241,10 +241,9 @@ public class SQLHelper
 
             for (Method method : cls.getMethods())
             {
-                if (method.isAnnotationPresent(OneToOne.class))
-                {
-                    continue;
-                }
+                if (method.isAnnotationPresent(OneToOne.class))continue;
+                if (method.isAnnotationPresent(OneToMany.class)) continue;
+                
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
                     if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
