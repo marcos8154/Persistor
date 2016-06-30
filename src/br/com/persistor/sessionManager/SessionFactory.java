@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 
 public class SessionFactory implements ISession
 {
+
     public Connection connection;
     DBConfig config;
 
@@ -369,16 +370,10 @@ public class SessionFactory implements ISession
             {
                 if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
-                    if (method.isAnnotationPresent(PrimaryKey.class))
-                    {
-                        continue;
-                    }
-
-                    if (method.isAnnotationPresent(OneToOne.class))
-                    {
-                        continue;
-                    }
-
+                    if (method.isAnnotationPresent(PrimaryKey.class))continue;
+                    if (method.isAnnotationPresent(OneToOne.class))continue;
+                    if (method.isAnnotationPresent(OneToMany.class));
+                    
                     if (method.isAnnotationPresent(Version.class))
                     {
                         System.out.println(method.getName());
@@ -554,14 +549,9 @@ public class SessionFactory implements ISession
             {
                 if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
-                    if (method.isAnnotationPresent(PrimaryKey.class))
-                    {
-                        continue;
-                    }
-                    if (method.isAnnotationPresent(OneToOne.class))
-                    {
-                        continue;
-                    }
+                    if (method.isAnnotationPresent(PrimaryKey.class))continue;
+                    if (method.isAnnotationPresent(OneToOne.class))continue;
+                    if (method.isAnnotationPresent(OneToMany.class))continue;
 
                     if (method.isAnnotationPresent(Version.class))
                     {
@@ -775,7 +765,7 @@ public class SessionFactory implements ISession
                     {
                         continue;
                     }
-                    
+
                     String sourceName = cls.getSimpleName() + "." + oneToOne.source();
                     String targetName = object.getClass().getSimpleName() + "." + oneToOne.target();
 
@@ -997,13 +987,13 @@ public class SessionFactory implements ISession
     {
         try
         {
-            
-        }catch(Exception ex)
+
+        } catch (Exception ex)
         {
-            
+
         }
     }
-    
+
     @Override
     public Criteria createCriteria(Object obj, ResultType result_type)
     {
