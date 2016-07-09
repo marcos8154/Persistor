@@ -904,6 +904,178 @@ public class SessionFactory implements ISession
     }
 
     @Override
+    public Object onID(Class cls, int id)
+    {
+       Statement statement = null;
+       Object obj = null;
+        try
+        {
+            java.lang.reflect.Constructor constructor = cls.getConstructor();
+            obj = constructor.newInstance();
+            
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return null;
+            }
+
+            String primaryKeyName = "";
+
+            Join join = new Join(obj);
+
+            List<JoinableObject> objectsToJoin = new ArrayList<>();
+
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
+                    Class clss = Class.forName(method.getReturnType().getName());
+
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+
+                    Object object = ctor.newInstance();
+
+                    // object.getClass().newInstance();
+                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+
+                    if (oneToOne.load() == LOAD.MANUAL)
+                    {
+                        continue;
+                    }
+
+                    String sourceName = cls.getSimpleName() + "." + oneToOne.source();
+                    String targetName = object.getClass().getSimpleName() + "." + oneToOne.target();
+
+                    join.addJoin(oneToOne.join_type(), object, sourceName + " = " + targetName);
+
+                    JoinableObject objToJoin = new JoinableObject();
+
+                    objToJoin.result_type = ResultType.UNIQUE;
+                    objToJoin.objectToJoin = object;
+
+                    objectsToJoin.add(objToJoin);
+                }
+
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    Class clss = Class.forName(method.getReturnType().getName());
+
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+
+                    Object object = ctor.newInstance();
+
+                    // object.getClass().newInstance();
+                    OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+
+                    if (oneToMany.load() == LOAD.MANUAL)
+                    {
+                        continue;
+                    }
+
+                    String sourceName = cls.getSimpleName() + "." + oneToMany.source();
+                    String targetName = object.getClass().getSimpleName() + "." + oneToMany.target();
+
+                    join.addJoin(oneToMany.join_type(), object, sourceName + " = " + targetName);
+
+                    JoinableObject objToJoin = new JoinableObject();
+
+                    objToJoin.result_type = ResultType.MULTIPLE;
+                    objToJoin.objectToJoin = object;
+
+                    objectsToJoin.add(objToJoin);
+                }
+            }
+
+            if (join.joinCount > 0)
+            {
+                SQLHelper helper = new SQLHelper();
+                String pkName = helper.getPrimaryKeyFieldName(obj);
+                join.addFinalCondition("WHERE " + cls.getSimpleName() + "." + pkName + " = " + id);
+
+                join.Execute(this);
+
+                join.getResultObj(obj);
+                for (JoinableObject object : objectsToJoin)
+                {
+                    if (object.result_type == ResultType.UNIQUE)
+                    {
+                        join.getResultObj(object.objectToJoin);
+
+                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(obj, object.objectToJoin);
+                    }
+
+                    if (object.result_type == ResultType.MULTIPLE)
+                    {
+                        Class clss = object.objectToJoin.getClass();
+
+                        Field f = clss.getField("ResultList");
+                        f.set(object.objectToJoin, join.getList(object.objectToJoin));
+
+                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(obj, object.objectToJoin);
+                    }
+
+                }
+
+                System.out.println("Persistor: \n" + join.mountedQuery);
+
+                return obj;
+            }
+
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(PrimaryKey.class))
+                {
+                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    {
+                        primaryKeyName = method.getName().replace("get", "");
+                        break;
+                    }
+                }
+            }
+
+            String sqlBase = ("select * from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + " = " + id).toLowerCase();
+            Field field = cls.getField("mountedQuery");
+            field.set(obj, sqlBase);
+
+            statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sqlBase);
+
+            while (resultSet.next())
+            {
+                for (Method method : cls.getMethods())
+                {
+                    if (method.getName().contains("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    {
+                        Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
+
+                        if (oneToOneMtd.isAnnotationPresent(OneToOne.class))
+                        {
+                            continue;
+                        }
+
+                        method.invoke(obj, resultSet.getObject(method.getName().replace("set", "")));
+                    }
+                }
+            }
+            System.out.println("Persistor: \n " + sqlBase);
+
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
+        } finally
+        {
+            if (statement != null)
+            {
+                clostSTMT(statement);
+            }
+        }
+        
+        return obj;
+    }
+    
+    @Override
     public void commit()
     {
         try

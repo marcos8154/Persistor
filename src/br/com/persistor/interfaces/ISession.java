@@ -22,6 +22,8 @@ public interface ISession
 
     void onID(Object obj, int id);
 
+    Object onID(Class cls, int id);
+    
     void close();
 
     Criteria createCriteria(Object obj, ResultType result_type);

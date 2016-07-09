@@ -12,7 +12,10 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/sessionManager/SessionFactory.java</file>
+            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/sessionManager/SessionFactory.java</file>
+            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/test/main.java</file>
+            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/abstractClasses/Entity.java</file>
+            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/interfaces/ISession.java</file>
         </group>
     </open-files>
 </project-private>
