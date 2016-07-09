@@ -40,7 +40,7 @@ public class Join implements IJoin
         String table = cls.getSimpleName().toLowerCase();
 
         String join = decodeJoin(join_type);
-        mountedQuery += (("\n" + join + table + " ON " + condition).trim()).toLowerCase() + "\n";
+        mountedQuery += ("\n" + join + table + " ON " + condition.toLowerCase()).trim() + "\n";
         objects.add(obj);
 
         joinCount++;
@@ -96,7 +96,7 @@ public class Join implements IJoin
 
         String baseQ = "SELECT \n " + fieldsSelect;
         baseQ = baseQ.substring(0, baseQ.length() - 2);
-        baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName() + "\n" + mountedQuery.trim();
+        baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
 
         mountedQuery = baseQ + "\n";
 

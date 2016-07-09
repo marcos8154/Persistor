@@ -813,7 +813,7 @@ public class SessionFactory implements ISession
             {
                 SQLHelper helper = new SQLHelper();
                 String pkName = helper.getPrimaryKeyFieldName(obj);
-                join.addFinalCondition("WHERE " + cls.getSimpleName() + "." + pkName + " = " + id);
+                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
 
                 join.Execute(this);
 
@@ -990,7 +990,7 @@ public class SessionFactory implements ISession
             {
                 SQLHelper helper = new SQLHelper();
                 String pkName = helper.getPrimaryKeyFieldName(obj);
-                join.addFinalCondition("WHERE " + cls.getSimpleName() + "." + pkName + " = " + id);
+                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
 
                 join.Execute(this);
 

@@ -11,6 +11,6 @@ public class main {
 
         Pessoa p = (Pessoa)session.onID(Pessoa.class, 1);
         
-        session.onID(p, 1);
+        session.close();
     }
 }
