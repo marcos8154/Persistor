@@ -29,6 +29,7 @@ public class DataSource
         cpds.setAcquireIncrement(config.getAcquireIncrement());
         cpds.setMaxPoolSize(config.getMaxPoolSize());
         cpds.setMaxStatements(config.getMaxStatements());
+        
 
     }
 
@@ -61,7 +62,7 @@ public class DataSource
             case SQLServer:
                 return "jdbc:sqlserver://" + config.getHost() + ":" + config.getPort() + ";" + "databaseName=" + config.getDatabase() + ";user=" + config.getUser() + ";password=" + config.getPassword() + ";";
             case FirebirdSQL:
-                return "org.firebirdsql.jdbc.FBDrive";
+                return "jdbc:firebirdsql://localhost:" + config.getPort() + "/" + config.getDatabase();
         }
 
         return null;
@@ -78,7 +79,7 @@ public class DataSource
             case SQLServer:
                 return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
             case FirebirdSQL:
-                return "org.firebirdsql.jdbc.FBDrive";
+                return "org.firebirdsql.jdbc.FBDriver";
         }
 
         return null;

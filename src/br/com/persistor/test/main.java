@@ -7,10 +7,17 @@ public class main {
 
     public static void main(String[] args) {
 
-        SessionFactory session = new ConfigureSession().getMySQLSession();
-
-        Pessoa p = (Pessoa)session.onID(Pessoa.class, 1);
         
-        session.close();
+        SessionFactory session = new ConfigureSession().getFbSession();
+
+        Pessoa pessoa = new Pessoa();
+        
+        pessoa.setId(1);
+        pessoa.setNome("Alterando...");
+        
+        session.save(pessoa);
+        session.commit();
+        
+        session.close(); 
     }
 }

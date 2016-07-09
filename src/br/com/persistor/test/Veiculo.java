@@ -7,6 +7,7 @@ package br.com.persistor.test;
 
 import br.com.persistor.abstractClasses.Entity;
 import br.com.persistor.annotations.PrimaryKey;
+import br.com.persistor.enums.INCREMENT;
 
 /**
  *
@@ -22,7 +23,7 @@ public class Veiculo extends Entity
     private int id;
     private String nome;
 
-    @PrimaryKey
+    @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId() {
         return id;
     }

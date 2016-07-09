@@ -10,6 +10,7 @@ import java.sql.Statement;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
+import br.com.persistor.enums.INCREMENT;
 
 public class SQLHelper
 {
@@ -341,7 +342,22 @@ public class SQLHelper
             String parameters = "";
             for (Method method : cls.getMethods())
             {
-                if (method.isAnnotationPresent(PrimaryKey.class))continue;
+                if (method.isAnnotationPresent(PrimaryKey.class))
+                {
+                    PrimaryKey primaryKey = (PrimaryKey)method.getAnnotation(PrimaryKey.class);
+                    
+                    if(primaryKey.increment() == INCREMENT.MANUAL)
+                    {
+                        sql += method.getName().replace("get", "") + ", ";
+                        parameters += "?, ";
+                         continue;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                
                 if (method.isAnnotationPresent(OneToOne.class)) continue;
                 if (method.isAnnotationPresent(OneToMany.class)) continue;
                 

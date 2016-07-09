@@ -23,6 +23,21 @@ public class ConfigureSession
         return sessionFactory;
     }
 
+    public SessionFactory getFbSession()
+    {
+        DBConfig config = new DBConfig();
+        
+        config.setDb_type(DB_TYPE.FirebirdSQL);
+        config.setHost("localhost");
+        config.setDatabase("/Users/marcosvinicius/NetBeansProjects/Persistor/banco.fdb");
+        config.setPort(3050);
+        config.setUser("SYSDBA");
+        config.setPassword("masterkey");
+        
+        SessionFactory sessionFactory = new SessionFactory(config);
+        return sessionFactory;
+    }
+    
     public SessionFactory getPgSession()
     {
         DBConfig config = new DBConfig();

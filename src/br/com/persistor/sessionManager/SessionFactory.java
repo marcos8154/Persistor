@@ -16,6 +16,7 @@ import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.connection.DataSource;
+import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.ResultType;
 import br.com.persistor.generalClasses.DBConfig;
@@ -192,8 +193,22 @@ public class SessionFactory implements ISession
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    continue;
+                    PrimaryKey primaryKey = (PrimaryKey)method.getAnnotation(PrimaryKey.class);
+                    
+                    if(primaryKey.increment() == INCREMENT.MANUAL)
+                    {
+                        int id = (this.maxId(obj) + 1);
+                        preparedStatement.setInt(parameterIndex, id);
+                        parameterIndex ++;
+                        continue;
+                    }
+                    
+                    else
+                    {
+                        continue;
+                    }
                 }
+                
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
                     continue;
@@ -1115,6 +1130,49 @@ public class SessionFactory implements ISession
         }
     }
 
+    private int maxId(Object obj)
+    {
+                Statement statement = null;
+                int result = 0;
+        try
+        {
+            Class cls = obj.getClass();
+            SQLHelper sql_helper = new SQLHelper();
+
+            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(obj);
+
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return 0;
+            }
+
+            String className = cls.getName().replace(cls.getPackage().getName(), "");
+            className = className.replace(".", "").toLowerCase();
+
+            String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
+
+            statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sqlBase);
+
+            String pkMethodName = sql_helper.getPrimaryKeyMethodName(obj).replace("get", "set");
+            
+            while (resultSet.next())
+            {
+                result = resultSet.getInt(primaryKeyName);
+            }
+
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: error at: \n" + ex.getMessage());
+        } finally
+        {
+            this.clostSTMT(statement);
+        }
+        
+        return result;
+    }
+    
     private void lastID(Object obj)
     {
         Statement statement = null;
