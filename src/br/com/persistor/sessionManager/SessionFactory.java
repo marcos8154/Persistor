@@ -1132,16 +1132,18 @@ public class SessionFactory implements ISession
             }
 
             String className = cls.getName().replace(cls.getPackage().getName(), "");
-            className = className.replace(".", "");
+            className = className.replace(".", "").toLowerCase();
 
             String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
+            String pkMethodName = sql_helper.getPrimaryKeyMethodName(obj).replace("get", "set");
+            
             while (resultSet.next())
             {
-                String field = ("set" + primaryKeyName);
+                String field = (pkMethodName);
                 Method method = obj.getClass().getMethod(field, int.class);
                 method.invoke(obj, resultSet.getObject(primaryKeyName));
             }

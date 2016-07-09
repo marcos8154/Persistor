@@ -14,8 +14,7 @@
         <group>
             <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/sessionManager/SessionFactory.java</file>
             <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/test/main.java</file>
-            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/abstractClasses/Entity.java</file>
-            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/interfaces/ISession.java</file>
+            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/sessionManager/SQLHelper.java</file>
         </group>
     </open-files>
 </project-private>

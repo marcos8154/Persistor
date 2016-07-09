@@ -6,13 +6,12 @@
 package br.com.persistor.test;
 
 import br.com.persistor.abstractClasses.Entity;
-import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
-import java.io.FileInputStream;
+import java.util.List;
 
 /**
  *
@@ -29,18 +28,12 @@ public class Pessoa extends Entity {
     private int veiculo_id;
 
     private Veiculo veiculo;
-    private Profissao profissao;
 
-    @OneToMany(source = "id", target = "pessoa_id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
-    public Profissao getProfissao()
+    public List<Pessoa> lista()
     {
-        return profissao;
-    }
-
-    public void setProfissao(Profissao profissao)
-    {
-        this.profissao = profissao;
-    }
+        List<Pessoa> lp = this.ResultList;
+        return  lp;
+    }        
     
     public int getVeiculo_id()
     {

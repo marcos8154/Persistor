@@ -87,6 +87,8 @@ public class Criteria implements ICriteria
         {
             Class clss = obj.getClass();
 
+            this.query = query.toLowerCase();
+            
             Field fieldMQ = clss.getField("mountedQuery");
             fieldMQ.set(obj, query);
 

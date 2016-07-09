@@ -37,10 +37,10 @@ public class Join implements IJoin
     {
         Class cls = obj.getClass();
 
-        String table = cls.getSimpleName();
+        String table = cls.getSimpleName().toLowerCase();
 
         String join = decodeJoin(join_type);
-        mountedQuery += ("\n" + join + table + " ON " + condition).trim() + "\n";
+        mountedQuery += (("\n" + join + table + " ON " + condition).trim()).toLowerCase() + "\n";
         objects.add(obj);
 
         joinCount++;
@@ -69,7 +69,7 @@ public class Join implements IJoin
             SQLHelper helper = new SQLHelper();
             String[] fields = helper.getFields(obj).split(",");
 
-            String primaryKeyName = cls.getSimpleName() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName();
+            String primaryKeyName = cls.getSimpleName().toLowerCase() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName().toLowerCase();
 
             fieldsSelect += primaryKeyName + ", ";
 
@@ -119,7 +119,7 @@ public class Join implements IJoin
                     otherObj = ctor.newInstance();
                     Class cls = otherObj.getClass();
                     SQLHelper helper = new SQLHelper();
-                    String tableName = cls.getSimpleName();
+                    String tableName = cls.getSimpleName().toLowerCase();
 
                     for (Method method : cls.getMethods())
                     {
@@ -129,7 +129,7 @@ public class Join implements IJoin
                             {
                                 String pkName = helper.getPrimaryKeyFieldName(otherObj);
                                 String mtdName = method.getName().replace("get", "");
-                                int inx = getFieldIndexByNamer(tableName + "." + mtdName + " " + mtdName + "_" + tableName);
+                                int inx = getFieldIndexByNamer(tableName + "." + mtdName.toLowerCase() + " " + mtdName.toLowerCase() + "_" + tableName);
 
                                 if (method.getReturnType() == int.class)
                                 {

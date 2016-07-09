@@ -134,7 +134,7 @@ public class SQLHelper
                 {
                     if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        primaryKeyName = method.getName().replace("get", "");
+                        primaryKeyName = (method.getName().replace("get", "")).toLowerCase();
                         this.setPrimaryKeyValue(method.invoke(obj).toString());
                     }
 
@@ -182,11 +182,14 @@ public class SQLHelper
             Class cls = obj.getClass();
 
             String sqlBase = "select * from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " LIMIT " + LIMIT;
+          
+            sqlBase = sqlBase.toLowerCase();
+            
             if (whereCondition != null && whereCondition != "")
             {
                 sqlBase += " where " + whereCondition;
             }
-            this.setSqlBase(sqlBase);
+            this.setSqlBase(sqlBase.toLowerCase());
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
@@ -215,8 +218,8 @@ public class SQLHelper
                     continue;
                 }
             }
-
-            sqlBase = "delete from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + "=" + primaryKeyValue;
+            
+            sqlBase = ("delete from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + "=" + primaryKeyValue).toLowerCase();
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
@@ -295,7 +298,7 @@ public class SQLHelper
 
             sql += " where " + pkFieldName + " = " + this.getPrimaryKeyValue();
 
-            this.setSqlBase(sql);
+            this.setSqlBase(sql.toLowerCase());
 
             Field fieldMQ = cls.getField("mountedQuery");
             fieldMQ.set(obj, sqlBase);
@@ -361,7 +364,7 @@ public class SQLHelper
             }
             sql += "values (" + parameters + ")";
 
-            this.setSqlBase(sql);
+            this.setSqlBase(sql.toLowerCase());
 
             Field fieldMQ = cls.getField("mountedQuery");
             fieldMQ.set(obj, sqlBase);
