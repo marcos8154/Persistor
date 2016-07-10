@@ -5,15 +5,12 @@
             <url>src/br/com/persistor/sessionManager/SessionFactory.java</url>
             <bookmark id="1">
                 <name/>
-                <line>505</line>
+                <line>490</line>
                 <key/>
             </bookmark>
         </file>
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group>
-            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/test/Pessoa.java</file>
-            <file>file:/Users/marcosvinicius/NetBeansProjects/Persistor/src/br/com/persistor/test/main.java</file>
-        </group>
+        <group/>
     </open-files>
 </project-private>
