@@ -29,9 +29,9 @@ public class Pessoa extends Entity {
     private int version;
     private int veiculo_id;
 
-   /* private Veiculo veiculo;
+    private Veiculo veiculo;
 
-    @OneToMany(source = "id", target = "pessoa_id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
+    @OneToMany(source = "id", target = "pessoa_id", join_type = JOIN_TYPE.LEFT, load = LOAD.AUTO)
     public Profissao getProfissao() {
         return profissao;
     }
@@ -68,7 +68,7 @@ public class Pessoa extends Entity {
         this.veiculo = veiculo;
     }
 
-    @PrimaryKey
+    @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId()
     {
         return id;
@@ -128,64 +128,5 @@ public class Pessoa extends Entity {
     public void setVersion(int version)
     {
         this.version = version;
-    }
- */
-
-
-    @PrimaryKey(increment = INCREMENT.MANUAL)
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getTelefone() {
-        return telefone;
-    }
-
-    public void setTelefone(String telefone) {
-        this.telefone = telefone;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getEndereco() {
-        return endereco;
-    }
-
-    public void setEndereco(String endereco) {
-        this.endereco = endereco;
-    }
-
-    public int getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
-    }
-
-    public int getVeiculo_id() {
-        return veiculo_id;
-    }
-
-    public void setVeiculo_id(int veiculo_id) {
-        this.veiculo_id = veiculo_id;
     }
 }

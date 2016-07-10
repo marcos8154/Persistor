@@ -121,16 +121,22 @@ public class Join implements IJoin
                     SQLHelper helper = new SQLHelper();
                     String tableName = cls.getSimpleName().toLowerCase();
 
+                    Object ignoreObj = null;
+                    
                     for (Method method : cls.getMethods())
                     {
                         if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                         {
                             if (method.isAnnotationPresent(PrimaryKey.class))
                             {
-                                String pkName = helper.getPrimaryKeyFieldName(otherObj);
                                 String mtdName = method.getName().replace("get", "");
                                 int inx = getFieldIndexByNamer(tableName + "." + mtdName.toLowerCase() + " " + mtdName.toLowerCase() + "_" + tableName);
-
+                                    
+                                if(resultSet.getInt(inx) == 0)
+                                {
+                                   ignoreObj = otherObj;
+                                }
+                                
                                 if (method.getReturnType() == int.class)
                                 {
                                     Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), int.class);
@@ -229,7 +235,7 @@ public class Join implements IJoin
                             }
                         }
                     }
-                    resultList.add(otherObj);
+                    if(ignoreObj == null)resultList.add(otherObj);
                 }
             }
 
