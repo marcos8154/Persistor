@@ -29,7 +29,7 @@ public class ConfigureSession
         
         config.setDb_type(DB_TYPE.FirebirdSQL);
         config.setHost("localhost");
-        config.setDatabase("c:/viva/banco.fdb");
+        config.setDatabase("Users/marcosvinicius/NetBeansProjects/Persistor/banco.fdb");
         config.setPort(3050);
         config.setUser("SYSDBA");
         config.setPassword("masterkey");
