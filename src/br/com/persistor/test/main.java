@@ -33,6 +33,6 @@ public class main
         session.commit(); */
        // Pessoa pessoa = (Pessoa) session.onID(Pessoa.class, 3);
 
-        session.close();
+       // session.close();
     }
 }
