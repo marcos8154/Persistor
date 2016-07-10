@@ -31,8 +31,8 @@ public class main
         session.save(profissao);
         
         session.commit(); */
-       // Pessoa pessoa = (Pessoa) session.onID(Pessoa.class, 3);
+        Pessoa pessoa = (Pessoa) session.onID(Pessoa.class, 3);
 
-       // session.close();
+        session.close();
     }
 }
