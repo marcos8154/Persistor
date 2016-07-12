@@ -6,6 +6,7 @@
 package br.com.persistor.test;
 
 import br.com.persistor.abstractClasses.Entity;
+import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
@@ -19,8 +20,11 @@ import java.util.List;
  *
  * @author Marcos Vinícius
  */
+
+@NamedQuery(name = "pegaClientes", value = "select*from pessoa")
 public class Pessoa extends Entity {
 
+    
     private int id;
     private String nome;
     private String telefone;
