@@ -2,6 +2,7 @@ package br.com.persistor.interfaces;
 
 import br.com.persistor.enums.ResultType;
 import br.com.persistor.sessionManager.Criteria;
+import br.com.persistor.sessionManager.Query;
 
 public interface ISession
 {
@@ -27,4 +28,6 @@ public interface ISession
     void close();
 
     Criteria createCriteria(Object obj, ResultType result_type);
+    
+    Query createQuery(Class cls, String queryCommand);
 }

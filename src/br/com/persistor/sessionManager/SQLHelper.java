@@ -139,7 +139,7 @@ public class SQLHelper
 
         return primaryKeyName;
     }
-
+    
     public String getPrimaryKeyFieldName(Object obj)
     {
         Class cls = obj.getClass();

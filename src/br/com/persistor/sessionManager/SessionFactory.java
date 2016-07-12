@@ -119,8 +119,7 @@ public class SessionFactory implements ISession
             {
                 methodName = "is" + methodName.substring(2, methodName.length());
                 method = obj.getClass().getMethod(methodName);
-            }
-            else
+            } else
             {
                 methodName = "get" + methodName.substring(3, methodName.length());
                 method = obj.getClass().getMethod(methodName);
@@ -139,6 +138,15 @@ public class SessionFactory implements ISession
         }
 
         return false;
+    }
+
+    @Override
+    public Query createQuery(Class cls, String queryCommand)
+    {
+        Query query = new Query();
+        query.createQuery(this, cls, queryCommand);
+
+        return query;
     }
 
     @Override
