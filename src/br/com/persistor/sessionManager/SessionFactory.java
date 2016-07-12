@@ -141,10 +141,10 @@ public class SessionFactory implements ISession
     }
 
     @Override
-    public Query createQuery(Class cls, String queryCommand)
+    public Query createQuery(Class cls, ResultType resultType, String queryCommand)
     {
         Query query = new Query();
-        query.createQuery(this, cls, queryCommand);
+        query.createQuery(this, resultType, cls, queryCommand);
 
         return query;
     }

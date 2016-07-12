@@ -6,6 +6,7 @@
 package br.com.persistor.sessionManager;
 
 import br.com.persistor.enums.PARAMETER_TYPE;
+import br.com.persistor.enums.ResultType;
 
 /**
  *
@@ -13,7 +14,7 @@ import br.com.persistor.enums.PARAMETER_TYPE;
  */
 public class Query
 {
-    public void createQuery(SessionFactory session, Class cls, String query)
+    public void createQuery(SessionFactory session, ResultType result_type, Class cls, String query)
     {
         //if "query" starts with "@", is an NamedQuery.
         //Find in Class "cls" the NamedQuery

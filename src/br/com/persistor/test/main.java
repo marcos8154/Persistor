@@ -1,6 +1,7 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.ResultType;
+import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
 import java.util.List;
 
@@ -18,6 +19,8 @@ public class main
         pessoa.setEndereco("Rua vogue, 166");
         pessoa.setHabilitado(true);
         pessoa.setVeiculo_id(1);
+
+        Query query = session.createQuery(Pessoa.class, ResultType.MULTIPLE, "@selecionaPessoa");
         
         session.save(pessoa);
         
