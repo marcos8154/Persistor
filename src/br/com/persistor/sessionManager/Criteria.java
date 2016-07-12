@@ -19,6 +19,7 @@ import br.com.persistor.sessionManager.SessionFactory;
 
 public class Criteria implements ICriteria
 {
+
     ResultType resultType;
     Connection connection;
     Object obj;
@@ -88,7 +89,7 @@ public class Criteria implements ICriteria
             Class clss = obj.getClass();
 
             this.query = query.toLowerCase();
-            
+
             Field fieldMQ = clss.getField("mountedQuery");
             fieldMQ.set(obj, query);
 
@@ -111,10 +112,20 @@ public class Criteria implements ICriteria
 
                 for (Method method : cls.getMethods())
                 {
-                    if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        String name = (method.getName().replace("get", "")).toLowerCase();
-                        String fieldName = method.getName().replace("get", "set");
+                        String name;
+                        String fieldName;
+
+                        if (method.getName().startsWith("is"))
+                        {
+                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(2, method.getName().length());
+                        } else
+                        {
+                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(3, method.getName().length());
+                        }
 
                         if (method.isAnnotationPresent(OneToOne.class));
 
@@ -198,10 +209,21 @@ public class Criteria implements ICriteria
 
                     for (Method method : cls.getMethods())
                     {
-                        if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        if (method.getName().contains("is") || method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                         {
-                            String name = (method.getName().replace("get", "")).toLowerCase();
-                            String fieldName = method.getName().replace("get", "set");
+                            String name;
+                            String fieldName;
+
+                            if (method.getName().startsWith("is"))
+                            {
+                                name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                                fieldName = "set" + method.getName().substring(2, method.getName().length());
+                            } 
+                            else
+                            {
+                                name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                                fieldName = "set" + method.getName().substring(3, method.getName().length());
+                            }
 
                             if (method.getReturnType() == boolean.class)
                             {

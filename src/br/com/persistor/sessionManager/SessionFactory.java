@@ -114,7 +114,18 @@ public class SessionFactory implements ISession
     {
         try
         {
-            Method method = obj.getClass().getMethod(methodName.replace("set", "get"));
+            Method method;
+            if (methodName.startsWith("is"))
+            {
+                methodName = "is" + methodName.substring(2, methodName.length());
+                method = obj.getClass().getMethod(methodName);
+            }
+            else
+            {
+                methodName = "get" + methodName.substring(3, methodName.length());
+                method = obj.getClass().getMethod(methodName);
+            }
+
             Object value = method.invoke(obj);
 
             if (value != null && (int) value != 0)
@@ -193,22 +204,20 @@ public class SessionFactory implements ISession
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    PrimaryKey primaryKey = (PrimaryKey)method.getAnnotation(PrimaryKey.class);
-                    
-                    if(primaryKey.increment() == INCREMENT.MANUAL)
+                    PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+
+                    if (primaryKey.increment() == INCREMENT.MANUAL)
                     {
                         int id = (this.maxId(obj) + 1);
                         preparedStatement.setInt(parameterIndex, id);
-                        parameterIndex ++;
+                        parameterIndex++;
                         continue;
-                    }
-                    
-                    else
+                    } else
                     {
                         continue;
                     }
                 }
-                
+
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
                     continue;
@@ -218,7 +227,7 @@ public class SessionFactory implements ISession
                     continue;
                 }
 
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
                     if (method.isAnnotationPresent(Version.class))
                     {
@@ -383,12 +392,18 @@ public class SessionFactory implements ISession
 
             for (Method method : cls.getMethods())
             {
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
-                    if (method.isAnnotationPresent(PrimaryKey.class))continue;
-                    if (method.isAnnotationPresent(OneToOne.class))continue;
+                    if (method.isAnnotationPresent(PrimaryKey.class))
+                    {
+                        continue;
+                    }
+                    if (method.isAnnotationPresent(OneToOne.class))
+                    {
+                        continue;
+                    }
                     if (method.isAnnotationPresent(OneToMany.class));
-                    
+
                     if (method.isAnnotationPresent(Version.class))
                     {
                         System.out.println(method.getName());
@@ -562,11 +577,20 @@ public class SessionFactory implements ISession
 
             for (Method method : cls.getMethods())
             {
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
-                    if (method.isAnnotationPresent(PrimaryKey.class))continue;
-                    if (method.isAnnotationPresent(OneToOne.class))continue;
-                    if (method.isAnnotationPresent(OneToMany.class))continue;
+                    if (method.isAnnotationPresent(PrimaryKey.class))
+                    {
+                        continue;
+                    }
+                    if (method.isAnnotationPresent(OneToOne.class))
+                    {
+                        continue;
+                    }
+                    if (method.isAnnotationPresent(OneToMany.class))
+                    {
+                        continue;
+                    }
 
                     if (method.isAnnotationPresent(Version.class))
                     {
@@ -865,7 +889,7 @@ public class SessionFactory implements ISession
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = method.getName().replace("get", "");
                         break;
@@ -890,7 +914,7 @@ public class SessionFactory implements ISession
             {
                 for (Method method : cls.getMethods())
                 {
-                    if (method.getName().contains("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
 
@@ -921,13 +945,13 @@ public class SessionFactory implements ISession
     @Override
     public Object onID(Class cls, int id)
     {
-       Statement statement = null;
-       Object obj = null;
+        Statement statement = null;
+        Object obj = null;
         try
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
             obj = constructor.newInstance();
-            
+
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
@@ -1042,7 +1066,7 @@ public class SessionFactory implements ISession
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = method.getName().replace("get", "");
                         break;
@@ -1061,7 +1085,7 @@ public class SessionFactory implements ISession
             {
                 for (Method method : cls.getMethods())
                 {
-                    if (method.getName().contains("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
 
@@ -1086,10 +1110,10 @@ public class SessionFactory implements ISession
                 clostSTMT(statement);
             }
         }
-        
+
         return obj;
     }
-    
+
     @Override
     public void commit()
     {
@@ -1132,8 +1156,8 @@ public class SessionFactory implements ISession
 
     private int maxId(Object obj)
     {
-                Statement statement = null;
-                int result = 0;
+        Statement statement = null;
+        int result = 0;
         try
         {
             Class cls = obj.getClass();
@@ -1156,7 +1180,7 @@ public class SessionFactory implements ISession
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
             String pkMethodName = sql_helper.getPrimaryKeyMethodName(obj).replace("get", "set");
-            
+
             while (resultSet.next())
             {
                 result = resultSet.getInt(primaryKeyName);
@@ -1169,10 +1193,10 @@ public class SessionFactory implements ISession
         {
             this.clostSTMT(statement);
         }
-        
+
         return result;
     }
-    
+
     private void lastID(Object obj)
     {
         Statement statement = null;
@@ -1198,7 +1222,7 @@ public class SessionFactory implements ISession
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
             String pkMethodName = sql_helper.getPrimaryKeyMethodName(obj).replace("get", "set");
-            
+
             while (resultSet.next())
             {
                 String field = (pkMethodName);

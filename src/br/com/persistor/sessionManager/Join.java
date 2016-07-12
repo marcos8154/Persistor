@@ -17,6 +17,7 @@ import br.com.persistor.interfaces.IJoin;
 
 public class Join implements IJoin
 {
+
     public String mountedQuery = "";
 
     Object primaryObj;
@@ -122,21 +123,21 @@ public class Join implements IJoin
                     String tableName = cls.getSimpleName().toLowerCase();
 
                     Object ignoreObj = null;
-                    
+
                     for (Method method : cls.getMethods())
                     {
-                        if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                         {
                             if (method.isAnnotationPresent(PrimaryKey.class))
                             {
-                                String mtdName = method.getName().replace("get", "");
+                                String mtdName = method.getName().substring(3, method.getName().length());
                                 int inx = getFieldIndexByNamer(tableName + "." + mtdName.toLowerCase() + " " + mtdName.toLowerCase() + "_" + tableName);
-                                    
-                                if(resultSet.getInt(inx) == 0)
+
+                                if (resultSet.getInt(inx) == 0)
                                 {
-                                   ignoreObj = otherObj;
+                                    ignoreObj = otherObj;
                                 }
-                                
+
                                 if (method.getReturnType() == int.class)
                                 {
                                     Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), int.class);
@@ -159,10 +160,20 @@ public class Join implements IJoin
                                 }
                             }
 
-                            String name = cls.getSimpleName() + "." + method.getName().replace("get", "");
-                            int indexParam = getFieldIndexByNamer(name.toLowerCase());
+                            String name;
+                            String methodSetName;
 
-                            String methodSetName = method.getName().replace("get", "set");
+                            if (method.getName().startsWith("is"))
+                            {
+                                name = cls.getSimpleName() + "." + method.getName().substring(2, method.getName().length());
+                                methodSetName = "set" + method.getName().substring(2, method.getName().length());
+                            } else
+                            {
+                                name = cls.getSimpleName() + "." + method.getName().substring(3, method.getName().length());
+                                methodSetName = "set" + method.getName().substring(3, method.getName().length());
+                            }
+
+                            int indexParam = getFieldIndexByNamer(name.toLowerCase());
 
                             if (method.getReturnType() == boolean.class)
                             {
@@ -235,7 +246,10 @@ public class Join implements IJoin
                             }
                         }
                     }
-                    if(ignoreObj == null)resultList.add(otherObj);
+                    if (ignoreObj == null)
+                    {
+                        resultList.add(otherObj);
+                    }
                 }
             }
 
@@ -261,9 +275,16 @@ public class Join implements IJoin
                             continue;
                         }
 
-                        if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                         {
-                            String name = (method.getName().replace("get", "set"));
+                            String name = "set" + (method.getName().substring(3, method.getName().length()));
+                            Method setInvokeMethod = obj.getClass().getMethod(name, method.getReturnType());
+                            setInvokeMethod.invoke(object, method.invoke(obj));
+                        }
+
+                        if (method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        {
+                            String name = "set" + (method.getName().substring(2, method.getName().length()));
                             Method setInvokeMethod = obj.getClass().getMethod(name, method.getReturnType());
                             setInvokeMethod.invoke(object, method.invoke(obj));
                         }
@@ -373,12 +394,15 @@ public class Join implements IJoin
     public List<Object> getResultList(Object object)
     {
         List<Object> returnList = new ArrayList<>();
-        
-        for(Object obj : resultList)
+
+        for (Object obj : resultList)
         {
-            if(obj.getClass() == object.getClass()) returnList.add(obj);
+            if (obj.getClass() == object.getClass())
+            {
+                returnList.add(obj);
+            }
         }
-        
+
         return resultList;
     }
 }

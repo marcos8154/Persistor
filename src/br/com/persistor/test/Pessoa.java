@@ -28,7 +28,18 @@ public class Pessoa extends Entity {
     private String endereco;
     private int version;
     private int veiculo_id;
+    private boolean habilitado;
 
+    public boolean isHabilitado()
+    {
+        return habilitado;
+    }
+
+    public void setHabilitado(boolean habilitado)
+    {
+        this.habilitado = habilitado;
+    }
+    
     private Veiculo veiculo;
 
     @OneToMany(source = "id", target = "pessoa_id", join_type = JOIN_TYPE.LEFT, load = LOAD.AUTO)

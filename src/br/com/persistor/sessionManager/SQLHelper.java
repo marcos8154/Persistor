@@ -14,6 +14,7 @@ import br.com.persistor.enums.INCREMENT;
 
 public class SQLHelper
 {
+
     private String sqlBase = "";
     private String columns = "";
     private String values = "";
@@ -77,14 +78,32 @@ public class SQLHelper
         String fields = "";
 
         for (Method method : cls.getMethods())
-        {   
-            if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+        {
+            if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
             {
-                if (method.isAnnotationPresent(OneToOne.class))continue;
-                if (method.isAnnotationPresent(PrimaryKey.class)) continue;
-                if(method.isAnnotationPresent(OneToMany.class)) continue;
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
+                    continue;
+                }
+                if (method.isAnnotationPresent(PrimaryKey.class))
+                {
+                    continue;
+                }
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    continue;
+                }
+
+                String name = "";
+
+                if (method.getName().startsWith("is"))
+                {
+                    name = method.getName().substring(2, method.getName().length());
+                } else
+                {
+                    name = method.getName().substring(3, method.getName().length());
+                }
                 
-                String name = method.getName().replace("get", "");
                 fields += name.toLowerCase() + ",";
             }
         }
@@ -104,7 +123,7 @@ public class SQLHelper
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = method.getName();
                         this.setPrimaryKeyValue(method.invoke(obj).toString());
@@ -128,14 +147,13 @@ public class SQLHelper
 
         try
         {
-
             for (Method method : cls.getMethods())
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        primaryKeyName = (method.getName().replace("get", "")).toLowerCase();
+                        primaryKeyName = (method.getName().substring(3, method.getName().length())).toLowerCase();
                         this.setPrimaryKeyValue(method.invoke(obj).toString());
                     }
 
@@ -183,9 +201,9 @@ public class SQLHelper
             Class cls = obj.getClass();
 
             String sqlBase = "select * from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " LIMIT " + LIMIT;
-          
+
             sqlBase = sqlBase.toLowerCase();
-            
+
             if (whereCondition != null && whereCondition != "")
             {
                 sqlBase += " where " + whereCondition;
@@ -212,14 +230,14 @@ public class SQLHelper
                 {
                     if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        primaryKeyName = method.getName().replace("get", "");
+                        primaryKeyName = method.getName().substring(3, method.getName().length());
                         primaryKeyValue = (method.invoke(obj)).toString();
                     }
 
                     continue;
                 }
             }
-            
+
             sqlBase = ("delete from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + "=" + primaryKeyValue).toLowerCase();
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
@@ -245,21 +263,27 @@ public class SQLHelper
 
             for (Method method : cls.getMethods())
             {
-                if (method.isAnnotationPresent(OneToOne.class))continue;
-                if (method.isAnnotationPresent(OneToMany.class)) continue;
-                
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
+                    continue;
+                }
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    continue;
+                }
+
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        primaryKeyName = method.getName().replace("get", "");
+                        primaryKeyName = method.getName().substring(3, method.getName().length());
                         continue;
                     }
                 }
 
                 if (method.isAnnotationPresent(Version.class))
                 {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         int versionObj = Integer.parseInt(method.invoke(obj).toString());
 
@@ -276,16 +300,26 @@ public class SQLHelper
                             return;
                         }
 
-                        String fieldName = method.getName().replace("get", "");
+                        String fieldName = method.getName().substring(3, method.getName().length());
                         sql += fieldName + " = ?, ";
 
                         continue;
                     }
                 }
 
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                 {
-                    String fieldName = method.getName().replace("get", "");
+                    String fieldName;
+
+                    if (method.getName().startsWith("is"))
+                    {
+                        fieldName = method.getName().substring(2, method.getName().length());
+                    } 
+                    else
+                    {
+                        fieldName = method.getName().substring(3, method.getName().length());
+                    }
+
                     sql += fieldName + " = ?, ";
                 }
             }
@@ -344,26 +378,38 @@ public class SQLHelper
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    PrimaryKey primaryKey = (PrimaryKey)method.getAnnotation(PrimaryKey.class);
-                    
-                    if(primaryKey.increment() == INCREMENT.MANUAL)
+                    PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+
+                    if (primaryKey.increment() == INCREMENT.MANUAL)
                     {
-                        sql += method.getName().replace("get", "") + ", ";
+                        sql += method.getName().substring(3, method.getName().length()) + ", ";
                         parameters += "?, ";
-                         continue;
-                    }
-                    else
+                        continue;
+                    } else
                     {
                         continue;
                     }
                 }
-                
-                if (method.isAnnotationPresent(OneToOne.class)) continue;
-                if (method.isAnnotationPresent(OneToMany.class)) continue;
-                
-                if (method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+
+                if (method.isAnnotationPresent(OneToOne.class))
                 {
-                    sql += method.getName().replace("get", "") + ", ";
+                    continue;
+                }
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    continue;
+                }
+
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                {
+                    if (method.getName().startsWith("is"))
+                    {
+                        sql += method.getName().substring(2, method.getName().length()) + ", ";
+                    } else
+                    {
+                        sql += method.getName().substring(3, method.getName().length()) + ", ";
+                    }
+
                     parameters += "?, ";
                 }
             }

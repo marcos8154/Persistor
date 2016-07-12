@@ -9,14 +9,19 @@ public class main
 
     public static void main(String[] args)
     {
-        SessionFactory session = new ConfigureSession().getFbSession();
+        SessionFactory session = new ConfigureSession().getMySQLSession();
 
-        /*  Pessoa pessoa = new Pessoa();
+        Pessoa pessoa = new Pessoa();
         pessoa.setNome("Marcos 3");
         pessoa.setEmail("marcos8154@gmail.com");
         pessoa.setTelefone("999486444");
         pessoa.setEndereco("Rua vogue, 166");
-        Veiculo veiculo = new Veiculo();
+        pessoa.setHabilitado(true);
+        pessoa.setVeiculo_id(1);
+        
+        session.save(pessoa);
+        
+     /*   Veiculo veiculo = new Veiculo();
         veiculo.setNome("Volkswagen Golf");
 
         pessoa.setVeiculo(veiculo);
@@ -28,10 +33,9 @@ public class main
 
         profissao.setPessoa_id(pessoa.getId());
 
-        session.save(profissao);
+        session.save(profissao); */
         
-        session.commit(); */
-        Pessoa pessoa = (Pessoa) session.onID(Pessoa.class, 3);
+        session.commit();
 
         session.close();
     }
