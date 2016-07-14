@@ -1265,7 +1265,7 @@ public class SessionFactory implements ISession
 
         try
         {
-            criteria = new Criteria(connection, obj, result_type);
+            criteria = new Criteria(this, obj, result_type);
 
         } catch (Exception ex)
         {

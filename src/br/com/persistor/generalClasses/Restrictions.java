@@ -403,14 +403,6 @@ public class Restrictions {
     }
 
     /**
-     * Represents the Limit expression. "LIMIT 1000"
-     */
-    public static Expressions limit(int limit)
-    {
-        return new Expressions(" LIMIT " + limit + " ");
-    }
-
-    /**
      * Represents the Order By expression. It can be customized with the
      * parameter enum ORDER_MODE
      */

@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.persistor.annotations.OneToOne;
+import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.enums.ResultType;
 import br.com.persistor.generalClasses.Expressions;
+import br.com.persistor.generalClasses.LIMIT;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
 import br.com.persistor.sessionManager.SessionFactory;
@@ -25,16 +27,69 @@ public class Criteria implements ICriteria
     Object obj;
 
     String query = "";
+    String tableName = "";
 
-    public Criteria(Connection conn, Object obj, ResultType result_type)
+    SessionFactory factory;
+
+    public Criteria(SessionFactory session, Object obj, ResultType result_type)
     {
-        this.connection = conn;
+        this.factory = session;
+        this.connection = session.connection;
         this.resultType = result_type;
         this.obj = obj;
 
         String name = (obj.getClass().getName().toLowerCase()).replace(obj.getClass().getPackage().getName() + ".", "");
+        this.tableName = name;
 
         query = "SELECT * FROM " + name;
+    }
+
+    public void addLimit(LIMIT limit)
+    {
+        switch (factory.config.getDb_type())
+        {
+            case FirebirdSQL:
+
+                if (limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    this.query = "SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " * FROM " + this.tableName;
+                }
+                
+                if(limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    this.query = "SELECT FIRST " + limit.getPageSize() + " * FROM " + this.tableName;
+                }
+
+                break;
+
+            case PostgreSQL:
+
+                if(limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    this.query += " LIMIT " + limit.getPageSize() + " OFFSET " + limit.getPagePosition();
+                }
+                
+                if(limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    this.query += " LIMIT " + limit.getPageSize();
+                }
+                
+                break;
+
+            case MySQL:
+
+                if(limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    this.query += " LIMIT " + limit.getPagePosition() + ", " + limit.getPageSize();
+                }
+                
+                if(limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    this.query += " LIMIT " + limit.getPageSize();
+                }
+                
+                break;
+        }
     }
 
     @Override
@@ -218,8 +273,7 @@ public class Criteria implements ICriteria
                             {
                                 name = (method.getName().substring(2, method.getName().length())).toLowerCase();
                                 fieldName = "set" + method.getName().substring(2, method.getName().length());
-                            } 
-                            else
+                            } else
                             {
                                 name = (method.getName().substring(3, method.getName().length())).toLowerCase();
                                 fieldName = "set" + method.getName().substring(3, method.getName().length());

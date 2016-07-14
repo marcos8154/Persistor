@@ -1,6 +1,8 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.ResultType;
+import br.com.persistor.generalClasses.LIMIT;
+import br.com.persistor.sessionManager.Criteria;
 import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
 import java.util.List;
@@ -12,34 +14,31 @@ public class main
     {
         SessionFactory session = new ConfigureSession().getMySQLSession();
 
+      /*  for (int i = 0; i < 3000; i++)
+        {
+
+            Pessoa pessoa = new Pessoa();
+            pessoa.setNome("Marcos 3");
+            pessoa.setEmail("marcos8154@gmail.com");
+            pessoa.setTelefone("999486444");
+            pessoa.setEndereco("Rua vogue, 166");
+            pessoa.setHabilitado(true);
+            pessoa.setVeiculo_id(1);
+
+            session.save(pessoa);
+           
+        }
+        
+        session.commit(); */
+        
         Pessoa pessoa = new Pessoa();
-        pessoa.setNome("Marcos 3");
-        pessoa.setEmail("marcos8154@gmail.com");
-        pessoa.setTelefone("999486444");
-        pessoa.setEndereco("Rua vogue, 166");
-        pessoa.setHabilitado(true);
-        pessoa.setVeiculo_id(1);
-
-        Query query = session.createQuery(Pessoa.class, ResultType.MULTIPLE, "@selecionaPessoa");
+        Criteria criteria = session.createCriteria(pessoa, ResultType.MULTIPLE);
         
-        session.save(pessoa);
+        criteria.addLimit(LIMIT.paginate(30, 10));
         
-     /*   Veiculo veiculo = new Veiculo();
-        veiculo.setNome("Volkswagen Golf");
+        criteria.execute(session);
 
-        pessoa.setVeiculo(veiculo);
-
-        session.save(pessoa);
-
-        Profissao profissao = new Profissao();
-        profissao.setDescricao("Programador");
-
-        profissao.setPessoa_id(pessoa.getId());
-
-        session.save(profissao); */
         
-        session.commit();
-
         session.close();
     }
 }

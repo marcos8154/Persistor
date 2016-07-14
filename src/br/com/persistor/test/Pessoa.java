@@ -21,7 +21,6 @@ import java.util.List;
  * @author Marcos Vinícius
  */
 
-@NamedQuery(name = "pegaClientes", value = "select*from pessoa")
 public class Pessoa extends Entity {
 
     
