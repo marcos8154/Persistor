@@ -15,9 +15,15 @@ public class DataSource
     private static DataSource datasource;
     private ComboPooledDataSource cpds;
 
+    public DBConfig config;
+    
+    private static DBConfig mainConfig;
+    
     private DataSource(DBConfig config) throws IOException, SQLException, PropertyVetoException
     {
 
+        this.config = config;
+        
         cpds = new ComboPooledDataSource();
         cpds.setDriverClass(decodeDriver(config)); //loads the jdbc driver
         cpds.setJdbcUrl(dataBaseURL(config));
@@ -34,14 +40,17 @@ public class DataSource
 
     public static DataSource getInstance(DBConfig config) throws IOException, SQLException, PropertyVetoException
     {
-        if (datasource == null)
+        if (DataSources.getDataSource(config) == null)
         {
             datasource = new DataSource(config);
+            
+            DataSources.add(datasource);
+            
             return datasource;
 
         } else
         {
-            return datasource;
+            return DataSources.getDataSource(config);
         }
     }
 

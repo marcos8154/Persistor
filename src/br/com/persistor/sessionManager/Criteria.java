@@ -31,6 +31,8 @@ public class Criteria implements ICriteria
 
     SessionFactory factory;
 
+    private boolean hasFbLimit = false;
+    
     public Criteria(SessionFactory session, Object obj, ResultType result_type)
     {
         this.factory = session;
@@ -41,7 +43,6 @@ public class Criteria implements ICriteria
         String name = (obj.getClass().getName().toLowerCase()).replace(obj.getClass().getPackage().getName() + ".", "");
         this.tableName = name;
 
-        query = "SELECT * FROM " + name;
     }
 
     public void addLimit(LIMIT limit)
@@ -52,42 +53,46 @@ public class Criteria implements ICriteria
 
                 if (limit.limit_type == LIMIT_TYPE.paginate)
                 {
-                    this.query = "SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " * FROM " + this.tableName;
+                    String q = query;
+                    this.query = ("SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " * FROM " + this.tableName) + " " + q;
+                }
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    String q = query;
+                    this.query = ("SELECT FIRST " + limit.getPageSize() + " * FROM " + this.tableName) + " " + q;
                 }
                 
-                if(limit.limit_type == LIMIT_TYPE.simple)
-                {
-                    this.query = "SELECT FIRST " + limit.getPageSize() + " * FROM " + this.tableName;
-                }
+                hasFbLimit = true;
 
                 break;
 
             case PostgreSQL:
 
-                if(limit.limit_type == LIMIT_TYPE.paginate)
+                if (limit.limit_type == LIMIT_TYPE.paginate)
                 {
                     this.query += " LIMIT " + limit.getPageSize() + " OFFSET " + limit.getPagePosition();
                 }
-                
-                if(limit.limit_type == LIMIT_TYPE.simple)
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
                 {
                     this.query += " LIMIT " + limit.getPageSize();
                 }
-                
+
                 break;
 
             case MySQL:
 
-                if(limit.limit_type == LIMIT_TYPE.paginate)
+                if (limit.limit_type == LIMIT_TYPE.paginate)
                 {
                     this.query += " LIMIT " + limit.getPagePosition() + ", " + limit.getPageSize();
                 }
-                
-                if(limit.limit_type == LIMIT_TYPE.simple)
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
                 {
                     this.query += " LIMIT " + limit.getPageSize();
                 }
-                
+
                 break;
         }
     }
@@ -138,7 +143,12 @@ public class Criteria implements ICriteria
     {
         Statement statement = null;
         ResultSet resultSet = null;
-
+        
+        if(!hasFbLimit)
+        {
+            query = "select * from " + tableName + " " + query;
+        }
+        
         try
         {
             Class clss = obj.getClass();

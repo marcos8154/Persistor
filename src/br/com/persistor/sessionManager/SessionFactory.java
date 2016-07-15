@@ -30,6 +30,8 @@ public class SessionFactory implements ISession
     public Connection connection;
     DBConfig config;
 
+    DataSource dataSource;
+    
     public SessionFactory(Connection connectiion)
     {
         this.connection = connectiion;
@@ -39,7 +41,7 @@ public class SessionFactory implements ISession
     {
         try
         {
-            connection = DataSource.getInstance(config).getConnection();
+            connection =  DataSource.getInstance(config).getConnection();
             this.config = config;
             connection.setAutoCommit(false);
 
