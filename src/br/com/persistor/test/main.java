@@ -1,7 +1,7 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.FILTER_TYPE;
-import br.com.persistor.enums.ResultType;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.LIMIT;
 import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.sessionManager.Criteria;
@@ -35,7 +35,7 @@ public class main
         session.commit(); */
         
         Pessoa pessoa = new Pessoa();
-        Criteria criteria = session.createCriteria(pessoa, ResultType.MULTIPLE);
+        Criteria criteria = session.createCriteria(pessoa, RESULT_TYPE.MULTIPLE);
         
         criteria.add(Restrictions.eq(FILTER_TYPE.WHERE, "nome", "Mar"));
         criteria.addLimit(LIMIT.paginate(30, 10));

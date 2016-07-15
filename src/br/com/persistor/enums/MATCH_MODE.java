@@ -1,6 +1,6 @@
 package br.com.persistor.enums;
 
-public enum MatchMode
+public enum MATCH_MODE
 {
     ANYWHERE, END, START, EXACT;
 }

@@ -18,7 +18,7 @@ import br.com.persistor.annotations.Version;
 import br.com.persistor.connection.DataSource;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.LOAD;
-import br.com.persistor.enums.ResultType;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
 import br.com.persistor.interfaces.ISession;
@@ -143,7 +143,7 @@ public class SessionFactory implements ISession
     }
 
     @Override
-    public Query createQuery(Class cls, ResultType resultType, String queryCommand)
+    public Query createQuery(Class cls, RESULT_TYPE resultType, String queryCommand)
     {
         Query query = new Query();
         query.createQuery(this, resultType, cls, queryCommand);
@@ -822,7 +822,7 @@ public class SessionFactory implements ISession
 
                     JoinableObject objToJoin = new JoinableObject();
 
-                    objToJoin.result_type = ResultType.UNIQUE;
+                    objToJoin.result_type = RESULT_TYPE.UNIQUE;
                     objToJoin.objectToJoin = object;
 
                     objectsToJoin.add(objToJoin);
@@ -851,7 +851,7 @@ public class SessionFactory implements ISession
 
                     JoinableObject objToJoin = new JoinableObject();
 
-                    objToJoin.result_type = ResultType.MULTIPLE;
+                    objToJoin.result_type = RESULT_TYPE.MULTIPLE;
                     objToJoin.objectToJoin = object;
 
                     objectsToJoin.add(objToJoin);
@@ -869,7 +869,7 @@ public class SessionFactory implements ISession
                 join.getResultObj(obj);
                 for (JoinableObject object : objectsToJoin)
                 {
-                    if (object.result_type == ResultType.UNIQUE)
+                    if (object.result_type == RESULT_TYPE.UNIQUE)
                     {
                         join.getResultObj(object.objectToJoin);
 
@@ -877,7 +877,7 @@ public class SessionFactory implements ISession
                         method.invoke(obj, object.objectToJoin);
                     }
 
-                    if (object.result_type == ResultType.MULTIPLE)
+                    if (object.result_type == RESULT_TYPE.MULTIPLE)
                     {
                         Class clss = object.objectToJoin.getClass();
 
@@ -999,7 +999,7 @@ public class SessionFactory implements ISession
 
                     JoinableObject objToJoin = new JoinableObject();
 
-                    objToJoin.result_type = ResultType.UNIQUE;
+                    objToJoin.result_type = RESULT_TYPE.UNIQUE;
                     objToJoin.objectToJoin = object;
 
                     objectsToJoin.add(objToJoin);
@@ -1028,7 +1028,7 @@ public class SessionFactory implements ISession
 
                     JoinableObject objToJoin = new JoinableObject();
 
-                    objToJoin.result_type = ResultType.MULTIPLE;
+                    objToJoin.result_type = RESULT_TYPE.MULTIPLE;
                     objToJoin.objectToJoin = object;
 
                     objectsToJoin.add(objToJoin);
@@ -1046,7 +1046,7 @@ public class SessionFactory implements ISession
                 join.getResultObj(obj);
                 for (JoinableObject object : objectsToJoin)
                 {
-                    if (object.result_type == ResultType.UNIQUE)
+                    if (object.result_type == RESULT_TYPE.UNIQUE)
                     {
                         join.getResultObj(object.objectToJoin);
 
@@ -1054,7 +1054,7 @@ public class SessionFactory implements ISession
                         method.invoke(obj, object.objectToJoin);
                     }
 
-                    if (object.result_type == ResultType.MULTIPLE)
+                    if (object.result_type == RESULT_TYPE.MULTIPLE)
                     {
                         Class clss = object.objectToJoin.getClass();
 
@@ -1261,7 +1261,7 @@ public class SessionFactory implements ISession
     }
 
     @Override
-    public Criteria createCriteria(Object obj, ResultType result_type)
+    public Criteria createCriteria(Object obj, RESULT_TYPE result_type)
     {
         Criteria criteria = null;
 

@@ -1,6 +1,6 @@
 package br.com.persistor.enums;
 
-public enum ResultType
+public enum RESULT_TYPE
 {
     UNIQUE, MULTIPLE;
 }

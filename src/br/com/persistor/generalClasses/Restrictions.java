@@ -3,7 +3,7 @@ package br.com.persistor.generalClasses;
 import java.util.Date;
 
 import br.com.persistor.enums.FILTER_TYPE;
-import br.com.persistor.enums.MatchMode;
+import br.com.persistor.enums.MATCH_MODE;
 import br.com.persistor.enums.ORDER_MODE;
 
 public class Restrictions {
@@ -172,7 +172,7 @@ public class Restrictions {
      * Represents the Like expression. It can be customized with the parameter
      * enum MatchMode
      */
-    public static Expressions like(FILTER_TYPE filter_type, String column, String value, MatchMode matchMode)
+    public static Expressions like(FILTER_TYPE filter_type, String column, String value, MATCH_MODE matchMode)
     {
         String baseCondition = "";
 

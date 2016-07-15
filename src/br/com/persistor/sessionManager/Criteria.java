@@ -12,7 +12,7 @@ import java.util.List;
 
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.LIMIT_TYPE;
-import br.com.persistor.enums.ResultType;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.LIMIT;
 import br.com.persistor.generalClasses.Util;
@@ -22,7 +22,7 @@ import br.com.persistor.sessionManager.SessionFactory;
 public class Criteria implements ICriteria
 {
 
-    ResultType resultType;
+    RESULT_TYPE resultType;
     Connection connection;
     Object obj;
 
@@ -33,7 +33,7 @@ public class Criteria implements ICriteria
 
     private boolean hasFbLimit = false;
     
-    public Criteria(SessionFactory session, Object obj, ResultType result_type)
+    public Criteria(SessionFactory session, Object obj, RESULT_TYPE result_type)
     {
         this.factory = session;
         this.connection = session.connection;
@@ -171,7 +171,7 @@ public class Criteria implements ICriteria
             statement = connection.createStatement();
             resultSet = statement.executeQuery(query);
 
-            if (resultType == ResultType.UNIQUE)
+            if (resultType == RESULT_TYPE.UNIQUE)
             {
                 resultSet.next();
 

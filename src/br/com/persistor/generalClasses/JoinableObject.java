@@ -5,7 +5,7 @@
  */
 package br.com.persistor.generalClasses;
 
-import br.com.persistor.enums.ResultType;
+import br.com.persistor.enums.RESULT_TYPE;
 
 /**
  *
@@ -13,6 +13,6 @@ import br.com.persistor.enums.ResultType;
  */
 public class JoinableObject
 {
-    public ResultType result_type;
+    public RESULT_TYPE result_type;
     public Object objectToJoin;
 }

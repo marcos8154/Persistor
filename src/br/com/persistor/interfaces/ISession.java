@@ -1,6 +1,6 @@
 package br.com.persistor.interfaces;
 
-import br.com.persistor.enums.ResultType;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.sessionManager.Criteria;
 import br.com.persistor.sessionManager.Query;
 
@@ -27,7 +27,7 @@ public interface ISession
     
     void close();
 
-    Criteria createCriteria(Object obj, ResultType result_type);
+    Criteria createCriteria(Object obj, RESULT_TYPE result_type);
     
-    Query createQuery(Class cls, ResultType resultType, String queryCommand);
+    Query createQuery(Class cls, RESULT_TYPE resultType, String queryCommand);
 }
