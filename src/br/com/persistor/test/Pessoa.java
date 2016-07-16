@@ -21,6 +21,7 @@ import java.util.List;
  * @author Marcos Vinícius
  */
 
+@NamedQuery(name = "selecionaPessoa", value = "select * from pessoa")
 public class Pessoa extends Entity {
 
     
@@ -45,7 +46,7 @@ public class Pessoa extends Entity {
     
     private Veiculo veiculo;
 
-    @OneToMany(source = "id", target = "pessoa_id", join_type = JOIN_TYPE.LEFT, load = LOAD.AUTO)
+    @OneToMany(source = "id", target = "pessoa_id", join_type = JOIN_TYPE.LEFT, load = LOAD.MANUAL)
     public Profissao getProfissao() {
         return profissao;
     }

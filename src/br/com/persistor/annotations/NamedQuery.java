@@ -14,8 +14,8 @@ import java.lang.annotation.Target;
  *
  * @author marcosvinicius
  */
-@Target(ElementType.TYPE_USE)
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
 public @interface NamedQuery
 {
     String name();
