@@ -18,6 +18,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface NamedQuery
 {
-    String name();
-    String value();
+    String queryName();
+    String queryValue();
 }

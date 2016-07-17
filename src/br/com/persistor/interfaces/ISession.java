@@ -29,5 +29,5 @@ public interface ISession
 
     Criteria createCriteria(Object obj, RESULT_TYPE result_type);
     
-    Query createQuery(Class cls, RESULT_TYPE resultType, String queryCommand);
+    Query createQuery(Object obj, String queryCommand);
 }

@@ -31,7 +31,7 @@ public class SessionFactory implements ISession
     DBConfig config;
 
     DataSource dataSource;
-    
+
     public SessionFactory(Connection connectiion)
     {
         this.connection = connectiion;
@@ -41,7 +41,7 @@ public class SessionFactory implements ISession
     {
         try
         {
-            connection =  DataSource.getInstance(config).getConnection();
+            connection = DataSource.getInstance(config).getConnection();
             this.config = config;
             connection.setAutoCommit(false);
 
@@ -51,7 +51,7 @@ public class SessionFactory implements ISession
         }
     }
 
-    private void clostSTMT(Statement statement)
+    public void closeStatement(Statement statement)
     {
         try
         {
@@ -62,7 +62,25 @@ public class SessionFactory implements ISession
         }
     }
 
-    private void closePS(PreparedStatement ps)
+    public void closeResultSet(ResultSet resultSet)
+    {
+        try
+        {
+            if (resultSet != null)
+            {
+                if (!resultSet.isClosed())
+                {
+                    resultSet.close();
+                }
+            }
+
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at: \n" + ex.getMessage());
+        }
+    }
+
+    public void closePreparedStatement(PreparedStatement ps)
     {
         try
         {
@@ -143,10 +161,10 @@ public class SessionFactory implements ISession
     }
 
     @Override
-    public Query createQuery(Class cls, RESULT_TYPE resultType, String queryCommand)
+    public Query createQuery(Object obj, String queryCommand)
     {
         Query query = new Query();
-        query.createQuery(this, resultType, cls, queryCommand);
+        query.createQuery(this, obj, queryCommand);
 
         return query;
     }
@@ -332,7 +350,7 @@ public class SessionFactory implements ISession
             rollback();
         } finally
         {
-            closePS(preparedStatement);
+            closePreparedStatement(preparedStatement);
         }
     }
 
@@ -516,7 +534,7 @@ public class SessionFactory implements ISession
             System.err.println("Persistor: update error at: \n" + ex.getMessage());
         } finally
         {
-            closePS(preparedStatement);
+            closePreparedStatement(preparedStatement);
         }
     }
 
@@ -695,7 +713,7 @@ public class SessionFactory implements ISession
             rollback();
         } finally
         {
-            closePS(preparedStatement);
+            closePreparedStatement(preparedStatement);
         }
     }
 
@@ -734,7 +752,7 @@ public class SessionFactory implements ISession
             System.err.println("Persistor: delete error at: \n" + ex.getMessage());
         } finally
         {
-            closePS(preparedStatement);
+            closePreparedStatement(preparedStatement);
         }
     }
 
@@ -771,7 +789,7 @@ public class SessionFactory implements ISession
             System.err.println("Persistor: delete error at: \n" + ex.getMessage());
         } finally
         {
-            closePS(preparedStatement);
+            closePreparedStatement(preparedStatement);
         }
     }
 
@@ -947,7 +965,7 @@ public class SessionFactory implements ISession
         {
             if (statement != null)
             {
-                clostSTMT(statement);
+                closeStatement(statement);
             }
         }
     }
@@ -1117,7 +1135,7 @@ public class SessionFactory implements ISession
         {
             if (statement != null)
             {
-                clostSTMT(statement);
+                closeStatement(statement);
             }
         }
 
@@ -1164,7 +1182,7 @@ public class SessionFactory implements ISession
         }
     }
 
-    private int maxId(Object obj)
+    public int maxId(Object obj)
     {
         Statement statement = null;
         int result = 0;
@@ -1201,7 +1219,7 @@ public class SessionFactory implements ISession
             System.err.println("Persistor: error at: \n" + ex.getMessage());
         } finally
         {
-            this.clostSTMT(statement);
+            this.closeStatement(statement);
         }
 
         return result;
@@ -1245,7 +1263,7 @@ public class SessionFactory implements ISession
             System.err.println("Persistor: error at: \n" + ex.getMessage());
         } finally
         {
-            this.clostSTMT(statement);
+            this.closeStatement(statement);
         }
     }
 

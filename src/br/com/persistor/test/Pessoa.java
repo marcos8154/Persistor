@@ -21,7 +21,7 @@ import java.util.List;
  * @author Marcos Vinícius
  */
 
-@NamedQuery(name = "selecionaPessoa", value = "select * from pessoa")
+@NamedQuery(queryName = "selecionaPessoa", queryValue = "insert into veiculo(id, nome) values (?, ?)")
 public class Pessoa extends Entity {
 
     
