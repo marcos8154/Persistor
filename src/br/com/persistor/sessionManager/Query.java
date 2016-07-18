@@ -32,13 +32,14 @@ import java.util.List;
  */
 public class Query
 {
+
     private PreparedStatement preparedStatement;
     private SessionFactory sessionFactory;
     String query;
 
     private RESULT_TYPE result_type;
     private COMMIT_MODE commit_mode = COMMIT_MODE.AUTO;
-    
+
     public COMMIT_MODE getCommit_mode()
     {
         return commit_mode;
@@ -48,7 +49,7 @@ public class Query
     {
         this.commit_mode = commit_mode;
     }
-    
+
     public RESULT_TYPE getResult_type()
     {
         return result_type;
@@ -61,7 +62,7 @@ public class Query
 
     private Class cls;
     Object obj;
-    
+
     public void createQuery(SessionFactory session, Object obj, String query)
     {
         //if "query" starts with "@", is an NamedQuery.
@@ -69,7 +70,7 @@ public class Query
         this.cls = obj.getClass();
         this.obj = obj;
         this.sessionFactory = session;
-        
+
         try
         {
             if (cls.isAnnotationPresent(NamedQuery.class))
@@ -83,7 +84,7 @@ public class Query
                         break;
                     }
                 }
-        
+
                 this.query = query.toLowerCase();
             }
 
@@ -197,7 +198,7 @@ public class Query
             }
 
             resultSet = preparedStatement.executeQuery();
-            
+
             if (resultType == RESULT_TYPE.UNIQUE)
             {
                 resultSet.next();
@@ -385,6 +386,13 @@ public class Query
                                 invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
                                 continue;
                             }
+
+                            if (method.getReturnType() == FileInputStream.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, FileInputStream.class);
+                                invokeMethod.invoke(ob, resultSet.getBinaryStream(name));
+                                continue;
+                            }
                         }
                     }
                     rList.add(ob);
@@ -401,8 +409,14 @@ public class Query
             System.err.println("Persistor: Execute query error at \n" + ex.getMessage());
         } finally
         {
-            if(resultSet != null) sessionFactory.closeResultSet(resultSet);
-            if(preparedStatement != null) sessionFactory.closePreparedStatement(preparedStatement);
+            if (resultSet != null)
+            {
+                sessionFactory.closeResultSet(resultSet);
+            }
+            if (preparedStatement != null)
+            {
+                sessionFactory.closePreparedStatement(preparedStatement);
+            }
         }
     }
 
@@ -424,23 +438,25 @@ public class Query
             fieldMQ.set(obj, query);
 
             preparedStatement.execute();
-            if(this.getCommit_mode() == COMMIT_MODE.AUTO) sessionFactory.commit();
-            
+            if (this.getCommit_mode() == COMMIT_MODE.AUTO)
+            {
+                sessionFactory.commit();
+            }
+
             Field fieldSv = cls.getField("saved");
             fieldSv.set(obj, true);
             System.out.println("Persistor: \n " + query);
-            
 
         } catch (Exception ex)
         {
             System.err.println("Persistor: execute query error at: \n" + ex.getMessage());
         } finally
         {
-            if(preparedStatement != null)
+            if (preparedStatement != null)
             {
                 sessionFactory.closePreparedStatement(preparedStatement);
             }
-            
+
             if (statement != null)
             {
                 sessionFactory.closeStatement(statement);

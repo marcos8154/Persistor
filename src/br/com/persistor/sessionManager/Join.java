@@ -14,6 +14,7 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
 import br.com.persistor.interfaces.IJoin;
+import java.io.FileInputStream;
 
 public class Join implements IJoin
 {
@@ -242,6 +243,13 @@ public class Join implements IJoin
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, BigDecimal.class);
                                 invokeMethod.invoke(otherObj, resultSet.getBigDecimal(indexParam));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == FileInputStream.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(methodSetName, FileInputStream.class);
+                                invokeMethod.invoke(obj, resultSet.getBinaryStream(name));
                                 continue;
                             }
                         }

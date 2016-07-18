@@ -18,6 +18,7 @@ import br.com.persistor.generalClasses.LIMIT;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
 import br.com.persistor.sessionManager.SessionFactory;
+import java.io.FileInputStream;
 
 public class Criteria implements ICriteria
 {
@@ -32,7 +33,7 @@ public class Criteria implements ICriteria
     SessionFactory factory;
 
     private boolean hasFbLimit = false;
-    
+
     public Criteria(SessionFactory session, Object obj, RESULT_TYPE result_type)
     {
         this.factory = session;
@@ -61,7 +62,7 @@ public class Criteria implements ICriteria
                     String q = query;
                     this.query = ("SELECT FIRST " + limit.getPageSize() + " * FROM " + this.tableName) + " " + q;
                 }
-                
+
                 hasFbLimit = true;
 
                 break;
@@ -102,7 +103,7 @@ public class Criteria implements ICriteria
         query += expression.getCurrentValue();
     }
 
-    private void CloseRS(ResultSet resultSet)
+    private void closeResultSet(ResultSet resultSet)
     {
         try
         {
@@ -120,7 +121,7 @@ public class Criteria implements ICriteria
         }
     }
 
-    private void CloseStatement(Statement statement)
+    private void closeStatement(Statement statement)
     {
         try
         {
@@ -142,12 +143,12 @@ public class Criteria implements ICriteria
     {
         Statement statement = null;
         ResultSet resultSet = null;
-        
-        if(!hasFbLimit)
+
+        if (!hasFbLimit)
         {
             query = "select * from " + tableName + " " + query;
         }
-        
+
         try
         {
             Class clss = obj.getClass();
@@ -262,6 +263,13 @@ public class Criteria implements ICriteria
                             invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
                             continue;
                         }
+
+                        if (method.getReturnType() == FileInputStream.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, FileInputStream.class);
+                            invokeMethod.invoke(ob, resultSet.getBinaryStream(name));
+                            continue;
+                        }
                     }
                 }
             } else
@@ -357,6 +365,13 @@ public class Criteria implements ICriteria
                                 invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
                                 continue;
                             }
+
+                            if (method.getReturnType() == FileInputStream.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, FileInputStream.class);
+                                invokeMethod.invoke(ob, resultSet.getBinaryStream(name));
+                                continue;
+                            }
                         }
                     }
                     rList.add(ob);
@@ -373,8 +388,8 @@ public class Criteria implements ICriteria
             System.err.println("Persistor: criteria error at \n" + ex.getMessage());
         } finally
         {
-            CloseRS(resultSet);
-            CloseStatement(statement);
+            closeResultSet(resultSet);
+            closeStatement(statement);
         }
     }
 }

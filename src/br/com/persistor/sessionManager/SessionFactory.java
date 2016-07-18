@@ -504,6 +504,13 @@ public class SessionFactory implements ISession
                         parameterIndex++;
                         continue;
                     }
+
+                    if (method.getReturnType() == FileInputStream.class)
+                    {
+                        preparedStatement.setBinaryStream(parameterIndex, (FileInputStream) method.invoke(obj));
+                        parameterIndex++;
+                        continue;
+                    }
                     //if (method.getReturnType() == byte.class){ preparedStatement.setByte(parameterIndex, (byte)method.invoke(obj)); parameterIndex ++; continue;}
 
                     if (method.getReturnType() == Date.class)
@@ -680,6 +687,13 @@ public class SessionFactory implements ISession
                     if (method.getReturnType() == byte.class)
                     {
                         preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
+                        parameterIndex++;
+                        continue;
+                    }
+
+                    if (method.getReturnType() == FileInputStream.class)
+                    {
+                        preparedStatement.setBinaryStream(parameterIndex, (FileInputStream) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
@@ -950,7 +964,7 @@ public class SessionFactory implements ISession
                         {
                             continue;
                         }
-
+                        
                         method.invoke(obj, resultSet.getObject(method.getName().replace("set", "")));
                     }
                 }
