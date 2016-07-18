@@ -9,6 +9,7 @@ import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
+import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.PARAMETER_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
@@ -31,13 +32,23 @@ import java.util.List;
  */
 public class Query
 {
-
     private PreparedStatement preparedStatement;
     private SessionFactory sessionFactory;
     String query;
 
     private RESULT_TYPE result_type;
+    private COMMIT_MODE commit_mode = COMMIT_MODE.AUTO;
+    
+    public COMMIT_MODE getCommit_mode()
+    {
+        return commit_mode;
+    }
 
+    public void setCommit_mode(COMMIT_MODE commit_mode)
+    {
+        this.commit_mode = commit_mode;
+    }
+    
     public RESULT_TYPE getResult_type()
     {
         return result_type;
@@ -137,6 +148,10 @@ public class Query
         }
     }
 
+    /**
+     * If this method will go be invoked for execute INSERT / UPDATE or DELETE
+     * more of once, is recommended use "setCommit_mode(COMMIT_MODE.MANUAL)"
+     */
     public void execute()
     {
         try
@@ -157,7 +172,7 @@ public class Query
 
         } catch (Exception ex)
         {
-
+            System.err.println(ex.getMessage());
         }
     }
 
@@ -409,7 +424,7 @@ public class Query
             fieldMQ.set(obj, query);
 
             preparedStatement.execute();
-            sessionFactory.commit();
+            if(this.getCommit_mode() == COMMIT_MODE.AUTO) sessionFactory.commit();
             
             Field fieldSv = cls.getField("saved");
             fieldSv.set(obj, true);

@@ -1,27 +1,24 @@
 package br.com.persistor.test;
 
-import br.com.persistor.enums.PARAMETER_TYPE;
+import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
 
 public class main
 {
-    
     public static void main(String[] args)
     {
-        SessionFactory factory = new ConfigureSession().getMySQLSession();
+        SessionFactory sessionFactory = new ConfigureSession().getMySQLSession();
+        
         Pessoa pessoa = new Pessoa();
         
-        Query q = factory.createQuery(pessoa, "select*from pessoa where id = ?");
-
-        q.setParameter(1, 9);
+        Query query = sessionFactory.createQuery(pessoa, "select*from pessoa");
+        query.setResult_type(RESULT_TYPE.MULTIPLE);
         
-        //  q.setParameter(2, "Teste Named Query");
-        q.setResult_type(RESULT_TYPE.UNIQUE);
+        query.execute();
+        query.execute();
         
-        q.execute();
-        
-        factory.close();
+        sessionFactory.close();
     }
 }

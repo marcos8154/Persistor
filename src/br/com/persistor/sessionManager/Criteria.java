@@ -42,7 +42,6 @@ public class Criteria implements ICriteria
 
         String name = (obj.getClass().getName().toLowerCase()).replace(obj.getClass().getPackage().getName() + ".", "");
         this.tableName = name;
-
     }
 
     public void addLimit(LIMIT limit)
