@@ -41,7 +41,7 @@ public class Criteria implements ICriteria
         this.resultType = result_type;
         this.obj = obj;
 
-        String name = (obj.getClass().getName().toLowerCase()).replace(obj.getClass().getPackage().getName() + ".", "");
+        String name = (obj.getClass().getSimpleName().toLowerCase());
         this.tableName = name;
     }
 
@@ -147,7 +147,7 @@ public class Criteria implements ICriteria
         if (!hasFbLimit)
         {
             query = "select * from " + tableName + " " + query;
-        }
+        } 
 
         try
         {
