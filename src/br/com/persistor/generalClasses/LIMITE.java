@@ -11,7 +11,7 @@ import br.com.persistor.enums.LIMIT_TYPE;
  *
  * @author marcosvinicius
  */
-public class LIMIT
+public class LIMITE
 {
 
     public LIMIT_TYPE limit_type;
@@ -39,9 +39,9 @@ public class LIMIT
         this.pageSize = pageSize;
     }
 
-    public  static LIMIT simpleLimit(int limitSize)
+    public  static LIMITE simpleLimit(int limitSize)
     {
-        LIMIT limit = new LIMIT();
+        LIMITE limit = new LIMITE();
         
         limit.limit_type = LIMIT_TYPE.simple;
         limit.setPageSize(limitSize);
@@ -49,9 +49,9 @@ public class LIMIT
         return limit;
     }
     
-    public static LIMIT paginate(int pagePosition, int pageSize)
+    public static LIMITE paginate(int pagePosition, int pageSize)
     {
-        LIMIT limit = new LIMIT();
+        LIMITE limit = new LIMITE();
         
         limit.limit_type = LIMIT_TYPE.paginate;
         limit.setPagePosition(pagePosition);
