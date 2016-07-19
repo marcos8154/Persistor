@@ -2,6 +2,7 @@ package br.com.persistor.test;
 
 import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
+import br.com.persistor.generalClasses.FileExtractor;
 import br.com.persistor.sessionManager.Criteria;
 import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
@@ -23,13 +24,16 @@ public class main
             SessionFactory session = new ConfigureSession().getMySQLSession();
 
             Veiculo v = new Veiculo();
-
-            InputStream is = new FileInputStream("C:\\Users\\Marcos Vinícius\\Pictures\\bolsonaro.jpg");
-
-            v.setFoto(is);
-
-            session.save(v);
-            session.commit();
+            
+            session.onID(v, 2);
+            
+            FileExtractor extractor = new FileExtractor();
+            
+            extractor.setFileToExtract("C:\\viva\\ha2.jpg");
+            extractor.setBufferSize(56);
+            extractor.setInputStream(v.getFoto());
+            
+            extractor.extract();
             
             session.close();
             
