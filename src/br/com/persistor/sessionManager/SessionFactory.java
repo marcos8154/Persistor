@@ -355,7 +355,9 @@ public class SessionFactory implements ISession
         }
     }
 
-    //UPDATE WITH AND CONDITIONS
+    /**
+     *  UPDATE WITH AND CONDITIONS
+     */
     @Override
     public void update(Object obj, String andCondition)
     {
@@ -732,7 +734,9 @@ public class SessionFactory implements ISession
         }
     }
 
-    //DELETE WITH AND CONDITIONS
+    /**
+     *DELETE WITH AND CONDITIONS
+     */
     @Override
     public void delete(Object obj, String andCondition)
     {
@@ -1440,17 +1444,6 @@ public class SessionFactory implements ISession
         } finally
         {
             this.closeStatement(statement);
-        }
-    }
-
-    private void Cancelar()
-    {
-        try
-        {
-
-        } catch (Exception ex)
-        {
-
         }
     }
 
