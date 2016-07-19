@@ -19,6 +19,7 @@ import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
 import br.com.persistor.sessionManager.SessionFactory;
 import java.io.FileInputStream;
+import java.io.InputStream;
 
 public class Criteria implements ICriteria
 {
@@ -147,7 +148,7 @@ public class Criteria implements ICriteria
         if (!hasFbLimit)
         {
             query = "select * from " + tableName + " " + query;
-        } 
+        }
 
         try
         {
@@ -264,10 +265,10 @@ public class Criteria implements ICriteria
                             continue;
                         }
 
-                        if (method.getReturnType() == FileInputStream.class)
+                        if (method.getReturnType() == InputStream.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, FileInputStream.class);
-                            invokeMethod.invoke(ob, resultSet.getBinaryStream(name));
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(ob, (InputStream) resultSet.getBinaryStream(name));
                             continue;
                         }
                     }
@@ -351,7 +352,7 @@ public class Criteria implements ICriteria
                                 invokeMethod.invoke(ob, resultSet.getDate(name));
                                 continue;
                             }
-
+                            
                             if (method.getReturnType() == byte.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
@@ -366,10 +367,11 @@ public class Criteria implements ICriteria
                                 continue;
                             }
 
-                            if (method.getReturnType() == FileInputStream.class)
+                            if (method.getReturnType() == InputStream.class)
                             {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, FileInputStream.class);
-                                invokeMethod.invoke(ob, resultSet.getBinaryStream(name));
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                                invokeMethod.invoke(ob, (InputStream) resultSet.getBinaryStream(name));
+
                                 continue;
                             }
                         }

@@ -23,6 +23,8 @@ import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
 import br.com.persistor.interfaces.ISession;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.math.BigDecimal;
 
 public class SessionFactory implements ISession
 {
@@ -927,17 +929,8 @@ public class SessionFactory implements ISession
                 return;
             }
 
-            for (Method method : cls.getMethods())
-            {
-                if (method.isAnnotationPresent(PrimaryKey.class))
-                {
-                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                    {
-                        primaryKeyName = method.getName().replace("get", "");
-                        break;
-                    }
-                }
-            }
+            SQLHelper helper = new SQLHelper();
+            primaryKeyName = helper.getPrimaryKeyFieldName(obj);
 
             if (!extendsEntity(cls))
             {
@@ -956,16 +949,106 @@ public class SessionFactory implements ISession
             {
                 for (Method method : cls.getMethods())
                 {
-                    if (method.getName().startsWith("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
+                        //   Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
 
-                        if (oneToOneMtd.isAnnotationPresent(OneToOne.class))
+                        if (method.isAnnotationPresent(OneToOne.class))
                         {
                             continue;
                         }
                         
-                        method.invoke(obj, resultSet.getObject(method.getName().replace("set", "")));
+                        String name;
+                        String fieldName;
+
+                        if (method.getName().startsWith("is"))
+                        {
+                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(2, method.getName().length());
+                        } else
+                        {
+                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(3, method.getName().length());
+                        }
+
+                        if (method.isAnnotationPresent(OneToOne.class));
+
+                        if (method.getReturnType() == boolean.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
+                            invokeMethod.invoke(obj, resultSet.getBoolean(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == int.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
+                            invokeMethod.invoke(obj, resultSet.getInt(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == double.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
+                            invokeMethod.invoke(obj, resultSet.getDouble(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == float.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
+                            invokeMethod.invoke(obj, resultSet.getFloat(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == short.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
+                            invokeMethod.invoke(obj, resultSet.getShort(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == long.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
+                            invokeMethod.invoke(obj, resultSet.getLong(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == String.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
+                            invokeMethod.invoke(obj, resultSet.getString(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == java.util.Date.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
+                            invokeMethod.invoke(obj, resultSet.getDate(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == byte.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
+                            invokeMethod.invoke(obj, resultSet.getByte(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == BigDecimal.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
+                            invokeMethod.invoke(obj, resultSet.getBigDecimal(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == InputStream.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
+                            continue;
+                        }
                     }
                 }
             }
@@ -1104,18 +1187,9 @@ public class SessionFactory implements ISession
                 return obj;
             }
 
-            for (Method method : cls.getMethods())
-            {
-                if (method.isAnnotationPresent(PrimaryKey.class))
-                {
-                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                    {
-                        primaryKeyName = method.getName().replace("get", "");
-                        break;
-                    }
-                }
-            }
-
+            SQLHelper helper = new SQLHelper();
+            primaryKeyName = helper.getPrimaryKeyFieldName(obj);
+            
             String sqlBase = ("select * from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + " = " + id).toLowerCase();
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
@@ -1127,16 +1201,105 @@ public class SessionFactory implements ISession
             {
                 for (Method method : cls.getMethods())
                 {
-                    if (method.getName().startsWith("set") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
-
-                        if (oneToOneMtd.isAnnotationPresent(OneToOne.class))
+                        
+                        if (method.isAnnotationPresent(OneToOne.class))
                         {
                             continue;
                         }
 
-                        method.invoke(obj, resultSet.getObject(method.getName().replace("set", "")));
+                        String name;
+                        String fieldName;
+
+                        if (method.getName().startsWith("is"))
+                        {
+                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(2, method.getName().length());
+                        } else
+                        {
+                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(3, method.getName().length());
+                        }
+
+                        if (method.isAnnotationPresent(OneToOne.class));
+
+                        if (method.getReturnType() == boolean.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
+                            invokeMethod.invoke(obj, resultSet.getBoolean(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == int.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
+                            invokeMethod.invoke(obj, resultSet.getInt(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == double.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
+                            invokeMethod.invoke(obj, resultSet.getDouble(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == float.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
+                            invokeMethod.invoke(obj, resultSet.getFloat(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == short.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
+                            invokeMethod.invoke(obj, resultSet.getShort(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == long.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
+                            invokeMethod.invoke(obj, resultSet.getLong(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == String.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
+                            invokeMethod.invoke(obj, resultSet.getString(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == java.util.Date.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
+                            invokeMethod.invoke(obj, resultSet.getDate(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == byte.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
+                            invokeMethod.invoke(obj, resultSet.getByte(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == BigDecimal.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
+                            invokeMethod.invoke(obj, resultSet.getBigDecimal(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == InputStream.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
+                            continue;
+                        }                   
                     }
                 }
             }

@@ -15,6 +15,7 @@ import br.com.persistor.enums.PARAMETER_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.JoinableObject;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -291,6 +292,13 @@ public class Query
                             invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
                             continue;
                         }
+
+                        if (method.getReturnType() == InputStream.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
+                            continue;
+                        }
                     }
                 }
             } else
@@ -387,10 +395,10 @@ public class Query
                                 continue;
                             }
 
-                            if (method.getReturnType() == FileInputStream.class)
+                            if (method.getReturnType() == InputStream.class)
                             {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, FileInputStream.class);
-                                invokeMethod.invoke(ob, resultSet.getBinaryStream(name));
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                                invokeMethod.invoke(ob, (InputStream)resultSet.getBinaryStream(name));
                                 continue;
                             }
                         }

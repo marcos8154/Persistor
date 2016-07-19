@@ -123,7 +123,7 @@ public class SQLHelper
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = method.getName();
                         this.setPrimaryKeyValue(method.invoke(obj).toString());
@@ -151,7 +151,7 @@ public class SQLHelper
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = (method.getName().substring(3, method.getName().length())).toLowerCase();
                         this.setPrimaryKeyValue(method.invoke(obj).toString());
