@@ -14,7 +14,7 @@ import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
-import br.com.persistor.generalClasses.LIMITE;
+import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
 import java.io.InputStream;
@@ -44,7 +44,7 @@ public class Criteria implements ICriteria
         this.tableName = name;
     }
 
-    public void addLimit(LIMITE limit)
+    public void addLimit(Limit limit)
     {
         switch (factory.config.getDb_type())
         {
