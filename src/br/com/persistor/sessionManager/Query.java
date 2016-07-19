@@ -6,15 +6,10 @@
 package br.com.persistor.sessionManager;
 
 import br.com.persistor.annotations.NamedQuery;
-import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
-import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.COMMIT_MODE;
-import br.com.persistor.enums.LOAD;
-import br.com.persistor.enums.PARAMETER_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
-import br.com.persistor.generalClasses.JoinableObject;
-import java.io.FileInputStream;
+
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -126,9 +121,9 @@ public class Query
             {
                 preparedStatement.setBoolean(parameter_index, (boolean) value);
             }
-            if (value instanceof FileInputStream)
+            if (value instanceof InputStream)
             {
-                preparedStatement.setBinaryStream(parameter_index, (FileInputStream) value);
+                preparedStatement.setBinaryStream(parameter_index, (InputStream) value);
             }
             if (value instanceof Short)
             {

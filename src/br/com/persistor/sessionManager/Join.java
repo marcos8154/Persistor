@@ -14,7 +14,8 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
 import br.com.persistor.interfaces.IJoin;
-import java.io.FileInputStream;
+import java.io.InputStream;
+
 
 public class Join implements IJoin
 {
@@ -246,9 +247,9 @@ public class Join implements IJoin
                                 continue;
                             }
 
-                            if (method.getReturnType() == FileInputStream.class)
+                            if (method.getReturnType() == InputStream.class)
                             {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, FileInputStream.class);
+                                Method invokeMethod = obj.getClass().getMethod(methodSetName, InputStream.class);
                                 invokeMethod.invoke(obj, resultSet.getBinaryStream(name));
                                 continue;
                             }

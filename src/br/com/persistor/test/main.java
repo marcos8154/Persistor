@@ -16,23 +16,26 @@ import java.sql.ResultSet;
 public class main
 {
 
-    private FileOutputStream outImage;
-    private FileInputStream intImage;
-
-    Object obj;
-
-    public void setNameImage(FileInputStream image)
-    {
-        this.intImage = image;
-    }
-
-    public FileOutputStream getImage()
-    {
-        return outImage;
-    }
-
     public static void main(String[] args)
     {
-        
+        try
+        {
+            SessionFactory session = new ConfigureSession().getMySQLSession();
+
+            Veiculo v = new Veiculo();
+
+            InputStream is = new FileInputStream("C:\\Users\\Marcos Vinícius\\Pictures\\bolsonaro.jpg");
+
+            v.setFoto(is);
+
+            session.save(v);
+            session.commit();
+            
+            session.close();
+            
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
     }
 }

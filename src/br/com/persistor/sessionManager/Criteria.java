@@ -17,8 +17,6 @@ import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.LIMIT;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
-import br.com.persistor.sessionManager.SessionFactory;
-import java.io.FileInputStream;
 import java.io.InputStream;
 
 public class Criteria implements ICriteria

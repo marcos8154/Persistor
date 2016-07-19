@@ -13,7 +13,7 @@ public class ConfigureSession
 
         config.setDb_type(DB_TYPE.MySQL);
         config.setHost("localhost");
-        config.setDatabase("abcinfo_cplus");
+        config.setDatabase("cadastro");
         config.setPort(3306);
         config.setUser("root");
         config.setPassword("81547686");

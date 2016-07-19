@@ -22,7 +22,6 @@ import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
 import br.com.persistor.interfaces.ISession;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 
@@ -315,9 +314,9 @@ public class SessionFactory implements ISession
                         continue;
                     }
 
-                    if (method.getReturnType() == FileInputStream.class)
+                    if (method.getReturnType() == InputStream.class)
                     {
-                        preparedStatement.setBinaryStream(parameterIndex, (FileInputStream) method.invoke(obj));
+                        preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
@@ -507,9 +506,9 @@ public class SessionFactory implements ISession
                         continue;
                     }
 
-                    if (method.getReturnType() == FileInputStream.class)
+                    if (method.getReturnType() == InputStream.class)
                     {
-                        preparedStatement.setBinaryStream(parameterIndex, (FileInputStream) method.invoke(obj));
+                        preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
@@ -693,9 +692,9 @@ public class SessionFactory implements ISession
                         continue;
                     }
 
-                    if (method.getReturnType() == FileInputStream.class)
+                    if (method.getReturnType() == InputStream.class)
                     {
-                        preparedStatement.setBinaryStream(parameterIndex, (FileInputStream) method.invoke(obj));
+                        preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }

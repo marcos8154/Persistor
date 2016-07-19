@@ -8,6 +8,7 @@ package br.com.persistor.test;
 import br.com.persistor.abstractClasses.Entity;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.INCREMENT;
+import java.io.InputStream;
 
 /**
  *
@@ -15,17 +16,24 @@ import br.com.persistor.enums.INCREMENT;
  */
 public class Veiculo extends Entity
 {
-    public <T> T vai()
-    {
-        return (T) new Pessoa();
-    }
     
     private int id;
     private String nome;
-
+    private InputStream foto;
+    
     @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId() {
         return id;
+    }
+
+    public InputStream getFoto()
+    {
+        return foto;
+    }
+
+    public void setFoto(InputStream foto)
+    {
+        this.foto = foto;
     }
 
     public void setId(int id) {
