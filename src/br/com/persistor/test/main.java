@@ -10,7 +10,14 @@ public class main
         try
         {
             SessionFactory session = new ConfigureSession().getMySQLSession();
-
+            
+            Cliente cliente = new Cliente();
+            
+            cliente.setLoja(2);
+            cliente.setId(1);
+            
+            session.delete(cliente);
+            session.commit();
             
             session.close();
             

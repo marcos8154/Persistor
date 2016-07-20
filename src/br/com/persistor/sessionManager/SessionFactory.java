@@ -18,6 +18,7 @@ import br.com.persistor.annotations.Version;
 import br.com.persistor.connection.DataSource;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.LOAD;
+import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
@@ -170,62 +171,46 @@ public class SessionFactory implements ISession
         return query;
     }
 
-    @Override
-    public void save(Object obj)
+    public Object getAuxiliarPK_value(Object obj, Class cls, String name)
     {
-        PreparedStatement preparedStatement = null;
 
         try
         {
-            Class cls = obj.getClass();
+            return cls.getMethod(name).invoke(obj);
 
-            if (!extendsEntity(cls))
-            {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return;
-            }
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
 
-            for (Method method : cls.getMethods())
+        return null;
+    }
+
+    public String getAuxiliarPK_name(Class cls)
+    {
+        for (Method method : cls.getMethods())
+        {
+            if (method.isAnnotationPresent(PrimaryKey.class))
             {
-                if (method.isAnnotationPresent(OneToOne.class))
+                PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+
+                if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
                 {
-                    Object object = method.invoke(obj);
-                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-
-                    String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
-
-                    if (methodHasValue(obj, field))
-                    {
-                        continue;
-                    }
-
-                    if (object == null)
-                    {
-                        Class clss = Class.forName(method.getReturnType().getName());
-
-                        java.lang.reflect.Constructor ctor = clss.getConstructor();
-
-                        object = ctor.newInstance();
-                    }
-
-                    SessionFactory session = new SessionFactory(this.connection);
-
-                    session.save(object);
-                    //  session.commit();
-
-                    SQLHelper helper = new SQLHelper();
-                    Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
-
-                    Method mtd = obj.getClass().getMethod(field, int.class);
-                    mtd.invoke(obj, pkObject.invoke(object));
+                    return method.getName();
                 }
             }
+        }
 
-            SQLHelper sql_Helper = new SQLHelper();
-            sql_Helper.prepareInsert(obj);
-            String sqlBase = sql_Helper.getSqlBase();
+        return null;
+    }
 
-            preparedStatement = connection.prepareStatement(sqlBase);
+    private String whereConditionGetLastID = "";
+
+    private void loadPreparedStatement(PreparedStatement preparedStatement, Object obj, boolean ignorePrimaryKey)
+    {
+        try
+        {
+            Class cls = obj.getClass();
 
             int parameterIndex = 1;
 
@@ -233,14 +218,38 @@ public class SessionFactory implements ISession
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
+                    if (ignorePrimaryKey)
+                    {
+                        continue;
+                    }
+
                     PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+
+                    int nextID;
 
                     if (primaryKey.increment() == INCREMENT.MANUAL)
                     {
-                        int id = (this.maxId(obj) + 1);
-                        preparedStatement.setInt(parameterIndex, id);
-                        parameterIndex++;
-                        continue;
+
+                        if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
+                        {
+                            preparedStatement.setInt(parameterIndex, (int) method.invoke(obj));
+                            parameterIndex++;
+                            continue;
+                        }
+
+                        if (getAuxiliarPK_name(cls) != null)
+                        {
+                            String auxPK_name = getAuxiliarPK_name(cls);
+                            String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
+
+                            whereConditionGetLastID = columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
+
+                            nextID = (this.maxId(obj, whereConditionGetLastID) + 1);
+                            preparedStatement.setInt(parameterIndex, nextID);
+                            parameterIndex++;
+
+                            continue;
+                        }
                     } else
                     {
                         continue;
@@ -320,7 +329,6 @@ public class SessionFactory implements ISession
                         parameterIndex++;
                         continue;
                     }
-                    //if (method.getReturnType() == byte.class){ preparedStatement.setByte(parameterIndex, (byte)method.invoke(obj)); parameterIndex ++; continue;}
 
                     if (method.getReturnType() == Date.class)
                     {
@@ -336,13 +344,101 @@ public class SessionFactory implements ISession
                 }
             }
 
-            System.out.println("Persistor: \n " + sqlBase);
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at:");
+            ex.printStackTrace();
+        }
+    }
+
+    private void SaveOrUpdateForeignObjects(Object obj, boolean isUpdateMode)
+    {
+        try
+        {
+            Class cls = obj.getClass();
+
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
+                    Object object = method.invoke(obj);
+
+                    if (object == null)
+                    {
+                        if (isUpdateMode)
+                        {
+                            continue;
+                        }
+
+                        Class clss = Class.forName(method.getReturnType().getName());
+                        java.lang.reflect.Constructor ctor = clss.getConstructor();
+                        object = ctor.newInstance();
+                    }
+
+                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+
+                    String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
+
+                    if (methodHasValue(obj, field))
+                    {
+                        continue;
+                    }
+
+                    SessionFactory session = new SessionFactory(this.connection);
+
+                    if (isUpdateMode)
+                    {
+                        session.update(object);
+                    } else
+                    {
+                        session.save(object);
+                    }
+
+                    SQLHelper helper = new SQLHelper();
+                    Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
+
+                    Method mtd = obj.getClass().getMethod(field, int.class);
+                    mtd.invoke(obj, pkObject.invoke(object));
+                }
+            }
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at:");
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public void save(Object obj)
+    {
+        PreparedStatement preparedStatement = null;
+
+        try
+        {
+            Class cls = obj.getClass();
+
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return;
+            }
+
+            SQLHelper sql_Helper = new SQLHelper();
+            sql_Helper.prepareInsert(obj);
+            String sqlBase = sql_Helper.getSqlBase();
+
+            preparedStatement = connection.prepareStatement(sqlBase);
+
+            SaveOrUpdateForeignObjects(obj, false);
+            loadPreparedStatement(preparedStatement, obj, false);
+
             preparedStatement.execute();
+            System.out.println("Persistor: \n " + sqlBase);
 
             Field fieldSaved = cls.getField("saved");
             fieldSaved.set(obj, true);
 
-            lastID(obj);
+            lastID(obj, whereConditionGetLastID);
 
         } catch (Exception ex)
         {
@@ -356,7 +452,7 @@ public class SessionFactory implements ISession
     }
 
     /**
-     *  UPDATE WITH AND CONDITIONS
+     * UPDATE WITH AND CONDITIONS
      */
     @Override
     public void update(Object obj, String andCondition)
@@ -556,46 +652,12 @@ public class SessionFactory implements ISession
         PreparedStatement preparedStatement = null;
         try
         {
-
             Class cls = obj.getClass();
 
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
-            }
-
-            for (Method method : cls.getMethods())
-            {
-                if (method.isAnnotationPresent(OneToOne.class))
-                {
-                    Object object = method.invoke(obj);
-
-                    if (object == null)
-                    {
-                        continue;
-                    }
-
-                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-
-                    String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
-
-                    if (methodHasValue(obj, field))
-                    {
-                        continue;
-                    }
-
-                    SessionFactory session = new SessionFactory(this.connection);
-
-                    session.update(object);
-                    //  session.commit();
-
-                    SQLHelper helper = new SQLHelper();
-                    Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
-
-                    Method mtd = obj.getClass().getMethod(field, int.class);
-                    mtd.invoke(obj, pkObject.invoke(object));
-                }
             }
 
             SQLHelper sql_Helper = new SQLHelper();
@@ -611,111 +673,8 @@ public class SessionFactory implements ISession
 
             preparedStatement = connection.prepareStatement(sqlBase);
 
-            int parameterIndex = 1;
-
-            for (Method method : cls.getMethods())
-            {
-                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                {
-                    if (method.isAnnotationPresent(PrimaryKey.class))
-                    {
-                        continue;
-                    }
-                    if (method.isAnnotationPresent(OneToOne.class))
-                    {
-                        continue;
-                    }
-                    if (method.isAnnotationPresent(OneToMany.class))
-                    {
-                        continue;
-                    }
-
-                    if (method.isAnnotationPresent(Version.class))
-                    {
-                        int version = Integer.parseInt(method.invoke(obj).toString());
-                        preparedStatement.setInt(parameterIndex, (version + 1));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == boolean.class)
-                    {
-                        preparedStatement.setBoolean(parameterIndex, (boolean) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == int.class)
-                    {
-                        preparedStatement.setInt(parameterIndex, (int) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == double.class)
-                    {
-                        preparedStatement.setDouble(parameterIndex, (double) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == String.class)
-                    {
-                        preparedStatement.setString(parameterIndex, (String) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == short.class)
-                    {
-                        preparedStatement.setShort(parameterIndex, (short) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == long.class)
-                    {
-                        preparedStatement.setLong(parameterIndex, (long) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == float.class)
-                    {
-                        preparedStatement.setFloat(parameterIndex, (float) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == byte.class)
-                    {
-                        preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-
-                    if (method.getReturnType() == InputStream.class)
-                    {
-                        preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(obj));
-                        parameterIndex++;
-                        continue;
-                    }
-                    //if (method.getReturnType() == byte.class){ preparedStatement.setByte(parameterIndex, (byte)method.invoke(obj)); parameterIndex ++; continue;}
-
-                    if (method.getReturnType() == Date.class)
-                    {
-                        Date date = (java.util.Date) method.invoke(obj);
-                        java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
-
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.set(date.getYear(), date.getMonth(), date.getDay(), date.getHours(), date.getMinutes(), date.getSeconds());
-
-                        preparedStatement.setDate(parameterIndex, dt, calendar);
-                        parameterIndex++;
-                        continue;
-                    }
-                }
-            }
+            SaveOrUpdateForeignObjects(obj, true);
+            loadPreparedStatement(preparedStatement, obj, true);
 
             preparedStatement.execute();
 
@@ -735,7 +694,7 @@ public class SessionFactory implements ISession
     }
 
     /**
-     *DELETE WITH AND CONDITIONS
+     * DELETE WITH AND CONDITIONS
      */
     @Override
     public void delete(Object obj, String andCondition)
@@ -812,26 +771,153 @@ public class SessionFactory implements ISession
         }
     }
 
-    @Override
-    public void onID(Object obj, int id)
+    private void loadEntity(Object obj, ResultSet resultSet)
     {
-        Statement statement = null;
-
         try
         {
-
             Class cls = obj.getClass();
 
-            if (!extendsEntity(cls))
+            while (resultSet.next())
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return;
+                for (Method method : cls.getMethods())
+                {
+                    if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    {
+                        //   Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
+
+                        if (method.isAnnotationPresent(OneToOne.class))
+                        {
+                            continue;
+                        }
+
+                        String name;
+                        String fieldName;
+
+                        if (method.getName().startsWith("is"))
+                        {
+                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(2, method.getName().length());
+                        } else
+                        {
+                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(3, method.getName().length());
+                        }
+
+                        if (method.isAnnotationPresent(OneToOne.class));
+
+                        if (method.getReturnType() == boolean.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
+                            invokeMethod.invoke(obj, resultSet.getBoolean(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == int.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
+                            invokeMethod.invoke(obj, resultSet.getInt(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == double.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
+                            invokeMethod.invoke(obj, resultSet.getDouble(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == float.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
+                            invokeMethod.invoke(obj, resultSet.getFloat(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == short.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
+                            invokeMethod.invoke(obj, resultSet.getShort(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == long.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
+                            invokeMethod.invoke(obj, resultSet.getLong(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == String.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
+                            invokeMethod.invoke(obj, resultSet.getString(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == java.util.Date.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
+                            invokeMethod.invoke(obj, resultSet.getDate(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == byte.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
+                            invokeMethod.invoke(obj, resultSet.getByte(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == BigDecimal.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
+                            invokeMethod.invoke(obj, resultSet.getBigDecimal(name));
+                            continue;
+                        }
+
+                        if (method.getReturnType() == InputStream.class)
+                        {
+                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
+                            continue;
+                        }
+                    }
+                }
             }
+        } catch (Exception ex)
+        {
 
-            String primaryKeyName = "";
+        }
+    }
 
+    private boolean hasJoinableObjects(Object obj)
+    {
+        try
+        {
+            Class cls = obj.getClass();
+
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
+                    return true;
+                }
+            }
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at");
+            ex.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private void executeJoin(Object obj, int id)
+    {
+        try
+        {
+            Class cls = obj.getClass();
             Join join = new Join(obj);
-
             List<JoinableObject> objectsToJoin = new ArrayList<>();
 
             for (Method method : cls.getMethods())
@@ -928,12 +1014,22 @@ public class SessionFactory implements ISession
                 }
 
                 System.out.println("Persistor: \n" + join.mountedQuery);
-
-                return;
             }
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at:");
+            ex.printStackTrace();
+        }
+    }
 
-            SQLHelper helper = new SQLHelper();
-            primaryKeyName = helper.getPrimaryKeyFieldName(obj);
+    @Override
+    public void onID(Object obj, int id)
+    {
+        Statement statement = null;
+
+        try
+        {
+            Class cls = obj.getClass();
 
             if (!extendsEntity(cls))
             {
@@ -941,120 +1037,30 @@ public class SessionFactory implements ISession
                 return;
             }
 
-            String sqlBase = ("select * from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + " = " + id).toLowerCase();
+            if(hasJoinableObjects(obj))
+            {
+                executeJoin(obj, id);
+                return;
+            }
+            
+            SQLHelper helper = new SQLHelper();
+            helper.prepareBasicSelect(obj, id);
+
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return;
+            }
+
+            String sqlBase = helper.getSqlBase();
+
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
-            while (resultSet.next())
-            {
-                for (Method method : cls.getMethods())
-                {
-                    if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                    {
-                        //   Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
-
-                        if (method.isAnnotationPresent(OneToOne.class))
-                        {
-                            continue;
-                        }
-                        
-                        String name;
-                        String fieldName;
-
-                        if (method.getName().startsWith("is"))
-                        {
-                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(2, method.getName().length());
-                        } else
-                        {
-                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(3, method.getName().length());
-                        }
-
-                        if (method.isAnnotationPresent(OneToOne.class));
-
-                        if (method.getReturnType() == boolean.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(obj, resultSet.getBoolean(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == int.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(obj, resultSet.getInt(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == double.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(obj, resultSet.getDouble(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == float.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(obj, resultSet.getFloat(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == short.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(obj, resultSet.getShort(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == long.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(obj, resultSet.getLong(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == String.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(obj, resultSet.getString(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == java.util.Date.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(obj, resultSet.getDate(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == byte.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(obj, resultSet.getByte(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == BigDecimal.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(obj, resultSet.getBigDecimal(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == InputStream.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
-                            continue;
-                        }
-                    }
-                }
-            }
+            loadEntity(obj, resultSet);
 
             System.out.println("Persistor: \n " + sqlBase);
 
@@ -1088,224 +1094,24 @@ public class SessionFactory implements ISession
 
             String primaryKeyName = "";
 
-            Join join = new Join(obj);
-
-            List<JoinableObject> objectsToJoin = new ArrayList<>();
-
-            for (Method method : cls.getMethods())
+            if(hasJoinableObjects(obj))
             {
-                if (method.isAnnotationPresent(OneToOne.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-
-                    Object object = ctor.newInstance();
-
-                    // object.getClass().newInstance();
-                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-
-                    if (oneToOne.load() == LOAD.MANUAL)
-                    {
-                        continue;
-                    }
-
-                    String sourceName = cls.getSimpleName() + "." + oneToOne.source();
-                    String targetName = object.getClass().getSimpleName() + "." + oneToOne.target();
-
-                    join.addJoin(oneToOne.join_type(), object, sourceName + " = " + targetName);
-
-                    JoinableObject objToJoin = new JoinableObject();
-
-                    objToJoin.result_type = RESULT_TYPE.UNIQUE;
-                    objToJoin.objectToJoin = object;
-
-                    objectsToJoin.add(objToJoin);
-                }
-
-                if (method.isAnnotationPresent(OneToMany.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-
-                    Object object = ctor.newInstance();
-
-                    // object.getClass().newInstance();
-                    OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
-
-                    if (oneToMany.load() == LOAD.MANUAL)
-                    {
-                        continue;
-                    }
-
-                    String sourceName = cls.getSimpleName() + "." + oneToMany.source();
-                    String targetName = object.getClass().getSimpleName() + "." + oneToMany.target();
-
-                    join.addJoin(oneToMany.join_type(), object, sourceName + " = " + targetName);
-
-                    JoinableObject objToJoin = new JoinableObject();
-
-                    objToJoin.result_type = RESULT_TYPE.MULTIPLE;
-                    objToJoin.objectToJoin = object;
-
-                    objectsToJoin.add(objToJoin);
-                }
-            }
-
-            if (join.joinCount > 0)
-            {
-                SQLHelper helper = new SQLHelper();
-                String pkName = helper.getPrimaryKeyFieldName(obj);
-                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
-
-                join.Execute(this);
-
-                join.getResultObj(obj);
-                for (JoinableObject object : objectsToJoin)
-                {
-                    if (object.result_type == RESULT_TYPE.UNIQUE)
-                    {
-                        join.getResultObj(object.objectToJoin);
-
-                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(obj, object.objectToJoin);
-                    }
-
-                    if (object.result_type == RESULT_TYPE.MULTIPLE)
-                    {
-                        Class clss = object.objectToJoin.getClass();
-
-                        Field f = clss.getField("ResultList");
-                        f.set(object.objectToJoin, join.getList(object.objectToJoin));
-
-                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(obj, object.objectToJoin);
-                    }
-
-                }
-
-                System.out.println("Persistor: \n" + join.mountedQuery);
-
+                executeJoin(obj, id);
                 return obj;
             }
 
             SQLHelper helper = new SQLHelper();
             primaryKeyName = helper.getPrimaryKeyFieldName(obj);
+            helper.prepareBasicSelect(obj, id);
             
-            String sqlBase = ("select * from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + " = " + id).toLowerCase();
+            String sqlBase = helper.getSqlBase();
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
-
-            while (resultSet.next())
-            {
-                for (Method method : cls.getMethods())
-                {
-                    if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                    {
-                        
-                        if (method.isAnnotationPresent(OneToOne.class))
-                        {
-                            continue;
-                        }
-
-                        String name;
-                        String fieldName;
-
-                        if (method.getName().startsWith("is"))
-                        {
-                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(2, method.getName().length());
-                        } else
-                        {
-                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(3, method.getName().length());
-                        }
-
-                        if (method.isAnnotationPresent(OneToOne.class));
-
-                        if (method.getReturnType() == boolean.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(obj, resultSet.getBoolean(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == int.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(obj, resultSet.getInt(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == double.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(obj, resultSet.getDouble(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == float.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(obj, resultSet.getFloat(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == short.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(obj, resultSet.getShort(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == long.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(obj, resultSet.getLong(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == String.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(obj, resultSet.getString(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == java.util.Date.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(obj, resultSet.getDate(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == byte.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(obj, resultSet.getByte(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == BigDecimal.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(obj, resultSet.getBigDecimal(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == InputStream.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
-                            continue;
-                        }                   
-                    }
-                }
-            }
+            loadEntity(obj, resultSet);
+            
             System.out.println("Persistor: \n " + sqlBase);
 
         } catch (Exception ex)
@@ -1362,7 +1168,7 @@ public class SessionFactory implements ISession
         }
     }
 
-    public int maxId(Object obj)
+    public int maxId(Object obj, String where)
     {
         Statement statement = null;
         int result = 0;
@@ -1379,10 +1185,13 @@ public class SessionFactory implements ISession
                 return 0;
             }
 
-            String className = cls.getName().replace(cls.getPackage().getName(), "");
-            className = className.replace(".", "").toLowerCase();
-
+            String className = cls.getSimpleName().toLowerCase();
             String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
+
+            if (!where.isEmpty())
+            {
+                sqlBase += " where " + where;
+            }
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
@@ -1405,7 +1214,7 @@ public class SessionFactory implements ISession
         return result;
     }
 
-    private void lastID(Object obj)
+    private void lastID(Object obj, String whereCondition)
     {
         Statement statement = null;
         try
@@ -1425,6 +1234,10 @@ public class SessionFactory implements ISession
             className = className.replace(".", "").toLowerCase();
 
             String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
+            if (!whereCondition.isEmpty())
+            {
+                sqlBase += " where " + whereCondition;
+            }
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);

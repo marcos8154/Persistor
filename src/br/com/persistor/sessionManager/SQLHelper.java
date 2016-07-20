@@ -11,6 +11,7 @@ import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.INCREMENT;
+import br.com.persistor.enums.PRIMARYKEY_TYPE;
 
 public class SQLHelper
 {
@@ -103,7 +104,7 @@ public class SQLHelper
                 {
                     name = method.getName().substring(3, method.getName().length());
                 }
-                
+
                 fields += name.toLowerCase() + ",";
             }
         }
@@ -118,11 +119,16 @@ public class SQLHelper
 
         try
         {
-
             for (Method method : cls.getMethods())
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
+                    PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+                    if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
+                    {
+                        continue;
+                    }
+
                     if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = method.getName();
@@ -139,7 +145,7 @@ public class SQLHelper
 
         return primaryKeyName;
     }
-    
+
     public String getPrimaryKeyFieldName(Object obj)
     {
         Class cls = obj.getClass();
@@ -151,6 +157,12 @@ public class SQLHelper
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
+                    PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+                    if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
+                    {
+                        continue;
+                    }
+
                     if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = (method.getName().substring(3, method.getName().length())).toLowerCase();
@@ -238,13 +250,46 @@ public class SQLHelper
                 }
             }
 
-            sqlBase = ("delete from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " where " + primaryKeyName + "=" + primaryKeyValue).toLowerCase();
+            sqlBase = ("delete from " + cls.getSimpleName() + " where " + primaryKeyName + "=" + primaryKeyValue).toLowerCase();
+
+            if (getAuxiliarPK_name(cls) != null)
+            {
+                String auxPK_name = getAuxiliarPK_name(cls);
+                String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
+
+                sqlBase += " AND " + columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
+            }
+
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
         } catch (Exception ex)
         {
             System.err.println("Persistor: SQL_Helper_error: \n" + ex.getMessage());
+        }
+    }
+
+    public void prepareBasicSelect(Object obj, int id)
+    {
+        try
+        {
+            Class cls = obj.getClass();
+            primaryKeyName = this.getPrimaryKeyFieldName(obj);
+
+            sqlBase = ("select * from " + cls.getSimpleName() + " where " + primaryKeyName + " = " + id).toLowerCase();
+
+            if (getAuxiliarPK_name(cls) != null)
+            {
+                String auxPK_name = getAuxiliarPK_name(cls);
+                String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
+
+                sqlBase += " AND " + columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
+            }
+
+        } catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at:");
+            ex.printStackTrace();
         }
     }
 
@@ -274,7 +319,7 @@ public class SQLHelper
 
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = method.getName().substring(3, method.getName().length());
                         continue;
@@ -314,8 +359,7 @@ public class SQLHelper
                     if (method.getName().startsWith("is"))
                     {
                         fieldName = method.getName().substring(2, method.getName().length());
-                    } 
-                    else
+                    } else
                     {
                         fieldName = method.getName().substring(3, method.getName().length());
                     }
@@ -333,6 +377,14 @@ public class SQLHelper
 
             sql += " where " + pkFieldName + " = " + this.getPrimaryKeyValue();
 
+            if (getAuxiliarPK_name(cls) != null)
+            {
+                String auxPK_name = getAuxiliarPK_name(cls);
+                String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
+
+                sql += " AND " + columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
+            }
+
             this.setSqlBase(sql.toLowerCase());
 
             Field fieldMQ = cls.getField("mountedQuery");
@@ -342,6 +394,38 @@ public class SQLHelper
         {
             System.out.println("Persistor: SQL_Helper_error: \n" + ex.getMessage());
         }
+    }
+
+    public Object getAuxiliarPK_value(Object obj, Class cls, String name)
+    {
+        try
+        {
+            return cls.getMethod(name).invoke(obj);
+
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public String getAuxiliarPK_name(Class cls)
+    {
+        for (Method method : cls.getMethods())
+        {
+            if (method.isAnnotationPresent(PrimaryKey.class))
+            {
+                PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+
+                if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
+                {
+                    return method.getName();
+                }
+            }
+        }
+
+        return null;
     }
 
     private int currentVersion(String table, String primaryKeyFieldName, String primaryKeyValue, String versionFieldName, Connection connection)
