@@ -32,7 +32,7 @@ public class Cliente extends Entity
         this.id = id;
     }
 
-    @PrimaryKey(increment = INCREMENT.MANUAL, primarykey_type = PRIMARYKEY_TYPE.AUXILIAR)
+   // @PrimaryKey(increment = INCREMENT.MANUAL, primarykey_type = PRIMARYKEY_TYPE.AUXILIAR)
     public int getLoja()
     {
         return loja;

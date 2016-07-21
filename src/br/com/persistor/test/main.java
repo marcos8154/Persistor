@@ -12,13 +12,12 @@ public class main
             SessionFactory session = new ConfigureSession().getMySQLSession();
             
             Cliente cliente = new Cliente();
-            
-            cliente.setLoja(2);
+            cliente.setLoja(1);
             cliente.setId(1);
+            cliente.setNome("Pimeirop alt");
             
-            session.delete(cliente);
+            session.update(cliente, "loja = 1");
             session.commit();
-            
             session.close();
             
         } catch (Exception ex)
