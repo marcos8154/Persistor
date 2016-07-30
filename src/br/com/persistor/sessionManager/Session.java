@@ -58,13 +58,13 @@ public class Session implements ISession
     {
         return this.config;
     }
-    
+
     @Override
     public Connection getActiveConnection()
     {
         return this.connection;
     }
-    
+
     @Override
     public void closeStatement(Statement statement)
     {
@@ -271,7 +271,7 @@ public class Session implements ISession
                             nextID = (this.maxId(obj, "") + 1);
                             preparedStatement.setInt(parameterIndex, nextID);
                             parameterIndex++;
-                            
+
                             continue;
                         }
                     } else
@@ -316,30 +316,42 @@ public class Session implements ISession
                         parameterIndex++;
                         continue;
                     }
+
+                    if (method.getReturnType() == BigDecimal.class)
+                    {
+                        preparedStatement.setBigDecimal(parameterIndex, (BigDecimal) method.invoke(obj));
+                        parameterIndex++;
+                        continue;
+                    }
+
                     if (method.getReturnType() == String.class)
                     {
                         preparedStatement.setString(parameterIndex, (String) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
+
                     if (method.getReturnType() == short.class)
                     {
                         preparedStatement.setShort(parameterIndex, (short) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
+
                     if (method.getReturnType() == long.class)
                     {
                         preparedStatement.setLong(parameterIndex, (long) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
+
                     if (method.getReturnType() == float.class)
                     {
                         preparedStatement.setFloat(parameterIndex, (float) method.invoke(obj));
                         parameterIndex++;
                         continue;
                     }
+
                     if (method.getReturnType() == byte.class)
                     {
                         preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
@@ -375,60 +387,53 @@ public class Session implements ISession
         }
     }
 
-    private void SaveOrUpdateForeignObjects(Object obj, boolean isUpdateMode)
+    private void SaveOrUpdateForeignObjects(Object obj, boolean isUpdateMode) throws Exception
     {
-        try
+        Class cls = obj.getClass();
+
+        for (Method method : cls.getMethods())
         {
-            Class cls = obj.getClass();
-
-            for (Method method : cls.getMethods())
+            if (method.isAnnotationPresent(OneToOne.class))
             {
-                if (method.isAnnotationPresent(OneToOne.class))
+                Object object = method.invoke(obj);
+
+                if (object == null)
                 {
-                    Object object = method.invoke(obj);
-
-                    if (object == null)
-                    {
-                        if (isUpdateMode)
-                        {
-                            continue;
-                        }
-
-                        Class clss = Class.forName(method.getReturnType().getName());
-                        java.lang.reflect.Constructor ctor = clss.getConstructor();
-                        object = ctor.newInstance();
-                    }
-
-                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-
-                    String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
-
-                    if (methodHasValue(obj, field))
+                    if (isUpdateMode)
                     {
                         continue;
                     }
 
-                    Session session = new Session(this.connection);
-
-                    if (isUpdateMode)
-                    {
-                        session.update(object);
-                    } else
-                    {
-                        session.save(object);
-                    }
-
-                    SQLHelper helper = new SQLHelper();
-                    Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
-
-                    Method mtd = obj.getClass().getMethod(field, int.class);
-                    mtd.invoke(obj, pkObject.invoke(object));
+                    Class clss = Class.forName(method.getReturnType().getName());
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+                    object = ctor.newInstance();
                 }
+
+                OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+
+                String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
+
+                if (methodHasValue(obj, field))
+                {
+                    continue;
+                }
+
+                Session session = new Session(this.connection);
+
+                if (isUpdateMode)
+                {
+                    session.update(object);
+                } else
+                {
+                    session.save(object);
+                }
+
+                SQLHelper helper = new SQLHelper();
+                Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
+
+                Method mtd = obj.getClass().getMethod(field, int.class);
+                mtd.invoke(obj, pkObject.invoke(object));
             }
-        } catch (Exception ex)
-        {
-            System.err.println("Persistor: internal error at:");
-            ex.printStackTrace();
         }
     }
 
@@ -495,9 +500,9 @@ public class Session implements ISession
 
             Class cls = obj.getClass();
             String sqlBase = sql_Helper.getSqlBase();
-            
+
             SaveOrUpdateForeignObjects(obj, true);
-            
+
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
@@ -520,8 +525,9 @@ public class Session implements ISession
 
         } catch (Exception ex)
         {
+            System.err.println("Persistor: update error at: \n");
+            ex.printStackTrace();
             rollback();
-            System.err.println("Persistor: update error at: \n" + ex.getMessage());
         } finally
         {
             closePreparedStatement(preparedStatement);
@@ -569,7 +575,8 @@ public class Session implements ISession
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: update error at: \n" + ex.getMessage());
+            System.err.println("Persistor: update error at: \n");
+            ex.printStackTrace();
             rollback();
         } finally
         {
@@ -608,11 +615,14 @@ public class Session implements ISession
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(obj, true);
 
-        } catch (Exception ex)
+        } 
+        catch (Exception ex)
         {
+            System.err.println("Persistor: delete error at: \n");
+            ex.printStackTrace();
             rollback();
-            System.err.println("Persistor: delete error at: \n" + ex.getMessage());
-        } finally
+        }
+        finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -645,11 +655,14 @@ public class Session implements ISession
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(obj, true);
 
-        } catch (Exception ex)
-        {
+        } 
+        catch (Exception ex)
+        {     
+            System.err.println("Persistor: delete error at: \n");
+            ex.printStackTrace();
             rollback();
-            System.err.println("Persistor: delete error at: \n" + ex.getMessage());
-        } finally
+        }
+        finally
         {
             closePreparedStatement(preparedStatement);
         }
