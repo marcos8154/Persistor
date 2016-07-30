@@ -13,10 +13,10 @@ public interface IJoin
     // void addJoin(JOIN_TYPE join_type, Object obj);
     void addFinalCondition(String final_and_or_where_condition);
 
-    String decodeJoin(JOIN_TYPE join_type);
+    String detectJoin(JOIN_TYPE join_type);
 
     List<Object> getResultList(Object obj);
 
-    void Execute(ISession iSession);
+    void execute(ISession iSession);
 
 }

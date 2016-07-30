@@ -877,7 +877,7 @@ public class Session implements ISession
                 String pkName = helper.getPrimaryKeyFieldName(obj);
                 join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
 
-                join.Execute(this);
+                join.execute(this);
 
                 join.getResultObj(obj);
                 for (JoinableObject object : objectsToJoin)

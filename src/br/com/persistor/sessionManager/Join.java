@@ -42,7 +42,7 @@ public class Join implements IJoin
 
         String table = cls.getSimpleName().toLowerCase();
 
-        String join = decodeJoin(join_type);
+        String join = detectJoin(join_type);
         mountedQuery += ("\n" + join + table + " ON " + condition.toLowerCase()).trim() + "\n";
         objects.add(obj);
 
@@ -57,7 +57,8 @@ public class Join implements IJoin
 
     List<FieldIndex> fields_index = new ArrayList<>();
 
-    public void Execute(ISession iSession)
+    @Override
+    public void execute(ISession iSession)
     {
         String fieldsSelect = "";
         int index = 1;
@@ -263,7 +264,8 @@ public class Join implements IJoin
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: execute join error at: \n" + ex.getMessage());
+            System.err.println("Persistor: execute join error at: \n");
+            ex.printStackTrace();
         }
         finally
         {
@@ -362,7 +364,7 @@ public class Join implements IJoin
     }
 
     @Override
-    public String decodeJoin(JOIN_TYPE join_type)
+    public String detectJoin(JOIN_TYPE join_type)
     {
 
         switch (join_type)
