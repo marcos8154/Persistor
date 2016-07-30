@@ -15,7 +15,7 @@ import java.util.List;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
-import br.com.persistor.connection.DataSource;
+import br.com.persistor.connectionManager.DataSource;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;

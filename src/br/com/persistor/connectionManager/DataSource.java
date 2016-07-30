@@ -1,4 +1,4 @@
-package br.com.persistor.connection;
+package br.com.persistor.connectionManager;
 
 import java.beans.PropertyVetoException;
 import java.io.IOException;

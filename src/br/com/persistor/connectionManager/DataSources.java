@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package br.com.persistor.connection;
+package br.com.persistor.connectionManager;
 
 import br.com.persistor.generalClasses.DBConfig;
 import java.util.ArrayList;
