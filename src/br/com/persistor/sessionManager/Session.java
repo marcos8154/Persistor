@@ -28,7 +28,6 @@ import java.math.BigDecimal;
 
 public class Session implements ISession
 {
-
     private Connection connection;
     DBConfig config;
     DataSource dataSource;
@@ -480,9 +479,6 @@ public class Session implements ISession
         }
     }
 
-    /**
-     * UPDATE WITH AND CONDITIONS
-     */
     @Override
     public void update(Object obj, String andCondition)
     {
@@ -584,9 +580,6 @@ public class Session implements ISession
         }
     }
 
-    /**
-     * DELETE WITH AND CONDITIONS
-     */
     @Override
     public void delete(Object obj, String andCondition)
     {
