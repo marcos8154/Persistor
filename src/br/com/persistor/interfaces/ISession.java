@@ -1,8 +1,13 @@
 package br.com.persistor.interfaces;
 
 import br.com.persistor.enums.RESULT_TYPE;
+import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.sessionManager.Criteria;
 import br.com.persistor.sessionManager.Query;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 public interface ISession
 {
@@ -30,4 +35,14 @@ public interface ISession
     Criteria createCriteria(Object obj, RESULT_TYPE result_type);
     
     Query createQuery(Object obj, String queryCommand);
+    
+    Connection getActiveConnection();
+    
+    void closeResultSet(ResultSet resultSet);
+    
+    void closeStatement(Statement statement);
+
+    void closePreparedStatement(PreparedStatement preparedStatement);
+    
+    DBConfig getConfig();
 }

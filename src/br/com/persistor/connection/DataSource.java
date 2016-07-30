@@ -17,8 +17,6 @@ public class DataSource
 
     public DBConfig config;
     
-    private static DBConfig mainConfig;
-    
     private DataSource(DBConfig config) throws IOException, SQLException, PropertyVetoException
     {
 

@@ -2,12 +2,12 @@ package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
-import br.com.persistor.sessionManager.SessionFactory;
+import br.com.persistor.sessionManager.Session;
 
 public class ConfigureSession
 {
 
-    public SessionFactory getMySQLSession()
+    public Session getMySQLSession()
     {
         DBConfig config = new DBConfig();
 
@@ -18,12 +18,12 @@ public class ConfigureSession
         config.setUser("root");
         config.setPassword("81547686");
 
-        SessionFactory sessionFactory = new SessionFactory(config);
+        Session sessionFactory = new Session(config);
 
         return sessionFactory;
     }
 
-    public SessionFactory getFbSession()
+    public Session getFbSession()
     {
         DBConfig config = new DBConfig();
         
@@ -34,11 +34,11 @@ public class ConfigureSession
         config.setUser("SYSDBA");
         config.setPassword("masterkey");
         
-        SessionFactory sessionFactory = new SessionFactory(config);
+        Session sessionFactory = new Session(config);
         return sessionFactory;
     }
     
-    public SessionFactory getPgSession()
+    public Session getPgSession()
     {
         DBConfig config = new DBConfig();
 
@@ -49,7 +49,7 @@ public class ConfigureSession
         config.setUser("postgres");
         config.setPassword("81547686");
 
-        SessionFactory sessionFactory = new SessionFactory(config);
+        Session sessionFactory = new Session(config);
 
         return sessionFactory;
     }

@@ -17,26 +17,25 @@ import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
+import br.com.persistor.interfaces.ISession;
 import java.io.InputStream;
 
 public class Criteria implements ICriteria
 {
 
     RESULT_TYPE resultType;
-    Connection connection;
     Object obj;
 
     String query = "";
     String tableName = "";
 
-    SessionFactory factory;
+    ISession iSession;
 
     private boolean hasFbLimit = false;
 
-    public Criteria(SessionFactory session, Object obj, RESULT_TYPE result_type)
+    public Criteria(ISession iSession, Object obj, RESULT_TYPE result_type)
     {
-        this.factory = session;
-        this.connection = session.connection;
+        this.iSession = iSession;
         this.resultType = result_type;
         this.obj = obj;
 
@@ -46,7 +45,7 @@ public class Criteria implements ICriteria
 
     public void addLimit(Limit limit)
     {
-        switch (factory.config.getDb_type())
+        switch (iSession.getConfig().getDb_type())
         {
             case FirebirdSQL:
 
@@ -138,7 +137,7 @@ public class Criteria implements ICriteria
     }
 
     @Override
-    public void execute(SessionFactory sessionFactory)
+    public void execute()
     {
         Statement statement = null;
         ResultSet resultSet = null;
@@ -147,12 +146,10 @@ public class Criteria implements ICriteria
         {
             query = "select * from " + tableName + " " + query;
         }
-
+        
         try
         {
             Class clss = obj.getClass();
-
-            this.query = query.toLowerCase();
 
             Field fieldMQ = clss.getField("mountedQuery");
             fieldMQ.set(obj, query);
@@ -167,7 +164,7 @@ public class Criteria implements ICriteria
                 return;
             }
 
-            statement = connection.createStatement();
+            statement = iSession.getActiveConnection().createStatement();
             resultSet = statement.executeQuery(query);
 
             if (resultType == RESULT_TYPE.UNIQUE)

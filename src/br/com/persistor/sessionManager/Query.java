@@ -9,6 +9,7 @@ import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
+import br.com.persistor.interfaces.ISession;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -30,7 +31,7 @@ public class Query
 {
 
     private PreparedStatement preparedStatement;
-    private SessionFactory sessionFactory;
+    private ISession iSession;
     String query;
 
     private RESULT_TYPE result_type;
@@ -59,13 +60,13 @@ public class Query
     private Class cls;
     Object obj;
 
-    public void createQuery(SessionFactory session, Object obj, String query)
+    public void createQuery(ISession isession, Object obj, String query)
     {
         //if "query" starts with "@", is an NamedQuery.
         //Find in Class "cls" the NamedQuery
         this.cls = obj.getClass();
         this.obj = obj;
-        this.sessionFactory = session;
+        this.iSession = isession;
 
         try
         {
@@ -84,7 +85,7 @@ public class Query
                 this.query = query.toLowerCase();
             }
 
-            this.preparedStatement = session.connection.prepareStatement(this.query);
+            this.preparedStatement = isession.getActiveConnection().prepareStatement(this.query);
 
         } catch (Exception ex)
         {
@@ -414,11 +415,11 @@ public class Query
         {
             if (resultSet != null)
             {
-                sessionFactory.closeResultSet(resultSet);
+                iSession.closeResultSet(resultSet);
             }
             if (preparedStatement != null)
             {
-                sessionFactory.closePreparedStatement(preparedStatement);
+                iSession.closePreparedStatement(preparedStatement);
             }
         }
     }
@@ -443,7 +444,7 @@ public class Query
             preparedStatement.execute();
             if (this.getCommit_mode() == COMMIT_MODE.AUTO)
             {
-                sessionFactory.commit();
+                iSession.commit();
             }
 
             Field fieldSv = cls.getField("saved");
@@ -457,12 +458,12 @@ public class Query
         {
             if (preparedStatement != null)
             {
-                sessionFactory.closePreparedStatement(preparedStatement);
+                iSession.closePreparedStatement(preparedStatement);
             }
 
             if (statement != null)
             {
-                sessionFactory.closeStatement(statement);
+                iSession.closeStatement(statement);
             }
         }
     }

@@ -26,20 +26,19 @@ import br.com.persistor.interfaces.ISession;
 import java.io.InputStream;
 import java.math.BigDecimal;
 
-public class SessionFactory implements ISession
+public class Session implements ISession
 {
 
-    public Connection connection;
+    private Connection connection;
     DBConfig config;
-
     DataSource dataSource;
 
-    public SessionFactory(Connection connectiion)
+    public Session(Connection connection)
     {
-        this.connection = connectiion;
+        this.connection = connection;
     }
 
-    public SessionFactory(DBConfig config)
+    public Session(DBConfig config)
     {
         try
         {
@@ -49,10 +48,24 @@ public class SessionFactory implements ISession
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: error at: \n" + ex.getMessage());
+            System.err.println("Persistor: error at: \n");
+            ex.printStackTrace();
         }
     }
 
+    @Override
+    public DBConfig getConfig()
+    {
+        return this.config;
+    }
+    
+    @Override
+    public Connection getActiveConnection()
+    {
+        return this.connection;
+    }
+    
+    @Override
     public void closeStatement(Statement statement)
     {
         try
@@ -64,6 +77,7 @@ public class SessionFactory implements ISession
         }
     }
 
+    @Override
     public void closeResultSet(ResultSet resultSet)
     {
         try
@@ -82,11 +96,12 @@ public class SessionFactory implements ISession
         }
     }
 
-    public void closePreparedStatement(PreparedStatement ps)
+    @Override
+    public void closePreparedStatement(PreparedStatement preparedStatement)
     {
         try
         {
-            ps.close();
+            preparedStatement.close();
         } catch (Exception ex)
         {
             System.out.println(ex.getMessage());
@@ -393,7 +408,7 @@ public class SessionFactory implements ISession
                         continue;
                     }
 
-                    SessionFactory session = new SessionFactory(this.connection);
+                    Session session = new Session(this.connection);
 
                     if (isUpdateMode)
                     {

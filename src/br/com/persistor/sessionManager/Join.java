@@ -14,8 +14,8 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
 import br.com.persistor.interfaces.IJoin;
+import br.com.persistor.interfaces.ISession;
 import java.io.InputStream;
-
 
 public class Join implements IJoin
 {
@@ -57,9 +57,8 @@ public class Join implements IJoin
 
     List<FieldIndex> fields_index = new ArrayList<>();
 
-    public void Execute(SessionFactory session)
+    public void Execute(ISession iSession)
     {
-
         String fieldsSelect = "";
         int index = 1;
 
@@ -104,12 +103,12 @@ public class Join implements IJoin
         mountedQuery = baseQ + "\n";
 
         Connection connection;
-        Statement statement;
-        ResultSet resultSet;
+        Statement statement = null;
+        ResultSet resultSet = null;
 
         try
         {
-            connection = session.connection;
+            connection = iSession.getActiveConnection();
             statement = connection.createStatement();
             resultSet = statement.executeQuery(mountedQuery);
 
@@ -266,6 +265,11 @@ public class Join implements IJoin
         {
             System.err.println("Persistor: execute join error at: \n" + ex.getMessage());
         }
+        finally
+        {
+            iSession.closeResultSet(resultSet);
+            iSession.closeStatement(statement);
+        }
     }
 
     public void getResultObj(Object object)
@@ -341,30 +345,6 @@ public class Join implements IJoin
         }
 
         return returnList;
-    }
-
-    private void closeRS(ResultSet resultSet)
-    {
-        try
-        {
-            resultSet.close();
-
-        } catch (Exception ex)
-        {
-            System.err.println("Persistor: Join closeRS error at: \n" + ex.getMessage());
-        }
-    }
-
-    private void closeSt(Statement statement)
-    {
-        try
-        {
-            statement.close();
-
-        } catch (Exception ex)
-        {
-            System.err.println("Persistor: Join closeSt error at: \n" + ex.getMessage());
-        }
     }
 
     private int getFieldIndexByNamer(String fieldName)
