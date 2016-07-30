@@ -107,35 +107,9 @@ public class Session implements ISession
         }
     }
 
-    private boolean isNumber(Method method)
+    private boolean extendsEntity(Class entityCls)
     {
-        if (method.getReturnType() == int.class)
-        {
-            return true;
-        }
-        if (method.getReturnType() == double.class)
-        {
-            return true;
-        }
-        if (method.getReturnType() == float.class)
-        {
-            return true;
-        }
-        if (method.getReturnType() == short.class)
-        {
-            return true;
-        }
-        if (method.getReturnType() == long.class)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean extendsEntity(Class cls)
-    {
-        for (Field field : cls.getFields())
+        for (Field field : entityCls.getFields())
         {
             if (field.getName() == "saved")
             {
@@ -146,7 +120,7 @@ public class Session implements ISession
         return false;
     }
 
-    private boolean methodHasValue(Object obj, String methodName)
+    private boolean methodHasValue(Object entity, String methodName)
     {
         try
         {
@@ -154,14 +128,14 @@ public class Session implements ISession
             if (methodName.startsWith("is"))
             {
                 methodName = "is" + methodName.substring(2, methodName.length());
-                method = obj.getClass().getMethod(methodName);
+                method = entity.getClass().getMethod(methodName);
             } else
             {
                 methodName = "get" + methodName.substring(3, methodName.length());
-                method = obj.getClass().getMethod(methodName);
+                method = entity.getClass().getMethod(methodName);
             }
 
-            Object value = method.invoke(obj);
+            Object value = method.invoke(entity);
 
             if (value != null && (int) value != 0)
             {
@@ -177,20 +151,20 @@ public class Session implements ISession
     }
 
     @Override
-    public Query createQuery(Object obj, String queryCommand)
+    public Query createQuery(Object entity, String queryCommand)
     {
         Query query = new Query();
-        query.createQuery(this, obj, queryCommand);
+        query.createQuery(this, entity, queryCommand);
 
         return query;
     }
 
-    public Object getAuxiliarPK_value(Object obj, Class cls, String name)
+    public Object getAuxiliarPK_value(Object entity, Class cls, String name)
     {
 
         try
         {
-            return cls.getMethod(name).invoke(obj);
+            return cls.getMethod(name).invoke(entity);
 
         } catch (Exception ex)
         {
@@ -200,9 +174,9 @@ public class Session implements ISession
         return null;
     }
 
-    public String getAuxiliarPK_name(Class cls)
+    public String getAuxiliarPK_name(Class entityCls)
     {
-        for (Method method : cls.getMethods())
+        for (Method method : entityCls.getMethods())
         {
             if (method.isAnnotationPresent(PrimaryKey.class))
             {
@@ -220,11 +194,11 @@ public class Session implements ISession
 
     private String whereConditionGetLastID = "";
 
-    private void loadPreparedStatement(PreparedStatement preparedStatement, Object obj, boolean ignorePrimaryKey)
+    private void loadPreparedStatement(PreparedStatement preparedStatement, Object entity, boolean ignorePrimaryKey)
     {
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             int parameterIndex = 1;
 
@@ -246,7 +220,7 @@ public class Session implements ISession
 
                         if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
                         {
-                            preparedStatement.setInt(parameterIndex, (int) method.invoke(obj));
+                            preparedStatement.setInt(parameterIndex, (int) method.invoke(entity));
                             parameterIndex++;
                             continue;
                         }
@@ -256,9 +230,9 @@ public class Session implements ISession
                             String auxPK_name = getAuxiliarPK_name(cls);
                             String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
 
-                            whereConditionGetLastID = columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
+                            whereConditionGetLastID = columnAuxPK_name + " = " + getAuxiliarPK_value(entity, cls, auxPK_name);
 
-                            nextID = (this.maxId(obj, whereConditionGetLastID) + 1);
+                            nextID = (this.maxId(entity, whereConditionGetLastID) + 1);
                             preparedStatement.setInt(parameterIndex, nextID);
                             parameterIndex++;
 
@@ -267,7 +241,7 @@ public class Session implements ISession
 
                         if (getAuxiliarPK_name(cls) == null)
                         {
-                            nextID = (this.maxId(obj, "") + 1);
+                            nextID = (this.maxId(entity, "") + 1);
                             preparedStatement.setInt(parameterIndex, nextID);
                             parameterIndex++;
 
@@ -299,75 +273,75 @@ public class Session implements ISession
 
                     if (method.getReturnType() == boolean.class)
                     {
-                        preparedStatement.setBoolean(parameterIndex, (boolean) method.invoke(obj));
+                        preparedStatement.setBoolean(parameterIndex, (boolean) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
                     if (method.getReturnType() == int.class)
                     {
-                        preparedStatement.setInt(parameterIndex, (int) method.invoke(obj));
+                        preparedStatement.setInt(parameterIndex, (int) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
                     if (method.getReturnType() == double.class)
                     {
-                        preparedStatement.setDouble(parameterIndex, (double) method.invoke(obj));
+                        preparedStatement.setDouble(parameterIndex, (double) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == BigDecimal.class)
                     {
-                        preparedStatement.setBigDecimal(parameterIndex, (BigDecimal) method.invoke(obj));
+                        preparedStatement.setBigDecimal(parameterIndex, (BigDecimal) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == String.class)
                     {
-                        preparedStatement.setString(parameterIndex, (String) method.invoke(obj));
+                        preparedStatement.setString(parameterIndex, (String) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == short.class)
                     {
-                        preparedStatement.setShort(parameterIndex, (short) method.invoke(obj));
+                        preparedStatement.setShort(parameterIndex, (short) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == long.class)
                     {
-                        preparedStatement.setLong(parameterIndex, (long) method.invoke(obj));
+                        preparedStatement.setLong(parameterIndex, (long) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == float.class)
                     {
-                        preparedStatement.setFloat(parameterIndex, (float) method.invoke(obj));
+                        preparedStatement.setFloat(parameterIndex, (float) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == byte.class)
                     {
-                        preparedStatement.setByte(parameterIndex, (byte) method.invoke(obj));
+                        preparedStatement.setByte(parameterIndex, (byte) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == InputStream.class)
                     {
-                        preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(obj));
+                        preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(entity));
                         parameterIndex++;
                         continue;
                     }
 
                     if (method.getReturnType() == Date.class)
                     {
-                        Date date = (java.util.Date) method.invoke(obj);
+                        Date date = (java.util.Date) method.invoke(entity);
                         java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
 
                         Calendar calendar = Calendar.getInstance();
@@ -386,15 +360,15 @@ public class Session implements ISession
         }
     }
 
-    private void SaveOrUpdateForeignObjects(Object obj, boolean isUpdateMode) throws Exception
+    private void SaveOrUpdateForeignObjects(Object entity, boolean isUpdateMode) throws Exception
     {
-        Class cls = obj.getClass();
+        Class cls = entity.getClass();
 
         for (Method method : cls.getMethods())
         {
             if (method.isAnnotationPresent(OneToOne.class))
             {
-                Object object = method.invoke(obj);
+                Object object = method.invoke(entity);
 
                 if (object == null)
                 {
@@ -412,7 +386,7 @@ public class Session implements ISession
 
                 String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
 
-                if (methodHasValue(obj, field))
+                if (methodHasValue(entity, field))
                 {
                     continue;
                 }
@@ -430,20 +404,20 @@ public class Session implements ISession
                 SQLHelper helper = new SQLHelper();
                 Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
 
-                Method mtd = obj.getClass().getMethod(field, int.class);
-                mtd.invoke(obj, pkObject.invoke(object));
+                Method mtd = entity.getClass().getMethod(field, int.class);
+                mtd.invoke(entity, pkObject.invoke(object));
             }
         }
     }
 
     @Override
-    public void save(Object obj)
+    public void save(Object entity)
     {
         PreparedStatement preparedStatement = null;
 
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             if (!extendsEntity(cls))
             {
@@ -452,21 +426,21 @@ public class Session implements ISession
             }
 
             SQLHelper sql_Helper = new SQLHelper();
-            sql_Helper.prepareInsert(obj);
+            sql_Helper.prepareInsert(entity);
             String sqlBase = sql_Helper.getSqlBase();
 
             preparedStatement = connection.prepareStatement(sqlBase);
 
-            SaveOrUpdateForeignObjects(obj, false);
-            loadPreparedStatement(preparedStatement, obj, false);
+            SaveOrUpdateForeignObjects(entity, false);
+            loadPreparedStatement(preparedStatement, entity, false);
 
             preparedStatement.execute();
             System.out.println("Persistor: \n " + sqlBase);
 
             Field fieldSaved = cls.getField("saved");
-            fieldSaved.set(obj, true);
+            fieldSaved.set(entity, true);
 
-            lastID(obj, whereConditionGetLastID);
+            lastID(entity, whereConditionGetLastID);
 
         } catch (Exception ex)
         {
@@ -480,13 +454,13 @@ public class Session implements ISession
     }
 
     @Override
-    public void update(Object obj, String andCondition)
+    public void update(Object entity, String andCondition)
     {
         PreparedStatement preparedStatement = null;
         try
         {
             SQLHelper sql_Helper = new SQLHelper();
-            sql_Helper.prepareUpdate(obj, connection);
+            sql_Helper.prepareUpdate(entity, connection);
 
             if (sql_Helper.updateStatus == 0)
             {
@@ -494,10 +468,10 @@ public class Session implements ISession
                 return;
             }
 
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
             String sqlBase = sql_Helper.getSqlBase();
 
-            SaveOrUpdateForeignObjects(obj, true);
+            SaveOrUpdateForeignObjects(entity, true);
 
             if (!extendsEntity(cls))
             {
@@ -509,13 +483,13 @@ public class Session implements ISession
 
             preparedStatement = connection.prepareStatement(sqlBase);
 
-            SaveOrUpdateForeignObjects(obj, true);
-            loadPreparedStatement(preparedStatement, obj, true);
+            SaveOrUpdateForeignObjects(entity, true);
+            loadPreparedStatement(preparedStatement, entity, true);
 
             preparedStatement.execute();
 
             Field fieldSaved = cls.getField("updated");
-            fieldSaved.set(obj, true);
+            fieldSaved.set(entity, true);
 
             System.out.println("Persistor: \n " + sqlBase);
 
@@ -533,12 +507,12 @@ public class Session implements ISession
     public boolean isVersionViolation = false;
 
     @Override
-    public void update(Object obj)
+    public void update(Object entity)
     {
         PreparedStatement preparedStatement = null;
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             if (!extendsEntity(cls))
             {
@@ -547,7 +521,7 @@ public class Session implements ISession
             }
 
             SQLHelper sql_Helper = new SQLHelper();
-            sql_Helper.prepareUpdate(obj, connection);
+            sql_Helper.prepareUpdate(entity, connection);
 
             if (sql_Helper.updateStatus == 0)
             {
@@ -559,13 +533,13 @@ public class Session implements ISession
 
             preparedStatement = connection.prepareStatement(sqlBase);
 
-            SaveOrUpdateForeignObjects(obj, true);
-            loadPreparedStatement(preparedStatement, obj, true);
+            SaveOrUpdateForeignObjects(entity, true);
+            loadPreparedStatement(preparedStatement, entity, true);
 
             preparedStatement.execute();
 
             Field fieldSaved = cls.getField("updated");
-            fieldSaved.set(obj, true);
+            fieldSaved.set(entity, true);
 
             System.out.println("Persistor: \n " + sqlBase);
 
@@ -581,15 +555,15 @@ public class Session implements ISession
     }
 
     @Override
-    public void delete(Object obj, String andCondition)
+    public void delete(Object entity, String andCondition)
     {
         PreparedStatement preparedStatement = null;
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             SQLHelper sql_helper = new SQLHelper();
-            sql_helper.prepareDelete(obj);
+            sql_helper.prepareDelete(entity);
             String sqlBase = sql_helper.getSqlBase();
 
             sqlBase += " AND " + andCondition;
@@ -606,7 +580,7 @@ public class Session implements ISession
             preparedStatement.execute();
 
             Field fieldDel = cls.getField("deleted");
-            fieldDel.set(obj, true);
+            fieldDel.set(entity, true);
 
         } 
         catch (Exception ex)
@@ -622,15 +596,15 @@ public class Session implements ISession
     }
 
     @Override
-    public void delete(Object obj)
+    public void delete(Object entity)
     {
         PreparedStatement preparedStatement = null;
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             SQLHelper sql_helper = new SQLHelper();
-            sql_helper.prepareDelete(obj);
+            sql_helper.prepareDelete(entity);
 
             String sqlBase = sql_helper.getSqlBase();
 
@@ -646,7 +620,7 @@ public class Session implements ISession
             preparedStatement.execute();
 
             Field fieldDel = cls.getField("deleted");
-            fieldDel.set(obj, true);
+            fieldDel.set(entity, true);
 
         } 
         catch (Exception ex)
@@ -661,11 +635,11 @@ public class Session implements ISession
         }
     }
 
-    private void loadEntity(Object obj, ResultSet resultSet)
+    private void loadEntity(Object entity, ResultSet resultSet)
     {
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             while (resultSet.next())
             {
@@ -697,78 +671,78 @@ public class Session implements ISession
 
                         if (method.getReturnType() == boolean.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(obj, resultSet.getBoolean(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, boolean.class);
+                            invokeMethod.invoke(entity, resultSet.getBoolean(name));
                             continue;
                         }
 
                         if (method.getReturnType() == int.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(obj, resultSet.getInt(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, int.class);
+                            invokeMethod.invoke(entity, resultSet.getInt(name));
                             continue;
                         }
 
                         if (method.getReturnType() == double.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(obj, resultSet.getDouble(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, double.class);
+                            invokeMethod.invoke(entity, resultSet.getDouble(name));
                             continue;
                         }
 
                         if (method.getReturnType() == float.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(obj, resultSet.getFloat(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, float.class);
+                            invokeMethod.invoke(entity, resultSet.getFloat(name));
                             continue;
                         }
 
                         if (method.getReturnType() == short.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(obj, resultSet.getShort(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, short.class);
+                            invokeMethod.invoke(entity, resultSet.getShort(name));
                             continue;
                         }
 
                         if (method.getReturnType() == long.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(obj, resultSet.getLong(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, long.class);
+                            invokeMethod.invoke(entity, resultSet.getLong(name));
                             continue;
                         }
 
                         if (method.getReturnType() == String.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(obj, resultSet.getString(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, String.class);
+                            invokeMethod.invoke(entity, resultSet.getString(name));
                             continue;
                         }
 
                         if (method.getReturnType() == java.util.Date.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(obj, resultSet.getDate(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, java.util.Date.class);
+                            invokeMethod.invoke(entity, resultSet.getDate(name));
                             continue;
                         }
 
                         if (method.getReturnType() == byte.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(obj, resultSet.getByte(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, byte.class);
+                            invokeMethod.invoke(entity, resultSet.getByte(name));
                             continue;
                         }
 
                         if (method.getReturnType() == BigDecimal.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(obj, resultSet.getBigDecimal(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, BigDecimal.class);
+                            invokeMethod.invoke(entity, resultSet.getBigDecimal(name));
                             continue;
                         }
 
                         if (method.getReturnType() == InputStream.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
+                            Method invokeMethod = entity.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(entity, (InputStream) resultSet.getBinaryStream(name));
                             continue;
                         }
                     }
@@ -780,11 +754,11 @@ public class Session implements ISession
         }
     }
 
-    private boolean hasJoinableObjects(Object obj)
+    private boolean hasJoinableObjects(Object entity)
     {
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             for (Method method : cls.getMethods())
             {
@@ -802,12 +776,12 @@ public class Session implements ISession
         return false;
     }
 
-    private void executeJoin(Object obj, int id)
+    private void executeJoin(Object entity, int id)
     {
         try
         {
-            Class cls = obj.getClass();
-            Join join = new Join(obj);
+            Class cls = entity.getClass();
+            Join join = new Join(entity);
             List<JoinableObject> objectsToJoin = new ArrayList<>();
 
             for (Method method : cls.getMethods())
@@ -815,12 +789,9 @@ public class Session implements ISession
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
                     Class clss = Class.forName(method.getReturnType().getName());
-
                     java.lang.reflect.Constructor ctor = clss.getConstructor();
+                    Object entityObj = ctor.newInstance();
 
-                    Object object = ctor.newInstance();
-
-                    // object.getClass().newInstance();
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
 
                     if (oneToOne.load() == LOAD.MANUAL)
@@ -829,14 +800,14 @@ public class Session implements ISession
                     }
 
                     String sourceName = cls.getSimpleName() + "." + oneToOne.source();
-                    String targetName = object.getClass().getSimpleName() + "." + oneToOne.target();
+                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
 
-                    join.addJoin(oneToOne.join_type(), object, sourceName + " = " + targetName);
+                    join.addJoin(oneToOne.join_type(), entityObj, sourceName + " = " + targetName);
 
                     JoinableObject objToJoin = new JoinableObject();
 
                     objToJoin.result_type = RESULT_TYPE.UNIQUE;
-                    objToJoin.objectToJoin = object;
+                    objToJoin.objectToJoin = entityObj;
 
                     objectsToJoin.add(objToJoin);
                 }
@@ -844,12 +815,9 @@ public class Session implements ISession
                 if (method.isAnnotationPresent(OneToMany.class))
                 {
                     Class clss = Class.forName(method.getReturnType().getName());
-
                     java.lang.reflect.Constructor ctor = clss.getConstructor();
+                    Object entityObj = ctor.newInstance();
 
-                    Object object = ctor.newInstance();
-
-                    // object.getClass().newInstance();
                     OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
 
                     if (oneToMany.load() == LOAD.MANUAL)
@@ -858,14 +826,14 @@ public class Session implements ISession
                     }
 
                     String sourceName = cls.getSimpleName() + "." + oneToMany.source();
-                    String targetName = object.getClass().getSimpleName() + "." + oneToMany.target();
+                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToMany.target();
 
-                    join.addJoin(oneToMany.join_type(), object, sourceName + " = " + targetName);
+                    join.addJoin(oneToMany.join_type(), entityObj, sourceName + " = " + targetName);
 
                     JoinableObject objToJoin = new JoinableObject();
 
                     objToJoin.result_type = RESULT_TYPE.MULTIPLE;
-                    objToJoin.objectToJoin = object;
+                    objToJoin.objectToJoin = entityObj;
 
                     objectsToJoin.add(objToJoin);
                 }
@@ -874,20 +842,20 @@ public class Session implements ISession
             if (join.joinCount > 0)
             {
                 SQLHelper helper = new SQLHelper();
-                String pkName = helper.getPrimaryKeyFieldName(obj);
+                String pkName = helper.getPrimaryKeyFieldName(entity);
+
                 join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
-
                 join.execute(this);
+                join.getResultObj(entity);
 
-                join.getResultObj(obj);
                 for (JoinableObject object : objectsToJoin)
                 {
                     if (object.result_type == RESULT_TYPE.UNIQUE)
                     {
                         join.getResultObj(object.objectToJoin);
 
-                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(obj, object.objectToJoin);
+                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(entity, object.objectToJoin);
                     }
 
                     if (object.result_type == RESULT_TYPE.MULTIPLE)
@@ -897,8 +865,8 @@ public class Session implements ISession
                         Field f = clss.getField("ResultList");
                         f.set(object.objectToJoin, join.getList(object.objectToJoin));
 
-                        Method method = obj.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(obj, object.objectToJoin);
+                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(entity, object.objectToJoin);
                     }
 
                 }
@@ -907,19 +875,19 @@ public class Session implements ISession
             }
         } catch (Exception ex)
         {
-            System.err.println("Persistor: internal error at:");
+            System.err.println("Persistor: join error at:");
             ex.printStackTrace();
         }
     }
 
     @Override
-    public void onID(Object obj, int id)
+    public void onID(Object entity, int id)
     {
         Statement statement = null;
 
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             if (!extendsEntity(cls))
             {
@@ -927,14 +895,14 @@ public class Session implements ISession
                 return;
             }
 
-            if (hasJoinableObjects(obj))
+            if (hasJoinableObjects(entity))
             {
-                executeJoin(obj, id);
+                executeJoin(entity, id);
                 return;
             }
 
             SQLHelper helper = new SQLHelper();
-            helper.prepareBasicSelect(obj, id);
+            helper.prepareBasicSelect(entity, id);
 
             if (!extendsEntity(cls))
             {
@@ -945,12 +913,12 @@ public class Session implements ISession
             String sqlBase = helper.getSqlBase();
 
             Field field = cls.getField("mountedQuery");
-            field.set(obj, sqlBase);
+            field.set(entity, sqlBase);
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
-            loadEntity(obj, resultSet);
+            loadEntity(entity, resultSet);
 
             System.out.println("Persistor: \n " + sqlBase);
 
@@ -967,18 +935,18 @@ public class Session implements ISession
     }
 
     @Override
-    public Object onID(Class cls, int id)
+    public Object onID(Class entityCls, int id)
     {
         Statement statement = null;
         Object obj = null;
         try
         {
-            java.lang.reflect.Constructor constructor = cls.getConstructor();
+            java.lang.reflect.Constructor constructor = entityCls.getConstructor();
             obj = constructor.newInstance();
 
-            if (!extendsEntity(cls))
+            if (!extendsEntity(entityCls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                System.err.println("Persistor warning: the class '" + entityCls.getName() + "' not extends Entity. Operation is stoped.");
                 return null;
             }
 
@@ -995,7 +963,7 @@ public class Session implements ISession
             helper.prepareBasicSelect(obj, id);
 
             String sqlBase = helper.getSqlBase();
-            Field field = cls.getField("mountedQuery");
+            Field field = entityCls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
             statement = connection.createStatement();
@@ -1058,16 +1026,16 @@ public class Session implements ISession
         }
     }
 
-    public int maxId(Object obj, String where)
+    public int maxId(Object entity, String where)
     {
         Statement statement = null;
         int result = 0;
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
             SQLHelper sql_helper = new SQLHelper();
 
-            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(obj);
+            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
             if (!extendsEntity(cls))
             {
@@ -1086,7 +1054,7 @@ public class Session implements ISession
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
-            String pkMethodName = sql_helper.getPrimaryKeyMethodName(obj).replace("get", "set");
+            String pkMethodName = sql_helper.getPrimaryKeyMethodName(entity).replace("get", "set");
 
             while (resultSet.next())
             {
@@ -1104,15 +1072,15 @@ public class Session implements ISession
         return result;
     }
 
-    private void lastID(Object obj, String whereCondition)
+    private void lastID(Object entity, String whereCondition)
     {
         Statement statement = null;
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
             SQLHelper sql_helper = new SQLHelper();
 
-            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(obj);
+            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
             if (!extendsEntity(cls))
             {
@@ -1132,13 +1100,13 @@ public class Session implements ISession
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
 
-            String pkMethodName = sql_helper.getPrimaryKeyMethodName(obj).replace("get", "set");
+            String pkMethodName = sql_helper.getPrimaryKeyMethodName(entity).replace("get", "set");
 
             while (resultSet.next())
             {
                 String field = (pkMethodName);
-                Method method = obj.getClass().getMethod(field, int.class);
-                method.invoke(obj, resultSet.getObject(primaryKeyName));
+                Method method = entity.getClass().getMethod(field, int.class);
+                method.invoke(entity, resultSet.getObject(primaryKeyName));
             }
 
         } catch (Exception ex)
@@ -1151,13 +1119,13 @@ public class Session implements ISession
     }
 
     @Override
-    public Criteria createCriteria(Object obj, RESULT_TYPE result_type)
+    public Criteria createCriteria(Object entity, RESULT_TYPE result_type)
     {
         Criteria criteria = null;
 
         try
         {
-            criteria = new Criteria(this, obj, result_type);
+            criteria = new Criteria(this, entity, result_type);
 
         } catch (Exception ex)
         {

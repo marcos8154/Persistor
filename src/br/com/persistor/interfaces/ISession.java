@@ -12,29 +12,29 @@ import java.sql.Statement;
 public interface ISession
 {
 
-    void save(Object obj);
+    void save(Object entity);
 
-    void update(Object obj);
+    void update(Object entity);
 
-    void update(Object obj, String andCondition);
+    void update(Object entity, String andCondition);
 
-    void delete(Object obj);
+    void delete(Object entity);
 
-    void delete(Object obj, String andCondition);
+    void delete(Object entity, String andCondition);
 
     void commit();
 
     void rollback();
 
-    void onID(Object obj, int id);
+    void onID(Object entity, int id);
 
-    Object onID(Class cls, int id);
+    Object onID(Class entityCls, int id);
     
     void close();
 
-    Criteria createCriteria(Object obj, RESULT_TYPE result_type);
+    Criteria createCriteria(Object entity, RESULT_TYPE result_type);
     
-    Query createQuery(Object obj, String queryCommand);
+    Query createQuery(Object entity, String queryCommand);
     
     Connection getActiveConnection();
     
