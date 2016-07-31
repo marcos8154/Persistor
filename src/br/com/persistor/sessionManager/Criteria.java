@@ -17,8 +17,8 @@ import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
-import br.com.persistor.interfaces.ISession;
 import java.io.InputStream;
+import br.com.persistor.interfaces.Session;
 
 public class Criteria implements ICriteria
 {
@@ -29,11 +29,11 @@ public class Criteria implements ICriteria
     String query = "";
     String tableName = "";
 
-    ISession iSession;
+    Session iSession;
 
     private boolean hasFbLimit = false;
 
-    public Criteria(ISession iSession, Object obj, RESULT_TYPE result_type)
+    public Criteria(Session iSession, Object obj, RESULT_TYPE result_type)
     {
         this.iSession = iSession;
         this.resultType = result_type;

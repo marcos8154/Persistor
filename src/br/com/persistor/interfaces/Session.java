@@ -9,7 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-public interface ISession
+public interface Session
 {
 
     void save(Object entity);

@@ -3,7 +3,7 @@ package br.com.persistor.interfaces;
 import java.util.List;
 
 import br.com.persistor.enums.JOIN_TYPE;
-import br.com.persistor.sessionManager.Session;
+import br.com.persistor.sessionManager.SessionImpl;
 
 public interface IJoin
 {
@@ -17,6 +17,6 @@ public interface IJoin
 
     List<Object> getResultList(Object obj);
 
-    void execute(ISession iSession);
+    void execute(Session iSession);
 
 }

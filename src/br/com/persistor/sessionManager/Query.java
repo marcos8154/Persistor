@@ -9,7 +9,6 @@ import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
-import br.com.persistor.interfaces.ISession;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -22,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import br.com.persistor.interfaces.Session;
 
 /**
  *
@@ -31,7 +31,7 @@ public class Query
 {
 
     private PreparedStatement preparedStatement;
-    private ISession iSession;
+    private Session iSession;
     String query;
 
     private RESULT_TYPE result_type;
@@ -60,7 +60,7 @@ public class Query
     private Class cls;
     Object obj;
 
-    public void createQuery(ISession isession, Object obj, String query)
+    public void createQuery(Session isession, Object obj, String query)
     {
         //if "query" starts with "@", is an NamedQuery.
         //Find in Class "cls" the NamedQuery

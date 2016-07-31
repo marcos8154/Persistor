@@ -14,8 +14,8 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
 import br.com.persistor.interfaces.IJoin;
-import br.com.persistor.interfaces.ISession;
 import java.io.InputStream;
+import br.com.persistor.interfaces.Session;
 
 public class Join implements IJoin
 {
@@ -58,7 +58,7 @@ public class Join implements IJoin
     List<FieldIndex> fields_index = new ArrayList<>();
 
     @Override
-    public void execute(ISession iSession)
+    public void execute(Session iSession)
     {
         String fieldsSelect = "";
         int index = 1;

@@ -22,34 +22,18 @@ import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
-import br.com.persistor.interfaces.ISession;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import br.com.persistor.interfaces.Session;
 
-public class Session implements ISession
+public class SessionImpl implements Session
 {
-    private Connection connection;
-    DBConfig config;
-    DataSource dataSource;
+    private Connection connection = null;
+    private DBConfig config = null;
 
-    public Session(Connection connection)
+    public SessionImpl(Connection connection)
     {
         this.connection = connection;
-    }
-
-    public Session(DBConfig config)
-    {
-        try
-        {
-            connection = DataSource.getInstance(config).getConnection();
-            this.config = config;
-            connection.setAutoCommit(false);
-
-        } catch (Exception ex)
-        {
-            System.err.println("Persistor: error at: \n");
-            ex.printStackTrace();
-        }
     }
 
     @Override
@@ -58,6 +42,11 @@ public class Session implements ISession
         return this.config;
     }
 
+    public void setConfig(DBConfig config)
+    {
+        this.config = config;
+    }
+    
     @Override
     public Connection getActiveConnection()
     {
@@ -391,7 +380,7 @@ public class Session implements ISession
                     continue;
                 }
 
-                Session session = new Session(this.connection);
+                SessionImpl session = new SessionImpl(this.connection);
 
                 if (isUpdateMode)
                 {

@@ -2,13 +2,23 @@ package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
-import br.com.persistor.sessionManager.Session;
+import br.com.persistor.interfaces.Session;
+import br.com.persistor.sessionManager.SessionFactory;
+import br.com.persistor.sessionManager.SessionImpl;
 
-public class ConfigureSession
+public class ConfiguraSession
 {
 
-    public Session getMySQLSession()
+    private static SessionFactory sfMySQL = null;
+    private static SessionFactory sfPg = null;
+
+    public static Session getSession()
     {
+        if (sfMySQL == null)
+        {
+            sfMySQL = new SessionFactory();
+        }
+
         DBConfig config = new DBConfig();
 
         config.setDb_type(DB_TYPE.MySQL);
@@ -18,28 +28,28 @@ public class ConfigureSession
         config.setUser("root");
         config.setPassword("81547686");
 
-        Session sessionFactory = new Session(config);
-
-        return sessionFactory;
+        return sfMySQL.getSession(config);
     }
 
-    public Session getFbSession()
+    /*  public Session getFbSession()
     {
         DBConfig config = new DBConfig();
-        
+
         config.setDb_type(DB_TYPE.FirebirdSQL);
         config.setHost("localhost");
         config.setDatabase("Users/marcosvinicius/NetBeansProjects/Persistor/banco.fdb");
         config.setPort(3050);
         config.setUser("SYSDBA");
         config.setPassword("masterkey");
-        
-        Session sessionFactory = new Session(config);
+
+        Session sessionFactory = SessionFactory.getSession(config);
         return sessionFactory;
-    }
-    
-    public Session getPgSession()
+    } */
+
+    public static Session getPgSession()
     {
+        if(sfPg == null) sfPg = new SessionFactory();
+        
         DBConfig config = new DBConfig();
 
         config.setDb_type(DB_TYPE.PostgreSQL);
@@ -49,8 +59,8 @@ public class ConfigureSession
         config.setUser("postgres");
         config.setPassword("81547686");
 
-        Session sessionFactory = new Session(config);
+        Session session = sfPg.getSession(config);
 
-        return sessionFactory;
-    }
+        return session;
+    } 
 }

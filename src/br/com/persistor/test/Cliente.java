@@ -15,7 +15,7 @@ import br.com.persistor.enums.PRIMARYKEY_TYPE;
  * 
  * @author Marcos Vinícius
  */
-public class Cliente extends Entity
+public class Cliente implements Interface
 {
     private int id;
     private int loja;
