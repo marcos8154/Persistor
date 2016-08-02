@@ -54,7 +54,9 @@ public class DataSource
 
     public Connection getConnection() throws SQLException
     {
-        return this.cpds.getConnection();
+        Connection connection = this.cpds.getConnection();
+        connection.setAutoCommit(false);
+        return connection;
     }
 
     private String dataBaseURL(DBConfig config)

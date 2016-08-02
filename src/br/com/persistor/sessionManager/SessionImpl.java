@@ -17,6 +17,7 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.connectionManager.DataSource;
 import br.com.persistor.enums.INCREMENT;
+import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
@@ -28,6 +29,7 @@ import br.com.persistor.interfaces.Session;
 
 public class SessionImpl implements Session
 {
+
     private Connection connection = null;
     private DBConfig config = null;
 
@@ -46,7 +48,7 @@ public class SessionImpl implements Session
     {
         this.config = config;
     }
-    
+
     @Override
     public Connection getActiveConnection()
     {
@@ -571,14 +573,12 @@ public class SessionImpl implements Session
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
 
-        } 
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             System.err.println("Persistor: delete error at: \n");
             ex.printStackTrace();
             rollback();
-        }
-        finally
+        } finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -611,14 +611,12 @@ public class SessionImpl implements Session
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
 
-        } 
-        catch (Exception ex)
-        {     
+        } catch (Exception ex)
+        {
             System.err.println("Persistor: delete error at: \n");
             ex.printStackTrace();
             rollback();
-        }
-        finally
+        } finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -866,6 +864,72 @@ public class SessionImpl implements Session
         {
             System.err.println("Persistor: join error at:");
             ex.printStackTrace();
+        }
+    }
+
+    public void loadWithJoin(Object sourceEntity, Object targetEntity)
+    {
+        try
+        {
+            int mode = 0;
+            Class sourceEntityClass = sourceEntity.getClass();
+            Join join = new Join(sourceEntity);
+            String finalCondition = "";
+            
+            for (Method method : sourceEntityClass.getMethods())
+            {
+                if (method.getReturnType() == targetEntity.getClass())
+                {
+                    if (method.isAnnotationPresent(OneToOne.class))
+                    {
+                        OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+                        if (oneToOne.load() == LOAD.AUTO)
+                        {
+                            throw new Exception("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
+                        }
+                        join.addJoin(oneToOne.join_type(), targetEntity, null);
+                        finalCondition = oneToOne.source() + " = " + oneToOne.target();
+                        mode = 1;
+                        break;
+                    }
+
+                    if (method.isAnnotationPresent(OneToMany.class))
+                    {
+                        if (method.isAnnotationPresent(OneToMany.class))
+                        {
+                            OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+                            if (oneToMany.load() == LOAD.AUTO)
+                            {
+                                throw new Exception("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
+                            }
+                            join.addJoin(oneToMany.join_type(), targetEntity, null);
+                            finalCondition = oneToMany.source() + " = " + oneToMany.target();
+                            mode = 2;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            join.addFinalCondition(finalCondition);
+            join.execute(this);
+           
+            if(mode == 1) //OneToOne
+            {
+                join.getResultObj(sourceEntity);
+                join.getResultObj(targetEntity);
+            }
+            
+            if(mode == 2) // OneToMany
+            {
+                join.getResultList(sourceEntity);
+                join.getResultList(targetEntity);
+            }
+        } 
+        catch (Exception ex)
+        {
+            System.out.println("Persistor: loadWithJoin error at: \n");
+            ex.getMessage();
         }
     }
 

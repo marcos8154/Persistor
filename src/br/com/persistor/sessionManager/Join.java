@@ -43,7 +43,8 @@ public class Join implements IJoin
         String table = cls.getSimpleName().toLowerCase();
 
         String join = detectJoin(join_type);
-        mountedQuery += ("\n" + join + table + " ON " + condition.toLowerCase()).trim() + "\n";
+        mountedQuery += ("\n" + join + table).trim() + "\n";
+        if(condition != null) mountedQuery += " ON " + condition;
         objects.add(obj);
 
         joinCount++;

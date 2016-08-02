@@ -17,7 +17,7 @@ public class SessionFactory
 {
 
     private DataSource mainDataSource = null;
-    private DBConfig mainConfig = null;
+    private final DBConfig mainConfig = null;
 
     private void buildSession(DBConfig config)
     {
@@ -27,7 +27,7 @@ public class SessionFactory
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: error at: \n");
+            System.err.println("Persistor: build session error at: \n");
             ex.printStackTrace();
         }
     }
