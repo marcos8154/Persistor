@@ -102,7 +102,7 @@ public class Join implements IJoin
         baseQ = baseQ.substring(0, baseQ.length() - 2);
         baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
 
-        mountedQuery = baseQ + "\n";
+        mountedQuery = (baseQ + "\n").toLowerCase();
 
         Connection connection;
         Statement statement = null;
@@ -262,8 +262,9 @@ public class Join implements IJoin
                     }
                 }
             }
-
-        } catch (Exception ex)
+            System.out.println("Persistor: \n" + mountedQuery);
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: execute join error at: \n");
             ex.printStackTrace();

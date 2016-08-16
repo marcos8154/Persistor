@@ -43,7 +43,7 @@ public class Criteria implements ICriteria
         this.tableName = name;
     }
 
-    public void addLimit(Limit limit)
+    public ICriteria addLimit(Limit limit)
     {
         switch (iSession.getConfig().getDb_type())
         {
@@ -93,12 +93,16 @@ public class Criteria implements ICriteria
 
                 break;
         }
+        
+        return this;
     }
 
     @Override
-    public void add(Expressions expression)
+    public Criteria add(Expressions expression)
     {
         query += expression.getCurrentValue();
+        
+        return this;
     }
 
     private void closeResultSet(ResultSet resultSet)

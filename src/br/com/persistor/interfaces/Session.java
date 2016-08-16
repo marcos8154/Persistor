@@ -45,4 +45,6 @@ public interface Session
     void closePreparedStatement(PreparedStatement preparedStatement);
     
     DBConfig getConfig();
+    
+    void loadWithJoin(Object sourceEntity, Object targetEntity);
 }

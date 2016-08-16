@@ -4,7 +4,7 @@ import br.com.persistor.generalClasses.Expressions;
 
 public interface ICriteria
 {
-    void add(Expressions expression);
+    ICriteria add(Expressions expression);
 
     void execute();
 }

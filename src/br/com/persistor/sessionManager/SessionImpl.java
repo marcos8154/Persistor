@@ -751,6 +751,10 @@ public class SessionImpl implements Session
             {
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
+                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+                    
+                    if(oneToOne.load() == LOAD.MANUAL) return false;
+                    
                     return true;
                 }
             }
@@ -867,6 +871,7 @@ public class SessionImpl implements Session
         }
     }
 
+    @Override
     public void loadWithJoin(Object sourceEntity, Object targetEntity)
     {
         try
@@ -875,66 +880,84 @@ public class SessionImpl implements Session
             Class sourceEntityClass = sourceEntity.getClass();
             Join join = new Join(sourceEntity);
             String finalCondition = "";
-            
+
             for (Method method : sourceEntityClass.getMethods())
             {
-                if (method.getReturnType() == targetEntity.getClass())
+                if (method.isAnnotationPresent(OneToOne.class))
                 {
-                    if (method.isAnnotationPresent(OneToOne.class))
+                    Class clss = Class.forName(method.getReturnType().getName());
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+                    targetEntity = ctor.newInstance();
+
+                    if (clss == targetEntity.getClass())
                     {
                         OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
                         if (oneToOne.load() == LOAD.AUTO)
                         {
-                            throw new Exception("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
+                            System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
                         }
                         join.addJoin(oneToOne.join_type(), targetEntity, null);
-                        finalCondition = oneToOne.source() + " = " + oneToOne.target();
+                        finalCondition = sourceEntityClass.getSimpleName() + "." + oneToOne.source() + " = "  + targetEntity.getClass().getSimpleName() + "." + oneToOne.target();
                         mode = 1;
                         break;
                     }
+                }
 
-                    if (method.isAnnotationPresent(OneToMany.class))
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    Class clss = Class.forName(method.getReturnType().getName());
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+                    targetEntity = ctor.newInstance();
+
+                    if (clss == targetEntity.getClass())
                     {
-                        if (method.isAnnotationPresent(OneToMany.class))
+                        OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+                        if (oneToMany.load() == LOAD.AUTO)
                         {
-                            OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
-                            if (oneToMany.load() == LOAD.AUTO)
-                            {
-                                throw new Exception("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
-                            }
-                            join.addJoin(oneToMany.join_type(), targetEntity, null);
-                            finalCondition = oneToMany.source() + " = " + oneToMany.target();
-                            mode = 2;
-                            break;
+                            System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
                         }
+                        join.addJoin(oneToMany.join_type(), targetEntity, null);
+                        finalCondition = sourceEntityClass.getSimpleName() + "." + oneToMany.source() + " = " + targetEntity.getClass().getSimpleName() + "." + oneToMany.target();
+                        mode = 2;
+                        break;
                     }
                 }
             }
+
+            SQLHelper helper = new SQLHelper();
             
-            join.addFinalCondition(finalCondition);
+            join.addFinalCondition(" where " + finalCondition + 
+                    " AND " + sourceEntityClass.getSimpleName() + 
+                    "." + helper.getPrimaryKeyFieldName(sourceEntity) +
+                    " = " + 
+                    sourceEntityClass.getMethod(helper.getPrimaryKeyMethodName(sourceEntity)).invoke(sourceEntity));
+            
             join.execute(this);
-           
-            if(mode == 1) //OneToOne
+
+            if (mode == 1) //OneToOne
             {
                 join.getResultObj(sourceEntity);
                 join.getResultObj(targetEntity);
             }
-            
-            if(mode == 2) // OneToMany
+
+            if (mode == 2) // OneToMany
             {
-                join.getResultList(sourceEntity);
-                join.getResultList(targetEntity);
+                join.getResultObj(sourceEntity);
+                targetEntity.getClass().getField("ResultList").set(targetEntity, join.getList(targetEntity));
+                Method method = sourceEntityClass.getMethod("set" + targetEntity.getClass().getSimpleName(), targetEntity.getClass());
+                method.invoke(sourceEntity, targetEntity);
             }
         } 
         catch (Exception ex)
         {
-            System.out.println("Persistor: loadWithJoin error at: \n");
-            ex.getMessage();
+            System.err.println("Persistor: loadWithJoin error at: \n");
+            ex.printStackTrace();
         }
     }
 
     @Override
-    public void onID(Object entity, int id)
+    public void onID(Object entity, int id
+    )
     {
         Statement statement = null;
 
@@ -988,7 +1011,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public Object onID(Class entityCls, int id)
+    public Object onID(Class entityCls, int id
+    )
     {
         Statement statement = null;
         Object obj = null;
@@ -1158,7 +1182,8 @@ public class SessionImpl implements Session
             while (resultSet.next())
             {
                 String field = (pkMethodName);
-                Method method = entity.getClass().getMethod(field, int.class);
+                Method method = entity.getClass().getMethod(field, int.class
+                );
                 method.invoke(entity, resultSet.getObject(primaryKeyName));
             }
 
