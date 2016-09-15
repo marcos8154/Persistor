@@ -60,7 +60,7 @@ public class Query
     private Class cls;
     Object obj;
 
-    public void createQuery(Session isession, Object obj, String query)
+    public void createQuery(Session isession, Object obj, String query) throws Exception
     {
         //if "query" starts with "@", is an NamedQuery.
         //Find in Class "cls" the NamedQuery
@@ -90,11 +90,11 @@ public class Query
         } catch (Exception ex)
         {
             System.err.println("Persistor: Create Query error at:");
-            ex.printStackTrace();
+            throw new Exception(ex.getMessage());
         }
     }
 
-    public void setParameter(int parameter_index, Object value)
+    public void setParameter(int parameter_index, Object value) throws Exception
     {
         try
         {
@@ -142,7 +142,7 @@ public class Query
         } catch (Exception ex)
         {
             System.err.println("Persistor: Set Parameter error at: ");
-            ex.printStackTrace();
+            throw new Exception(ex.getMessage());
         }
     }
 
@@ -150,7 +150,7 @@ public class Query
      * If this method will go be invoked for execute INSERT / UPDATE or DELETE
      * more of once, is recommended use "setCommit_mode(COMMIT_MODE.MANUAL)"
      */
-    public void execute()
+    public void execute() throws Exception
     {
         try
         {
@@ -170,11 +170,11 @@ public class Query
 
         } catch (Exception ex)
         {
-            System.err.println(ex.getMessage());
+            throw new Exception(ex.getMessage());
         }
     }
 
-    private void executeSelect(Class clss, RESULT_TYPE resultType)
+    private void executeSelect(Class clss, RESULT_TYPE resultType) throws Exception
     {
         ResultSet resultSet = null;
         try
@@ -394,7 +394,7 @@ public class Query
                             if (method.getReturnType() == InputStream.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                                invokeMethod.invoke(ob, (InputStream)resultSet.getBinaryStream(name));
+                                invokeMethod.invoke(ob, (InputStream) resultSet.getBinaryStream(name));
                                 continue;
                             }
                         }
@@ -410,7 +410,8 @@ public class Query
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: Execute query error at \n" + ex.getMessage());
+            System.err.println("Persistor: Execute query error at \n");
+            throw new Exception(ex.getMessage());
         } finally
         {
             if (resultSet != null)
@@ -424,7 +425,7 @@ public class Query
         }
     }
 
-    private void executeInsertOrUpdate(Class cls)
+    private void executeInsertOrUpdate(Class cls) throws Exception
     {
         Statement statement = null;
         Object obj = null;
@@ -453,7 +454,8 @@ public class Query
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: execute query error at: \n" + ex.getMessage());
+            System.err.println("Persistor: execute query error at: \n");
+            throw new Exception(ex.getMessage());
         } finally
         {
             if (preparedStatement != null)

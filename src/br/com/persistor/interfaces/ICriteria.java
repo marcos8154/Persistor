@@ -6,5 +6,5 @@ public interface ICriteria
 {
     ICriteria add(Expressions expression);
 
-    void execute();
+    void execute() throws Exception;
 }

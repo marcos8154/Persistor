@@ -112,7 +112,7 @@ public class SQLHelper
         return fields;
     }
 
-    public String getPrimaryKeyMethodName(Object obj)
+    public String getPrimaryKeyMethodName(Object obj) throws Exception
     {
         Class cls = obj.getClass();
         String primaryKeyName = "";
@@ -140,13 +140,14 @@ public class SQLHelper
             }
         } catch (Exception ex)
         {
-            System.err.println("Persistor: internal error at: \n" + ex.getMessage());
+            System.err.println("Persistor: internal error at: \n");
+            throw new Exception(ex.getMessage());
         }
 
         return primaryKeyName;
     }
 
-    public String getPrimaryKeyFieldName(Object obj)
+    public String getPrimaryKeyFieldName(Object obj) throws Exception
     {
         Class cls = obj.getClass();
         String primaryKeyName = "";
@@ -174,7 +175,8 @@ public class SQLHelper
             }
         } catch (Exception ex)
         {
-            System.err.println("Persistor: internal error at: \n" + ex.getMessage());
+            System.err.println("Persistor: internal error at: \n");
+            throw new Exception(ex.getMessage());
         }
 
         return primaryKeyName;
@@ -206,7 +208,7 @@ public class SQLHelper
         return false;
     }
 
-    public void prepareSelect(Object obj, String whereCondition, int LIMIT)
+    public void prepareSelect(Object obj, String whereCondition, int LIMIT) throws Exception
     {
         try
         {
@@ -226,11 +228,12 @@ public class SQLHelper
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: SQL_Helper_error: \n" + ex.getMessage());
+            System.err.println("Persistor: SQL_Helper_error: \n");
+            throw new Exception(ex.getMessage());
         }
     }
 
-    public void prepareDelete(Object obj)
+    public void prepareDelete(Object obj) throws Exception
     {
         try
         {
@@ -265,11 +268,12 @@ public class SQLHelper
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: SQL_Helper_error: \n" + ex.getMessage());
+            System.err.println("Persistor: SQL_Helper_error: \n");
+            throw new Exception(ex.getMessage());
         }
     }
 
-    public void prepareBasicSelect(Object obj, int id)
+    public void prepareBasicSelect(Object obj, int id) throws Exception
     {
         try
         {
@@ -289,13 +293,13 @@ public class SQLHelper
         } catch (Exception ex)
         {
             System.err.println("Persistor: internal error at:");
-            ex.printStackTrace();
+            throw new Exception(ex.getMessage());
         }
     }
 
     public int updateStatus = 1;
 
-    public void prepareUpdate(Object obj, Connection connection)
+    public void prepareUpdate(Object obj, Connection connection) throws Exception
     {
         try
         {
@@ -392,11 +396,12 @@ public class SQLHelper
 
         } catch (Exception ex)
         {
-            System.out.println("Persistor: SQL_Helper_error: \n" + ex.getMessage());
+            System.out.println("Persistor: SQL_Helper_error: \n");
+            throw new Exception(ex.getMessage());
         }
     }
 
-    public Object getAuxiliarPK_value(Object obj, Class cls, String name)
+    public Object getAuxiliarPK_value(Object obj, Class cls, String name) throws Exception
     {
         try
         {
@@ -404,10 +409,8 @@ public class SQLHelper
 
         } catch (Exception ex)
         {
-            ex.printStackTrace();
+            throw new Exception(ex.getMessage());
         }
-
-        return null;
     }
 
     public String getAuxiliarPK_name(Class cls)
@@ -428,7 +431,7 @@ public class SQLHelper
         return null;
     }
 
-    private int currentVersion(String table, String primaryKeyFieldName, String primaryKeyValue, String versionFieldName, Connection connection)
+    private int currentVersion(String table, String primaryKeyFieldName, String primaryKeyValue, String versionFieldName, Connection connection) throws Exception
     {
         try
         {
@@ -442,15 +445,14 @@ public class SQLHelper
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: internal error on get currentVersion \n" + ex.getMessage());
+            System.err.println("Persistor: internal error on get currentVersion \n");
+            throw new Exception(ex.getMessage());
         }
-
-        return 0;
     }
 
     public String parameterNames = "";
 
-    public void prepareInsert(Object obj)
+    public void prepareInsert(Object obj) throws Exception
     {
         try
         {
@@ -517,7 +519,8 @@ public class SQLHelper
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: SQL_Helper_exception: " + ex.getMessage());
+            System.err.println("Persistor: SQL_Helper_exception at :\n ");
+            throw new Exception(ex.getMessage());
         }
     }
 }

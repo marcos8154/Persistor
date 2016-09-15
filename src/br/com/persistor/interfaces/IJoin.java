@@ -17,6 +17,6 @@ public interface IJoin
 
     List<Object> getResultList(Object obj);
 
-    void execute(Session iSession);
+    void execute(Session iSession) throws Exception;
 
 }

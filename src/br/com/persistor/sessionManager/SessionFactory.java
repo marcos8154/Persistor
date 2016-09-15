@@ -19,7 +19,7 @@ public class SessionFactory
     private DataSource mainDataSource = null;
     private final DBConfig mainConfig = null;
 
-    private void buildSession(DBConfig config)
+    private void buildSession(DBConfig config) throws Exception
     {
         try
         {
@@ -28,11 +28,11 @@ public class SessionFactory
         } catch (Exception ex)
         {
             System.err.println("Persistor: build session error at: \n");
-            ex.printStackTrace();
+            throw new Exception(ex.getMessage());
         }
     }
 
-    public Session getSession(DBConfig config)
+    public Session getSession(DBConfig config) throws Exception
     {
         SessionImpl returnSessonImpl = null;
 
@@ -49,7 +49,7 @@ public class SessionFactory
         } catch (Exception ex)
         {
             System.err.println("Persistor: create session error at: \n");
-            ex.getMessage();
+            throw new Exception(ex.getMessage());
         }
 
         return returnSessonImpl;

@@ -12,23 +12,23 @@ import java.sql.Statement;
 public interface Session
 {
 
-    void save(Object entity);
+    void save(Object entity) throws Exception;
 
-    void update(Object entity);
+    void update(Object entity) throws Exception;
 
-    void update(Object entity, String andCondition);
+    void update(Object entity, String andCondition) throws Exception;
 
-    void delete(Object entity);
+    void delete(Object entity) throws Exception;
 
-    void delete(Object entity, String andCondition);
+    void delete(Object entity, String andCondition) throws Exception;
 
     void commit();
 
     void rollback();
 
-    void onID(Object entity, int id);
+    void onID(Object entity, int id) throws Exception;
 
-    Object onID(Class entityCls, int id);
+    Object onID(Class entityCls, int id) throws Exception;
     
     void close();
 
@@ -46,5 +46,5 @@ public interface Session
     
     DBConfig getConfig();
     
-    void loadWithJoin(Object sourceEntity, Object targetEntity);
+    void loadWithJoin(Object sourceEntity, Object targetEntity) throws Exception;
 }

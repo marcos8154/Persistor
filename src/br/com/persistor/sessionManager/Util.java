@@ -54,7 +54,7 @@ public class Util
         return false;
     }
 
-    public static boolean methodHasValue(Object obj, String methodName)
+    public static boolean methodHasValue(Object obj, String methodName) throws Exception
     {
         try
         {
@@ -79,6 +79,7 @@ public class Util
         } catch (Exception ex)
         {
             System.err.println(ex.getMessage());
+            throw new Exception(ex.getMessage());
         }
 
         return false;

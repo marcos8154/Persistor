@@ -59,7 +59,7 @@ public class Join implements IJoin
     List<FieldIndex> fields_index = new ArrayList<>();
 
     @Override
-    public void execute(Session iSession)
+    public void execute(Session iSession) throws Exception
     {
         String fieldsSelect = "";
         int index = 1;
@@ -267,7 +267,7 @@ public class Join implements IJoin
         catch (Exception ex)
         {
             System.err.println("Persistor: execute join error at: \n");
-            ex.printStackTrace();
+            throw new Exception(ex.getMessage());
         }
         finally
         {
@@ -276,7 +276,7 @@ public class Join implements IJoin
         }
     }
 
-    public void getResultObj(Object object)
+    public void getResultObj(Object object) throws Exception
     {
         Object objToRemove = null;
         try
@@ -332,7 +332,8 @@ public class Join implements IJoin
 
         } catch (Exception ex)
         {
-            System.err.println("Persistor: internal error join.getResultObj: \n" + ex.getMessage());
+            System.err.println("Persistor: internal error join.getResultObj: \n");
+            throw new Exception(ex.getMessage());
         }
     }
 

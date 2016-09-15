@@ -141,7 +141,7 @@ public class Criteria implements ICriteria
     }
 
     @Override
-    public void execute()
+    public void execute() throws Exception
     {
         Statement statement = null;
         ResultSet resultSet = null;
@@ -384,9 +384,12 @@ public class Criteria implements ICriteria
             Field f = clss.getField("ResultList");
             f.set(obj, rList);
 
-        } catch (Exception ex)
+        } 
+        catch (Exception ex)
         {
             System.err.println("Persistor: criteria error at \n" + ex.getMessage());
+            throw new Exception(ex.getMessage());
+            
         } finally
         {
             closeResultSet(resultSet);
