@@ -34,7 +34,7 @@ public interface Session
 
     Criteria createCriteria(Object entity, RESULT_TYPE result_type);
     
-    Query createQuery(Object entity, String queryCommand);
+    Query createQuery(Object entity, String queryCommand) throws Exception;
     
     Connection getActiveConnection();
     

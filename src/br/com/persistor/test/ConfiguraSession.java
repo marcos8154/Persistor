@@ -12,7 +12,7 @@ public class ConfiguraSession
     private static SessionFactory sfMySQL = null;
     private static SessionFactory sfPg = null;
 
-    public static Session getSession()
+ /*   public static Session getSession()
     {
         if (sfMySQL == null)
         {
@@ -29,7 +29,7 @@ public class ConfiguraSession
         config.setPassword("81547686");
 
         return sfMySQL.getSession(config);
-    }
+    } */
 
     /*  public Session getFbSession()
     {
@@ -46,7 +46,7 @@ public class ConfiguraSession
         return sessionFactory;
     } */
 
-    public static Session getPgSession()
+/*    public static Session getPgSession()
     {
         if(sfPg == null) sfPg = new SessionFactory();
         
@@ -62,5 +62,5 @@ public class ConfiguraSession
         Session session = sfPg.getSession(config);
 
         return session;
-    } 
+    }  */
 }

@@ -142,12 +142,19 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public Query createQuery(Object entity, String queryCommand)
-    {
-        Query query = new Query();
-        query.createQuery(this, entity, queryCommand);
+    public Query createQuery(Object entity, String queryCommand) throws Exception
+    { 
+        try
+        {
+            Query query = new Query();
+            query.createQuery(this, entity, queryCommand);
 
-        return query;
+            return query;
+            
+        } catch (Exception ex)
+        {
+            throw new Exception(ex.getMessage());
+        }
     }
 
     public Object getAuxiliarPK_value(Object entity, Class cls, String name) throws Exception
@@ -172,7 +179,7 @@ public class SessionImpl implements Session
                 if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
                 {
                     return method.getName();
-                }
+                } 
             }
         }
 
@@ -1197,8 +1204,7 @@ public class SessionImpl implements Session
         {
             System.err.println("Persistor: error at: \n");
             throw new Exception(ex.getMessage());
-        }
-        finally
+        } finally
         {
             this.closeStatement(statement);
         }
