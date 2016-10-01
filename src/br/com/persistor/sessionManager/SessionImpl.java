@@ -873,7 +873,7 @@ public class SessionImpl implements Session
 
                 }
 
-                System.out.println("Persistor: \n" + join.mountedQuery);
+              //  System.out.println("Persistor: \n" + join.mountedQuery);
             }
         } catch (Exception ex)
         {

@@ -53,7 +53,7 @@ public class Join implements IJoin
     @Override
     public void addFinalCondition(String final_and_or_where_condition)
     {
-        mountedQuery += final_and_or_where_condition;
+        mountedQuery += " " + final_and_or_where_condition;
     }
 
     List<FieldIndex> fields_index = new ArrayList<>();

@@ -6,30 +6,36 @@ import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
 import br.com.persistor.sessionManager.SessionImpl;
 
-public class ConfiguraSession
-{
+public class ConfiguraSession {
 
     private static SessionFactory sfMySQL = null;
     private static SessionFactory sfPg = null;
 
- /*   public static Session getSession()
+    public static Session getSession()
     {
-        if (sfMySQL == null)
+        try 
         {
-            sfMySQL = new SessionFactory();
+            if (sfMySQL == null) {
+                sfMySQL = new SessionFactory();
+            }
+
+            DBConfig config = new DBConfig();
+
+            config.setDb_type(DB_TYPE.MySQL);
+            config.setHost("localhost");
+            config.setDatabase("cadastro");
+            config.setPort(3306);
+            config.setUser("root");
+            config.setPassword("81547686");
+
+            return sfMySQL.getSession(config);
+        } 
+        catch (Exception ex) {
+
         }
-
-        DBConfig config = new DBConfig();
-
-        config.setDb_type(DB_TYPE.MySQL);
-        config.setHost("localhost");
-        config.setDatabase("cadastro");
-        config.setPort(3306);
-        config.setUser("root");
-        config.setPassword("81547686");
-
-        return sfMySQL.getSession(config);
-    } */
+        
+        return null;
+    }
 
     /*  public Session getFbSession()
     {
@@ -46,7 +52,7 @@ public class ConfiguraSession
         return sessionFactory;
     } */
 
-/*    public static Session getPgSession()
+ /*    public static Session getPgSession()
     {
         if(sfPg == null) sfPg = new SessionFactory();
         

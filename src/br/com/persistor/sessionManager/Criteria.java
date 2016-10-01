@@ -173,8 +173,7 @@ public class Criteria implements ICriteria
 
             if (resultType == RESULT_TYPE.UNIQUE)
             {
-                resultSet.next();
-
+                if(resultSet.next())
                 for (Method method : cls.getMethods())
                 {
                     if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
