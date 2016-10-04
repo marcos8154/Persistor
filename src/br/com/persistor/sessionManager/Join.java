@@ -43,17 +43,22 @@ public class Join implements IJoin
         String table = cls.getSimpleName().toLowerCase();
 
         String join = detectJoin(join_type);
-        mountedQuery += ("\n" + join + table).trim() + "\n";
-        if(condition != null) mountedQuery += " ON " + condition;
+        mountedQuery += ("\n" + " " + join + " " + table) + "\n";
+        if (condition != null)
+        {
+            mountedQuery += " ON " + condition;
+        }
         objects.add(obj);
 
         joinCount++;
     }
 
+    String final_condition = "";
+    
     @Override
     public void addFinalCondition(String final_and_or_where_condition)
     {
-        mountedQuery += " " + final_and_or_where_condition;
+        final_condition = " " + final_and_or_where_condition;
     }
 
     List<FieldIndex> fields_index = new ArrayList<>();
@@ -103,7 +108,8 @@ public class Join implements IJoin
         baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
 
         mountedQuery = (baseQ + "\n").toLowerCase();
-
+        mountedQuery += final_condition;
+        
         Connection connection;
         Statement statement = null;
         ResultSet resultSet = null;
@@ -170,7 +176,8 @@ public class Join implements IJoin
                             {
                                 name = cls.getSimpleName() + "." + method.getName().substring(2, method.getName().length());
                                 methodSetName = "set" + method.getName().substring(2, method.getName().length());
-                            } else
+                            }
+                            else
                             {
                                 name = cls.getSimpleName() + "." + method.getName().substring(3, method.getName().length());
                                 methodSetName = "set" + method.getName().substring(3, method.getName().length());
@@ -275,7 +282,7 @@ public class Join implements IJoin
             iSession.closeStatement(statement);
         }
     }
-
+    
     public void getResultObj(Object object) throws Exception
     {
         Object objToRemove = null;
@@ -325,27 +332,29 @@ public class Join implements IJoin
                 index++;
             }
 
-            if (hasIndex)
+            resultList.remove(objToRemove);
+         /*   if (hasIndex)
             {
                 resultList.remove(index);
-            }
+            } */
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error join.getResultObj: \n");
             throw new Exception(ex.getMessage());
         }
     }
 
-    public List<Object> getList(Object object)
+    public <T> List<T>  getList(Object object)
     {
-        List<Object> returnList = new ArrayList<>();
+        List<T> returnList = new ArrayList<>();
 
         for (Object obj : resultList)
         {
             if (obj.getClass() == object.getClass())
             {
-                returnList.add(obj);
+                returnList.add((T)obj);
             }
         }
 
@@ -385,18 +394,18 @@ public class Join implements IJoin
     }
 
     @Override
-    public List<Object> getResultList(Object object)
+    public <T> List<T>  getResultList(Object object)
     {
-        List<Object> returnList = new ArrayList<>();
+        List<T> returnList = new ArrayList<>();
 
         for (Object obj : resultList)
         {
             if (obj.getClass() == object.getClass())
             {
-                returnList.add(obj);
+                returnList.add((T)obj);
             }
         }
 
-        return resultList;
+        return returnList;
     }
 }

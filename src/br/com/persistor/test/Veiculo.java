@@ -19,14 +19,14 @@ public class Veiculo extends Entity
     
     private int id;
     private String nome;
-    private InputStream foto;
+  //  private InputStream foto;
     
     @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId() {
         return id;
     }
 
-    public InputStream getFoto()
+ /*   public InputStream getFoto()
     {
         return foto;
     }
@@ -34,7 +34,7 @@ public class Veiculo extends Entity
     public void setFoto(InputStream foto)
     {
         this.foto = foto;
-    }
+    } */
 
     public void setId(int id) {
         this.id = id;

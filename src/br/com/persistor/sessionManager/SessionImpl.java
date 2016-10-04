@@ -61,7 +61,8 @@ public class SessionImpl implements Session
         try
         {
             statement.close();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: error at: \n" + ex.getMessage());
         }
@@ -80,7 +81,8 @@ public class SessionImpl implements Session
                 }
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at: \n" + ex.getMessage());
         }
@@ -92,7 +94,8 @@ public class SessionImpl implements Session
         try
         {
             preparedStatement.close();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.out.println(ex.getMessage());
         }
@@ -120,7 +123,8 @@ public class SessionImpl implements Session
             {
                 methodName = "is" + methodName.substring(2, methodName.length());
                 method = entity.getClass().getMethod(methodName);
-            } else
+            }
+            else
             {
                 methodName = "get" + methodName.substring(3, methodName.length());
                 method = entity.getClass().getMethod(methodName);
@@ -133,7 +137,8 @@ public class SessionImpl implements Session
                 return true;
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             throw new Exception(ex.getMessage());
         }
@@ -142,16 +147,30 @@ public class SessionImpl implements Session
     }
 
     @Override
+    public <T> List<T> getList(T t) throws Exception
+    {
+        Field f = t.getClass().getField("ResultList");
+        List<Object> list = (List<Object>) f.get(t);
+        List<T> resultList = new ArrayList<>();
+        for (Object obj : list)
+        {
+            resultList.add((T) obj);
+        }
+        return resultList;
+    }
+
+    @Override
     public Query createQuery(Object entity, String queryCommand) throws Exception
-    { 
+    {
         try
         {
             Query query = new Query();
             query.createQuery(this, entity, queryCommand);
 
             return query;
-            
-        } catch (Exception ex)
+
+        }
+        catch (Exception ex)
         {
             throw new Exception(ex.getMessage());
         }
@@ -162,7 +181,8 @@ public class SessionImpl implements Session
         try
         {
             return cls.getMethod(name).invoke(entity);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             throw new Exception(ex.getMessage());
         }
@@ -179,7 +199,7 @@ public class SessionImpl implements Session
                 if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
                 {
                     return method.getName();
-                } 
+                }
             }
         }
 
@@ -240,7 +260,8 @@ public class SessionImpl implements Session
 
                             continue;
                         }
-                    } else
+                    }
+                    else
                     {
                         continue;
                     }
@@ -346,7 +367,8 @@ public class SessionImpl implements Session
                 }
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at:\n");
             throw new Exception(ex.getMessage());
@@ -389,7 +411,8 @@ public class SessionImpl implements Session
                 if (isUpdateMode)
                 {
                     session.update(object);
-                } else
+                }
+                else
                 {
                     session.save(object);
                 }
@@ -435,14 +458,16 @@ public class SessionImpl implements Session
 
             lastID(entity, whereConditionGetLastID);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: save error at: \n");
             rollback();
 
             throw new Exception(ex.getMessage());
 
-        } finally
+        }
+        finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -488,14 +513,16 @@ public class SessionImpl implements Session
 
             System.out.println("Persistor: \n " + sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: update error at: \n");
             rollback();
 
             throw new Exception(ex.getMessage());
 
-        } finally
+        }
+        finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -540,14 +567,16 @@ public class SessionImpl implements Session
 
             System.out.println("Persistor: \n " + sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: update error at: \n");
             rollback();
 
             throw new Exception(ex.getMessage());
 
-        } finally
+        }
+        finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -581,13 +610,15 @@ public class SessionImpl implements Session
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: delete error at: \n");
             rollback();
             throw new Exception(ex.getMessage());
 
-        } finally
+        }
+        finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -620,13 +651,15 @@ public class SessionImpl implements Session
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: delete error at: \n");
             rollback();
             throw new Exception(ex.getMessage());
 
-        } finally
+        }
+        finally
         {
             closePreparedStatement(preparedStatement);
         }
@@ -658,7 +691,8 @@ public class SessionImpl implements Session
                         {
                             name = (method.getName().substring(2, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(2, method.getName().length());
-                        } else
+                        }
+                        else
                         {
                             name = (method.getName().substring(3, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(3, method.getName().length());
@@ -745,7 +779,8 @@ public class SessionImpl implements Session
                     }
                 }
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             throw new Exception(ex.getMessage());
         }
@@ -764,12 +799,15 @@ public class SessionImpl implements Session
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
 
                     if (oneToOne.load() == LOAD.MANUAL)
+                    {
                         return false;
+                    }
 
                     return true;
                 }
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at");
             throw new Exception(ex.getMessage());
@@ -873,9 +911,10 @@ public class SessionImpl implements Session
 
                 }
 
-              //  System.out.println("Persistor: \n" + join.mountedQuery);
+                //  System.out.println("Persistor: \n" + join.mountedQuery);
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: join error at:");
             throw new Exception(ex.getMessage());
@@ -958,7 +997,8 @@ public class SessionImpl implements Session
                 Method method = sourceEntityClass.getMethod("set" + targetEntity.getClass().getSimpleName(), targetEntity.getClass());
                 method.invoke(sourceEntity, targetEntity);
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: loadWithJoin error at: \n");
             throw new Exception(ex.getMessage());
@@ -1007,12 +1047,14 @@ public class SessionImpl implements Session
 
             System.out.println("Persistor: \n " + sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
             throw new Exception(ex.getMessage());
 
-        } finally
+        }
+        finally
         {
             if (statement != null)
             {
@@ -1022,7 +1064,7 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public Object onID(Class entityCls, int id) throws Exception
+    public <T> T onID(Class entityCls, int id) throws Exception
     {
         Statement statement = null;
         Object obj = null;
@@ -1042,7 +1084,7 @@ public class SessionImpl implements Session
             if (hasJoinableObjects(obj))
             {
                 executeJoin(obj, id);
-                return obj;
+                return (T) obj;
             }
 
             SQLHelper helper = new SQLHelper();
@@ -1059,12 +1101,14 @@ public class SessionImpl implements Session
 
             System.out.println("Persistor: \n " + sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
             throw new Exception(ex.getMessage());
 
-        } finally
+        }
+        finally
         {
             if (statement != null)
             {
@@ -1072,7 +1116,7 @@ public class SessionImpl implements Session
             }
         }
 
-        return obj;
+        return (T) obj;
     }
 
     @Override
@@ -1081,7 +1125,8 @@ public class SessionImpl implements Session
         try
         {
             connection.commit();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: commit error at: \n" + ex.getMessage());
             System.err.println("Executing rollback...");
@@ -1096,7 +1141,8 @@ public class SessionImpl implements Session
         try
         {
             connection.close();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: close session error at: \n" + ex.getMessage());
         }
@@ -1109,13 +1155,14 @@ public class SessionImpl implements Session
         {
             System.out.println("Rollbacking...");
             connection.rollback();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor rollback error at: \n" + ex.getMessage());
         }
     }
 
-    public int maxId(Object entity, String where) throws Exception
+    private int maxId(Object entity, String where) throws Exception
     {
         Statement statement = null;
         int result = 0;
@@ -1142,19 +1189,17 @@ public class SessionImpl implements Session
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
-
-            String pkMethodName = sql_helper.getPrimaryKeyMethodName(entity).replace("get", "set");
-
-            while (resultSet.next())
+            if (resultSet.next())
             {
-                result = resultSet.getInt(primaryKeyName);
+                result = resultSet.getInt(1);
             }
-
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: error at: \n");
             throw new Exception(ex.getMessage());
-        } finally
+        }
+        finally
         {
             this.closeStatement(statement);
         }
@@ -1169,19 +1214,60 @@ public class SessionImpl implements Session
         {
             Class cls = entity.getClass();
             SQLHelper sql_helper = new SQLHelper();
-
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
-
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
             }
-
-            String className = cls.getName().replace(cls.getPackage().getName(), "");
-            className = className.replace(".", "").toLowerCase();
-
+            String className = cls.getSimpleName().toLowerCase();
             String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
+            if (!whereCondition.isEmpty())
+            {
+                sqlBase += " where " + whereCondition;
+            }
+            statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sqlBase);
+            if (resultSet.next())
+            {
+                int obtainedId = resultSet.getInt(1);
+                this.closeStatement(statement);
+                onID(entity, obtainedId);
+            }
+            this.closeResultSet(resultSet);
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Persistor: error at: \n");
+            throw new Exception(ex.getMessage());
+        }
+        finally
+        {
+            this.closeStatement(statement);
+        }
+    }
+
+    @Override
+    public <T> T First(Class cls, String whereCondition) throws Exception
+    {
+        Statement statement = null;
+        try
+        {
+            java.lang.reflect.Constructor constructor = cls.getConstructor();
+            Object entity = constructor.newInstance();
+
+            SQLHelper sql_helper = new SQLHelper();
+            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
+
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return null;
+            }
+
+            String className = cls.getSimpleName().toLowerCase();
+            String sqlBase = "select min(" + primaryKeyName + ") from " + className;
+
             if (!whereCondition.isEmpty())
             {
                 sqlBase += " where " + whereCondition;
@@ -1189,22 +1275,69 @@ public class SessionImpl implements Session
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
-
-            String pkMethodName = sql_helper.getPrimaryKeyMethodName(entity).replace("get", "set");
-
-            while (resultSet.next())
+            if (resultSet.next())
             {
-                String field = (pkMethodName);
-                Method method = entity.getClass().getMethod(field, int.class
-                );
-                method.invoke(entity, resultSet.getObject(primaryKeyName));
+                int obtainedId = resultSet.getInt(1);
+                this.closeStatement(statement);
+                return onID(cls, obtainedId);
             }
-
-        } catch (Exception ex)
+            this.closeStatement(statement);
+            return (T) entity;
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: error at: \n");
             throw new Exception(ex.getMessage());
-        } finally
+        }
+        finally
+        {
+            this.closeStatement(statement);
+        }
+    }
+
+    @Override
+    public <T> T Last(Class cls, String whereCondition) throws Exception
+    {
+        Statement statement = null;
+        try
+        {
+            java.lang.reflect.Constructor constructor = cls.getConstructor();
+            Object entity = constructor.newInstance();
+
+            SQLHelper sql_helper = new SQLHelper();
+            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
+
+            if (!extendsEntity(cls))
+            {
+                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                return null;
+            }
+
+            String className = cls.getSimpleName().toLowerCase();
+            String sqlBase = "select max(" + primaryKeyName + ") from " + className;
+
+            if (!whereCondition.isEmpty())
+            {
+                sqlBase += " where " + whereCondition;
+            }
+
+            statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sqlBase);
+            if (resultSet.next())
+            {
+                int obtainedId = resultSet.getInt(1);
+                this.closeStatement(statement);
+                return onID(cls, obtainedId);
+            }
+            this.closeStatement(statement);
+            return (T) entity;
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Persistor: error at: \n");
+            throw new Exception(ex.getMessage());
+        }
+        finally
         {
             this.closeStatement(statement);
         }
@@ -1219,7 +1352,8 @@ public class SessionImpl implements Session
         {
             criteria = new Criteria(this, entity, result_type);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: create criteria error at \n");
             ex.printStackTrace();

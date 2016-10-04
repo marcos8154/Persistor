@@ -56,12 +56,6 @@ public class Pessoa extends Entity {
     }
     private Profissao profissao;
     
-    public List<Pessoa> lista()
-    {
-        List<Pessoa> lp = this.ResultList;
-        return  lp;
-    }        
-    
     public int getVeiculo_id()
     {
         return veiculo_id;

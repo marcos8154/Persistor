@@ -15,7 +15,7 @@ public interface IJoin
 
     String detectJoin(JOIN_TYPE join_type);
 
-    List<Object> getResultList(Object obj);
+    <T> List<T>  getResultList(Object obj);
 
     void execute(Session iSession) throws Exception;
 
