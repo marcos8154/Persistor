@@ -1221,7 +1221,7 @@ public class SessionImpl implements Session
                 return;
             }
             String className = cls.getSimpleName().toLowerCase();
-            String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
+            String sqlBase = "select max(" + primaryKeyName + ") from " + className;
             if (!whereCondition.isEmpty())
             {
                 sqlBase += " where " + whereCondition;

@@ -8,6 +8,7 @@ import br.com.persistor.sessionManager.Join;
 import br.com.persistor.sessionManager.SessionFactory;
 import br.com.persistor.sessionManager.SessionImpl;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class main
@@ -16,15 +17,7 @@ public class main
     {
         try
         {
-            SessionFactory sf = new SessionFactory();
-            DBConfig config = new DBConfig();
-            config.setHost("MARCOS\\SQLSERVER");
-            config.setDatabase("sig");
-            config.setUser("sa");
-            config.setPassword("81547686");
-            config.setDb_type(DB_TYPE.SQLServer);
             
-            Session session = sf.getSession(config);
         
         }
         catch (Exception ex)
