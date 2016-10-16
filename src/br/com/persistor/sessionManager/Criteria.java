@@ -93,7 +93,7 @@ public class Criteria implements ICriteria
 
                 break;
         }
-        
+
         return this;
     }
 
@@ -101,7 +101,7 @@ public class Criteria implements ICriteria
     public Criteria add(Expressions expression)
     {
         query += expression.getCurrentValue();
-        
+
         return this;
     }
 
@@ -117,7 +117,8 @@ public class Criteria implements ICriteria
                 }
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at: \n" + ex.getMessage());
         }
@@ -134,7 +135,8 @@ public class Criteria implements ICriteria
                     statement.close();
                 }
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at: \n" + ex.getMessage());
         }
@@ -150,7 +152,7 @@ public class Criteria implements ICriteria
         {
             query = "select * from " + tableName + " " + query;
         }
-        
+
         try
         {
             Class clss = obj.getClass();
@@ -173,114 +175,10 @@ public class Criteria implements ICriteria
 
             if (resultType == RESULT_TYPE.UNIQUE)
             {
-                if(resultSet.next())
-                for (Method method : cls.getMethods())
-                {
-                    if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                    {
-                        String name;
-                        String fieldName;
-
-                        if (method.getName().startsWith("is"))
-                        {
-                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(2, method.getName().length());
-                        } else
-                        {
-                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(3, method.getName().length());
-                        }
-
-                        if (method.isAnnotationPresent(OneToOne.class));
-
-                        if (method.getReturnType() == boolean.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(ob, resultSet.getBoolean(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == int.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(ob, resultSet.getInt(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == double.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(ob, resultSet.getDouble(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == float.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(ob, resultSet.getFloat(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == short.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(ob, resultSet.getShort(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == long.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(ob, resultSet.getLong(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == String.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(ob, resultSet.getString(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == java.util.Date.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(ob, resultSet.getDate(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == byte.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(ob, resultSet.getByte(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == BigDecimal.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == InputStream.class)
-                        {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(ob, (InputStream) resultSet.getBinaryStream(name));
-                            continue;
-                        }
-                    }
-                }
-            } else
-            {
-                while (resultSet.next())
-                {
-                    Constructor ctor = cls.getConstructor();
-                    ob = ctor.newInstance();
-
+                if (resultSet.next())
                     for (Method method : cls.getMethods())
                     {
-                        if (method.getName().contains("is") || method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                         {
                             String name;
                             String fieldName;
@@ -289,10 +187,25 @@ public class Criteria implements ICriteria
                             {
                                 name = (method.getName().substring(2, method.getName().length())).toLowerCase();
                                 fieldName = "set" + method.getName().substring(2, method.getName().length());
-                            } else
+                            }
+                            else
                             {
                                 name = (method.getName().substring(3, method.getName().length())).toLowerCase();
                                 fieldName = "set" + method.getName().substring(3, method.getName().length());
+                            }
+
+                            if (method.isAnnotationPresent(OneToOne.class));
+
+                            if (method.getReturnType() == char.class)
+                            {
+                                String str = resultSet.getString(name);
+
+                                if (str.length() > 0)
+                                {
+                                    Method invokeMethod = obj.getClass().getMethod(fieldName, char.class);
+                                    invokeMethod.invoke(ob, str.charAt(0));
+                                    continue;
+                                }
                             }
 
                             if (method.getReturnType() == boolean.class)
@@ -350,7 +263,123 @@ public class Criteria implements ICriteria
                                 invokeMethod.invoke(ob, resultSet.getDate(name));
                                 continue;
                             }
-                            
+
+                            if (method.getReturnType() == byte.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
+                                invokeMethod.invoke(ob, resultSet.getByte(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == BigDecimal.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
+                                invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == InputStream.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
+                                invokeMethod.invoke(ob, (InputStream) resultSet.getBinaryStream(name));
+                                continue;
+                            }
+                        }
+                    }
+            }
+            else
+            {
+                while (resultSet.next())
+                {
+                    Constructor ctor = cls.getConstructor();
+                    ob = ctor.newInstance();
+
+                    for (Method method : cls.getMethods())
+                    {
+                        if (method.getName().contains("is") || method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        {
+                            String name;
+                            String fieldName;
+
+                            if (method.getName().startsWith("is"))
+                            {
+                                name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                                fieldName = "set" + method.getName().substring(2, method.getName().length());
+                            }
+                            else
+                            {
+                                name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                                fieldName = "set" + method.getName().substring(3, method.getName().length());
+                            }
+
+                            if (method.getReturnType() == char.class)
+                            {
+                                String str = resultSet.getString(name);
+
+                                if (str.length() > 0)
+                                {
+                                    Method invokeMethod = obj.getClass().getMethod(fieldName, char.class);
+                                    invokeMethod.invoke(ob, str.charAt(0));
+                                    continue;
+                                }
+                            }
+
+                            if (method.getReturnType() == boolean.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
+                                invokeMethod.invoke(ob, resultSet.getBoolean(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == int.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
+                                invokeMethod.invoke(ob, resultSet.getInt(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == double.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
+                                invokeMethod.invoke(ob, resultSet.getDouble(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == float.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
+                                invokeMethod.invoke(ob, resultSet.getFloat(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == short.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
+                                invokeMethod.invoke(ob, resultSet.getShort(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == long.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
+                                invokeMethod.invoke(ob, resultSet.getLong(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == String.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
+                                invokeMethod.invoke(ob, resultSet.getString(name));
+                                continue;
+                            }
+
+                            if (method.getReturnType() == java.util.Date.class)
+                            {
+                                Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
+                                invokeMethod.invoke(ob, resultSet.getDate(name));
+                                continue;
+                            }
+
                             if (method.getReturnType() == byte.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
@@ -383,13 +412,14 @@ public class Criteria implements ICriteria
             Field f = clss.getField("ResultList");
             f.set(obj, rList);
 
-        } 
+        }
         catch (Exception ex)
         {
             System.err.println("Persistor: criteria error at \n" + ex.getMessage());
             throw new Exception(ex.getMessage());
-            
-        } finally
+
+        }
+        finally
         {
             closeResultSet(resultSet);
             closeStatement(statement);

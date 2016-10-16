@@ -167,7 +167,7 @@ public class SQLHelper
                     if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
                         primaryKeyName = (method.getName().substring(3, method.getName().length())).toLowerCase();
-                        this.setPrimaryKeyValue(method.invoke(obj).toString());
+                        this.setPrimaryKeyValue(method.invoke(obj) == null ? "" : method.invoke(obj).toString());
                     }
 
                     break;

@@ -54,7 +54,7 @@ public class Join implements IJoin
     }
 
     String final_condition = "";
-    
+
     @Override
     public void addFinalCondition(String final_and_or_where_condition)
     {
@@ -109,11 +109,11 @@ public class Join implements IJoin
 
         mountedQuery = (baseQ + "\n").toLowerCase();
         mountedQuery += final_condition;
-        
+
         Connection connection;
         Statement statement = null;
         ResultSet resultSet = null;
-
+        String currentFieldName = "";
         try
         {
             connection = iSession.getActiveConnection();
@@ -140,125 +140,140 @@ public class Join implements IJoin
                             if (method.isAnnotationPresent(PrimaryKey.class))
                             {
                                 String mtdName = method.getName().substring(3, method.getName().length());
-                                int inx = getFieldIndexByNamer(tableName + "." + mtdName.toLowerCase() + " " + mtdName.toLowerCase() + "_" + tableName);
-
-                                if (resultSet.getInt(inx) == 0)
-                                {
-                                    ignoreObj = otherObj;
-                                }
+                                String pkColumnName = (mtdName.toLowerCase() + "_" + tableName);
 
                                 if (method.getReturnType() == int.class)
                                 {
                                     Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), int.class);
-                                    invokeMethod.invoke(otherObj, resultSet.getInt(inx));
+                                    invokeMethod.invoke(otherObj, resultSet.getInt(pkColumnName));
                                     continue;
                                 }
 
                                 if (method.getReturnType() == long.class)
                                 {
                                     Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), long.class);
-                                    invokeMethod.invoke(otherObj, resultSet.getInt(inx));
+                                    invokeMethod.invoke(otherObj, resultSet.getLong(pkColumnName));
                                     continue;
                                 }
 
                                 if (method.getReturnType() == short.class)
                                 {
                                     Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), short.class);
-                                    invokeMethod.invoke(otherObj, resultSet.getInt(inx));
+                                    invokeMethod.invoke(otherObj, resultSet.getShort(pkColumnName));
+                                    continue;
+                                }
+
+                                if (method.getReturnType() == String.class)
+                                {
+                                    Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), String.class);
+                                    invokeMethod.invoke(otherObj, resultSet.getString(pkColumnName));
                                     continue;
                                 }
                             }
 
-                            String name;
+                            String columnName;
                             String methodSetName;
 
                             if (method.getName().startsWith("is"))
                             {
-                                name = cls.getSimpleName() + "." + method.getName().substring(2, method.getName().length());
+                                columnName = (method.getName().substring(2, method.getName().length())).toLowerCase();
                                 methodSetName = "set" + method.getName().substring(2, method.getName().length());
                             }
                             else
                             {
-                                name = cls.getSimpleName() + "." + method.getName().substring(3, method.getName().length());
+                                columnName = (method.getName().substring(3, method.getName().length())).toLowerCase();
                                 methodSetName = "set" + method.getName().substring(3, method.getName().length());
                             }
 
-                            int indexParam = getFieldIndexByNamer(name.toLowerCase());
+                            currentFieldName = columnName;
+                            // int indexParam = getFieldIndexByNamer(name.toLowerCase());
+
+                            if (method.getReturnType() == char.class)
+                            {
+                                String str = resultSet.getString(columnName);
+                                if(str == null) continue;
+                                if (str.length() > 0)
+                                {
+                                    Method invokeMethod = obj.getClass().getMethod(methodSetName, char.class);
+                                    invokeMethod.invoke(otherObj, str.charAt(0));
+                                    continue;
+                                }
+                            }
 
                             if (method.getReturnType() == boolean.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, boolean.class);
-                                invokeMethod.invoke(otherObj, resultSet.getBoolean(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getBoolean(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == int.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, int.class);
-                                invokeMethod.invoke(otherObj, resultSet.getInt(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getInt(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == double.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, double.class);
-                                invokeMethod.invoke(otherObj, resultSet.getDouble(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getDouble(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == float.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, float.class);
-                                invokeMethod.invoke(otherObj, resultSet.getFloat(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getFloat(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == short.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, short.class);
-                                invokeMethod.invoke(otherObj, resultSet.getShort(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getShort(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == long.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, long.class);
-                                invokeMethod.invoke(otherObj, resultSet.getLong(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getLong(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == String.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, String.class);
-                                invokeMethod.invoke(otherObj, resultSet.getString(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getString(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == java.util.Date.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, java.util.Date.class);
-                                invokeMethod.invoke(otherObj, resultSet.getDate(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getDate(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == byte.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, byte.class);
-                                invokeMethod.invoke(otherObj, resultSet.getByte(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getByte(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == BigDecimal.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, BigDecimal.class);
-                                invokeMethod.invoke(otherObj, resultSet.getBigDecimal(indexParam));
+                                invokeMethod.invoke(otherObj, resultSet.getBigDecimal(columnName));
                                 continue;
                             }
 
                             if (method.getReturnType() == InputStream.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, InputStream.class);
-                                invokeMethod.invoke(obj, resultSet.getBinaryStream(name));
+                                invokeMethod.invoke(obj, resultSet.getBinaryStream(columnName));
                                 continue;
                             }
                         }
@@ -282,7 +297,7 @@ public class Join implements IJoin
             iSession.closeStatement(statement);
         }
     }
-    
+
     public void getResultObj(Object object) throws Exception
     {
         Object objToRemove = null;
@@ -333,7 +348,7 @@ public class Join implements IJoin
             }
 
             resultList.remove(objToRemove);
-         /*   if (hasIndex)
+            /*   if (hasIndex)
             {
                 resultList.remove(index);
             } */
@@ -346,7 +361,7 @@ public class Join implements IJoin
         }
     }
 
-    public <T> List<T>  getList(Object object)
+    public <T> List<T> getList(Object object)
     {
         List<T> returnList = new ArrayList<>();
 
@@ -354,7 +369,7 @@ public class Join implements IJoin
         {
             if (obj.getClass() == object.getClass())
             {
-                returnList.add((T)obj);
+                returnList.add((T) obj);
             }
         }
 
@@ -366,8 +381,9 @@ public class Join implements IJoin
         for (FieldIndex field_index : fields_index)
         {
             String value = field_index.field.replace(", ", "");
-            if (value.equals(fieldName))
+            if (value.startsWith(fieldName))
             {
+                fields_index.remove(field_index);
                 return field_index.index;
             }
         }
@@ -394,7 +410,7 @@ public class Join implements IJoin
     }
 
     @Override
-    public <T> List<T>  getResultList(Object object)
+    public <T> List<T> getResultList(Object object)
     {
         List<T> returnList = new ArrayList<>();
 
@@ -402,7 +418,7 @@ public class Join implements IJoin
         {
             if (obj.getClass() == object.getClass())
             {
-                returnList.add((T)obj);
+                returnList.add((T) obj);
             }
         }
 

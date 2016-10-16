@@ -356,6 +356,12 @@ public class SessionImpl implements Session
                     if (method.getReturnType() == Date.class)
                     {
                         Date date = (java.util.Date) method.invoke(entity);
+                        if(date == null)
+                        {
+                            preparedStatement.setDate(parameterIndex, null);
+                            parameterIndex ++;
+                            continue;
+                        }
                         java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
 
                         Calendar calendar = Calendar.getInstance();
