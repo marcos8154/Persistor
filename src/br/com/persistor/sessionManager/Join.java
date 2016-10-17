@@ -109,7 +109,7 @@ public class Join implements IJoin
 
         mountedQuery = (baseQ + "\n").toLowerCase();
         mountedQuery += final_condition;
-
+        
         Connection connection;
         Statement statement = null;
         ResultSet resultSet = null;

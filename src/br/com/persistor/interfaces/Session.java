@@ -3,6 +3,7 @@ package br.com.persistor.interfaces;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.sessionManager.Criteria;
+import br.com.persistor.sessionManager.PersistenceContext;
 import br.com.persistor.sessionManager.Query;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,7 +13,8 @@ import java.util.List;
 
 public interface Session
 {
-
+    PersistenceContext getPersistenceContext();
+    
     void save(Object entity) throws Exception;
 
     void update(Object entity) throws Exception;

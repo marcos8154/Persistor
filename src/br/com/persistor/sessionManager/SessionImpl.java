@@ -32,12 +32,20 @@ public class SessionImpl implements Session
 
     private Connection connection = null;
     private DBConfig config = null;
+    public PersistenceContext context = null;
 
     public SessionImpl(Connection connection)
     {
         this.connection = connection;
+        this.context = new PersistenceContext();
     }
 
+    @Override
+    public PersistenceContext getPersistenceContext()
+    {
+        return this.context;
+    }
+    
     @Override
     public DBConfig getConfig()
     {
@@ -47,6 +55,7 @@ public class SessionImpl implements Session
     public void setConfig(DBConfig config)
     {
         this.config = config;
+        this.context.Initialize(config.getPersistenceContext());
     }
 
     @Override
@@ -344,10 +353,10 @@ public class SessionImpl implements Session
                     if (method.getReturnType() == Date.class)
                     {
                         Date date = (java.util.Date) method.invoke(entity);
-                        if(date == null)
+                        if (date == null)
                         {
                             preparedStatement.setDate(parameterIndex, null);
-                            parameterIndex ++;
+                            parameterIndex++;
                             continue;
                         }
                         java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
@@ -947,6 +956,7 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
+            entity = cls.newInstance();
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
@@ -969,15 +979,21 @@ public class SessionImpl implements Session
             }
 
             String sqlBase = helper.getSqlBase();
-
             Field field = cls.getField("mountedQuery");
             field.set(entity, sqlBase);
+
+            if (context.getFromContext(entity) != null)
+            {
+                entity = context.getFromContext(entity);
+                return;
+            }
+
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
             loadEntity(entity, resultSet);
 
             System.out.println("Persistor: \n " + sqlBase);
-
+            this.context.addToContext(entity);
         }
         catch (Exception ex)
         {
@@ -1024,12 +1040,15 @@ public class SessionImpl implements Session
             Field field = entityCls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
+            if (context.getFromContext(obj) != null)
+                return (T) context.getFromContext(obj);
+
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
             loadEntity(obj, resultSet);
 
             System.out.println("Persistor: \n " + sqlBase);
-
+            context.addToContext(obj);
         }
         catch (Exception ex)
         {
@@ -1068,6 +1087,7 @@ public class SessionImpl implements Session
         try
         {
             connection.close();
+            context = null;
         }
         catch (Exception ex)
         {
@@ -1181,6 +1201,8 @@ public class SessionImpl implements Session
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
             Object entity = constructor.newInstance();
+            if (context.getFromContext(entity) != null)
+                return (T) context.getFromContext(entity);
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
@@ -1207,6 +1229,7 @@ public class SessionImpl implements Session
                 return onID(cls, obtainedId);
             }
             this.closeStatement(statement);
+            context.addToContext(entity);
             return (T) entity;
         }
         catch (Exception ex)
@@ -1228,6 +1251,8 @@ public class SessionImpl implements Session
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
             Object entity = constructor.newInstance();
+            if (context.getFromContext(entity) != null)
+                return (T) context.getFromContext(entity);
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
@@ -1254,6 +1279,7 @@ public class SessionImpl implements Session
                 return onID(cls, obtainedId);
             }
             this.closeStatement(statement);
+            context.addToContext(entity);
             return (T) entity;
         }
         catch (Exception ex)

@@ -162,6 +162,7 @@ public class Criteria implements ICriteria
 
             List<Object> rList = new ArrayList<>();
             Object ob = obj;
+            
             Class cls = ob.getClass();
 
             if (!Util.extendsEntity(cls))
@@ -170,6 +171,12 @@ public class Criteria implements ICriteria
                 return;
             }
 
+            if(this.iSession.getPersistenceContext().getFromContext(obj) != null)
+            {
+                obj = this.iSession.getPersistenceContext().getFromContext(obj);
+                return;
+            }
+            
             statement = iSession.getActiveConnection().createStatement();
             resultSet = statement.executeQuery(query);
 
@@ -293,7 +300,7 @@ public class Criteria implements ICriteria
                 {
                     Constructor ctor = cls.getConstructor();
                     ob = ctor.newInstance();
-
+                    ob.getClass().getField("mountedQuery").set(ob, query);
                     for (Method method : cls.getMethods())
                     {
                         if (method.getName().contains("is") || method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
@@ -411,7 +418,7 @@ public class Criteria implements ICriteria
 
             Field f = clss.getField("ResultList");
             f.set(obj, rList);
-
+            this.iSession.getPersistenceContext().addToContext(ob);
         }
         catch (Exception ex)
         {

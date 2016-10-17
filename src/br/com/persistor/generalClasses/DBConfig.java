@@ -2,7 +2,9 @@ package br.com.persistor.generalClasses;
 
 import br.com.persistor.enums.DB_TYPE;
 
-public class DBConfig {
+public class DBConfig
+{
+    private String persistenceContext;
 
     private DB_TYPE db_type;
     private String host;
@@ -15,6 +17,16 @@ public class DBConfig {
     private int acquireIncrement = 1;
     private int maxPoolSize = 20;
     private int maxStatements = 180;
+
+    public String getPersistenceContext()
+    {
+        return persistenceContext;
+    }
+
+    public void setPersistenceContext(String persistenceContext)
+    {
+        this.persistenceContext = persistenceContext;
+    }
 
     public int getMinPoolSize()
     {
