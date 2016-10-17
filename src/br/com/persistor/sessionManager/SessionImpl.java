@@ -45,7 +45,7 @@ public class SessionImpl implements Session
     {
         return this.context;
     }
-    
+
     @Override
     public DBConfig getConfig()
     {
@@ -858,6 +858,7 @@ public class SessionImpl implements Session
                     }
                 }
             }
+             this.context.addToContext(entity);
         }
         catch (Exception ex)
         {
@@ -949,6 +950,8 @@ public class SessionImpl implements Session
         }
     }
 
+    private boolean enabledContext = true;
+
     @Override
     public void onID(Object entity, int id) throws Exception
     {
@@ -956,11 +959,27 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            entity = cls.newInstance();
+            if (enabledContext)
+                entity = cls.newInstance();
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
                 return;
+            }
+
+            SQLHelper helper = new SQLHelper();
+            helper.prepareBasicSelect(entity, id);
+            String sqlBase = helper.getSqlBase();
+            Field field = cls.getField("mountedQuery");
+            field.set(entity, sqlBase);
+
+            if (enabledContext)
+            {
+                if (context.getFromContext(entity) != null)
+                {
+                    entity = context.getFromContext(entity);
+                    return;
+                }
             }
 
             if (hasJoinableObjects(entity))
@@ -969,22 +988,9 @@ public class SessionImpl implements Session
                 return;
             }
 
-            SQLHelper helper = new SQLHelper();
-            helper.prepareBasicSelect(entity, id);
-
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return;
-            }
-
-            String sqlBase = helper.getSqlBase();
-            Field field = cls.getField("mountedQuery");
-            field.set(entity, sqlBase);
-
-            if (context.getFromContext(entity) != null)
-            {
-                entity = context.getFromContext(entity);
                 return;
             }
 
@@ -993,7 +999,8 @@ public class SessionImpl implements Session
             loadEntity(entity, resultSet);
 
             System.out.println("Persistor: \n " + sqlBase);
-            this.context.addToContext(entity);
+            if (enabledContext)
+                this.context.addToContext(entity);
         }
         catch (Exception ex)
         {
@@ -1155,6 +1162,7 @@ public class SessionImpl implements Session
 
     private void lastID(Object entity, String whereCondition) throws Exception
     {
+        enabledContext = false;
         Statement statement = null;
         try
         {
@@ -1191,6 +1199,7 @@ public class SessionImpl implements Session
         {
             this.closeStatement(statement);
         }
+        enabledContext = true;
     }
 
     @Override
