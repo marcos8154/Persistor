@@ -19,10 +19,23 @@ import br.com.persistor.interfaces.Session;
 
 public class Join implements IJoin
 {
+
     public String mountedQuery = "";
     public int joinCount = 0;
     public boolean hasAllLoaded = false;
-    
+
+    private boolean restartEntityInstance;
+
+    public boolean isRestartEntityInstance()
+    {
+        return restartEntityInstance;
+    }
+
+    public void setRestartEntityInstance(boolean restartEntityInstance)
+    {
+        this.restartEntityInstance = restartEntityInstance;
+    }
+
     Object primaryObj;
     List<Object> objects = new ArrayList<>();
     List<Object> resultList = new ArrayList<>();
@@ -32,6 +45,7 @@ public class Join implements IJoin
     {
         objects.add(baseObject);
         primaryObj = baseObject;
+        restartEntityInstance = true;
     }
 
     @Override
@@ -138,6 +152,10 @@ public class Join implements IJoin
                     Object otherObj = obj;
 
                     Class cls = otherObj.getClass();
+                    
+                    if (isRestartEntityInstance())
+                        otherObj = cls.newInstance();
+                    
                     SQLHelper helper = new SQLHelper();
                     String tableName = cls.getSimpleName().toLowerCase();
 

@@ -15,9 +15,7 @@ import java.util.List;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
-import br.com.persistor.connectionManager.DataSource;
 import br.com.persistor.enums.INCREMENT;
-import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
@@ -869,6 +867,7 @@ public class SessionImpl implements Session
         {
             Class cls = entity.getClass();
             Join join = new Join(entity);
+            join.setRestartEntityInstance(false);
             List<JoinableObject> objectsToJoin = new ArrayList<>();
             for (Method method : cls.getMethods())
             {
