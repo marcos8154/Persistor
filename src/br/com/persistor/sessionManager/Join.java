@@ -91,7 +91,9 @@ public class Join implements IJoin
 
             for (int i = 0; i < fields.length; i++)
             {
-                String fieldName = cls.getSimpleName().toLowerCase() + "." + fields[i] + ", ";
+                String tableName = cls.getSimpleName().toLowerCase();
+                //tableName.field field_tableName -->  field_tableName = query alias
+                String fieldName = tableName + "." + fields[i] + " " + fields[i] + "_" + tableName + ", ";
                 fieldsSelect += fieldName;
 
                 field_index = new FieldIndex();
@@ -109,7 +111,7 @@ public class Join implements IJoin
 
         mountedQuery = (baseQ + "\n").toLowerCase();
         mountedQuery += final_condition;
-        
+
         Connection connection;
         Statement statement = null;
         ResultSet resultSet = null;
@@ -176,12 +178,12 @@ public class Join implements IJoin
 
                             if (method.getName().startsWith("is"))
                             {
-                                columnName = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                                columnName = (method.getName().substring(2, method.getName().length())).toLowerCase() + "_" + tableName;
                                 methodSetName = "set" + method.getName().substring(2, method.getName().length());
                             }
                             else
                             {
-                                columnName = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                                columnName = (method.getName().substring(3, method.getName().length())).toLowerCase() + "_" + tableName;
                                 methodSetName = "set" + method.getName().substring(3, method.getName().length());
                             }
 
@@ -191,7 +193,8 @@ public class Join implements IJoin
                             if (method.getReturnType() == char.class)
                             {
                                 String str = resultSet.getString(columnName);
-                                if(str == null) continue;
+                                if (str == null)
+                                    continue;
                                 if (str.length() > 0)
                                 {
                                     Method invokeMethod = obj.getClass().getMethod(methodSetName, char.class);
@@ -298,67 +301,33 @@ public class Join implements IJoin
         }
     }
 
-    public void getResultObj(Object object) throws Exception
+    public <T> T getEntity(Class entityClass) throws Exception
     {
         Object objToRemove = null;
+        T entity = null;
         try
         {
+            entity = (T) entityClass.newInstance();
             for (Object obj : resultList)
             {
-                if (obj.getClass() == object.getClass())
+                if (obj.getClass() == entity.getClass())
                 {
-                    for (Method method : obj.getClass().getMethods())
-                    {
-                        if (method.isAnnotationPresent(OneToOne.class))
-                        {
-                            continue;
-                        }
-
-                        if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                        {
-                            String name = "set" + (method.getName().substring(3, method.getName().length()));
-                            Method setInvokeMethod = obj.getClass().getMethod(name, method.getReturnType());
-                            setInvokeMethod.invoke(object, method.invoke(obj));
-                        }
-
-                        if (method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                        {
-                            String name = "set" + (method.getName().substring(2, method.getName().length()));
-                            Method setInvokeMethod = obj.getClass().getMethod(name, method.getReturnType());
-                            setInvokeMethod.invoke(object, method.invoke(obj));
-                        }
-                    }
-
+                    entity.getClass().newInstance();
+                    entity = (T) obj;
                     objToRemove = obj;
                     break;
                 }
             }
 
-            int index = 0;
-            boolean hasIndex = false;
-
-            for (Object obj : resultList)
-            {
-                if (obj == objToRemove)
-                {
-                    hasIndex = true;
-                    break;
-                }
-                index++;
-            }
-
             resultList.remove(objToRemove);
-            /*   if (hasIndex)
-            {
-                resultList.remove(index);
-            } */
-
         }
         catch (Exception ex)
         {
             System.err.println("Persistor: internal error join.getResultObj: \n");
             throw new Exception(ex.getMessage());
         }
+        entity.getClass().getField("mountedQuery").set(entity, this.mountedQuery);
+        return entity;
     }
 
     public <T> List<T> getList(Object object)

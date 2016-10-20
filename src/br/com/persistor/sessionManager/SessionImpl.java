@@ -836,13 +836,13 @@ public class SessionImpl implements Session
                 String pkName = helper.getPrimaryKeyFieldName(entity);
                 join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
                 join.execute(this);
-                join.getResultObj(entity);
+                entity = join.getEntity(entity.getClass());
 
                 for (JoinableObject object : objectsToJoin)
                 {
                     if (object.result_type == RESULT_TYPE.UNIQUE)
                     {
-                        join.getResultObj(object.objectToJoin);
+                        object.objectToJoin = join.getEntity(object.objectToJoin.getClass());
 
                         Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
                         method.invoke(entity, object.objectToJoin);
@@ -858,7 +858,7 @@ public class SessionImpl implements Session
                     }
                 }
             }
-             this.context.addToContext(entity);
+            this.context.addToContext(entity);
         }
         catch (Exception ex)
         {
@@ -931,13 +931,13 @@ public class SessionImpl implements Session
 
             if (mode == 1) //OneToOne
             {
-                join.getResultObj(sourceEntity);
-                join.getResultObj(targetEntity);
+                sourceEntity = join.getEntity(sourceEntity.getClass());
+                targetEntity = join.getEntity(targetEntity.getClass());
             }
 
             if (mode == 2) // OneToMany
             {
-                join.getResultObj(sourceEntity);
+                sourceEntity = join.getEntity(sourceEntity.getClass());
                 targetEntity.getClass().getField("ResultList").set(targetEntity, join.getList(targetEntity));
                 Method method = sourceEntityClass.getMethod("set" + targetEntity.getClass().getSimpleName(), targetEntity.getClass());
                 method.invoke(sourceEntity, targetEntity);
