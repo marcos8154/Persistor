@@ -19,15 +19,14 @@ import br.com.persistor.interfaces.Session;
 
 public class Join implements IJoin
 {
-
     public String mountedQuery = "";
-
+    public int joinCount = 0;
+    public boolean hasAllLoaded = false;
+    
     Object primaryObj;
-
     List<Object> objects = new ArrayList<>();
     List<Object> resultList = new ArrayList<>();
-
-    public int joinCount = 0;
+    Session mainSession = null;
 
     public Join(Object baseObject)
     {
@@ -66,6 +65,7 @@ public class Join implements IJoin
     @Override
     public void execute(Session iSession) throws Exception
     {
+        this.mainSession = iSession;
         String fieldsSelect = "";
         int index = 1;
 
@@ -116,6 +116,15 @@ public class Join implements IJoin
         Statement statement = null;
         ResultSet resultSet = null;
         String currentFieldName = "";
+
+        primaryObj.getClass().getField("mountedQuery").set(primaryObj, mountedQuery);
+        if (iSession.getPersistenceContext().getFromContext(primaryObj) != null)
+        {
+            resultList.add(iSession.getPersistenceContext().getFromContext(primaryObj));
+            hasAllLoaded = true;
+            return;
+        }
+
         try
         {
             connection = iSession.getActiveConnection();
@@ -127,8 +136,7 @@ public class Join implements IJoin
                 for (Object obj : objects)
                 {
                     Object otherObj = obj;
-                    Constructor ctor = obj.getClass().getConstructor();
-                    otherObj = ctor.newInstance();
+
                     Class cls = otherObj.getClass();
                     SQLHelper helper = new SQLHelper();
                     String tableName = cls.getSimpleName().toLowerCase();
@@ -312,7 +320,6 @@ public class Join implements IJoin
             {
                 if (obj.getClass() == entity.getClass())
                 {
-                    entity.getClass().newInstance();
                     entity = (T) obj;
                     objToRemove = obj;
                     break;

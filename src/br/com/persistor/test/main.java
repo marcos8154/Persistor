@@ -10,7 +10,31 @@ public class main
     
     public static void main(String[] args)
     {
-        
+        Pessoa ve = new Pessoa();
+        try
+        {
+            Session session = getSession();
+            ve = session.onID(Pessoa.class, 3);
+            ve = session.onID(Pessoa.class, 3);
+            ve = session.onID(Pessoa.class, 3);
+            ve = session.onID(Pessoa.class, 3);
+
+            
+            
+            session.close();
+        }
+        catch(Exception ex)
+        {
+            
+        }
+    }
+    
+    private static void Ha(Pessoa p)
+    {
+        Pessoa t = p;
+        t = new Pessoa();
+        t.setNome("Ta");
+        p = t;
     }
     
     private static Session getSession()
@@ -19,7 +43,7 @@ public class main
         {
             DBConfig config = new DBConfig();
             
-            config.setPersistenceContext("br.com.persistor.test.Contexto");
+            config.setPersistenceContext("br.com.persistor.test.Context");
             config.setDb_type(DB_TYPE.MySQL);
             config.setHost("localhost");
             config.setPort(3306);

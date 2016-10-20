@@ -34,6 +34,8 @@ public class SessionImpl implements Session
     private DBConfig config = null;
     public PersistenceContext context = null;
 
+    private boolean enabledContext = true;
+
     public SessionImpl(Connection connection)
     {
         this.connection = connection;
@@ -778,95 +780,6 @@ public class SessionImpl implements Session
         return false;
     }
 
-    private void executeJoin(Object entity, int id) throws Exception
-    {
-        try
-        {
-            Class cls = entity.getClass();
-            Join join = new Join(entity);
-            List<JoinableObject> objectsToJoin = new ArrayList<>();
-            for (Method method : cls.getMethods())
-            {
-                if (method.isAnnotationPresent(OneToOne.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-                    Object entityObj = ctor.newInstance();
-                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-
-                    if (oneToOne.load() == LOAD.MANUAL)
-                    {
-                        continue;
-                    }
-
-                    String sourceName = cls.getSimpleName() + "." + oneToOne.source();
-                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
-                    join.addJoin(oneToOne.join_type(), entityObj, sourceName + " = " + targetName);
-                    JoinableObject objToJoin = new JoinableObject();
-                    objToJoin.result_type = RESULT_TYPE.UNIQUE;
-                    objToJoin.objectToJoin = entityObj;
-                    objectsToJoin.add(objToJoin);
-                }
-
-                if (method.isAnnotationPresent(OneToMany.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-                    Object entityObj = ctor.newInstance();
-                    OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
-
-                    if (oneToMany.load() == LOAD.MANUAL)
-                    {
-                        continue;
-                    }
-
-                    String sourceName = cls.getSimpleName() + "." + oneToMany.source();
-                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToMany.target();
-                    join.addJoin(oneToMany.join_type(), entityObj, sourceName + " = " + targetName);
-                    JoinableObject objToJoin = new JoinableObject();
-                    objToJoin.result_type = RESULT_TYPE.MULTIPLE;
-                    objToJoin.objectToJoin = entityObj;
-                    objectsToJoin.add(objToJoin);
-                }
-            }
-
-            if (join.joinCount > 0)
-            {
-                SQLHelper helper = new SQLHelper();
-                String pkName = helper.getPrimaryKeyFieldName(entity);
-                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
-                join.execute(this);
-                entity = join.getEntity(entity.getClass());
-
-                for (JoinableObject object : objectsToJoin)
-                {
-                    if (object.result_type == RESULT_TYPE.UNIQUE)
-                    {
-                        object.objectToJoin = join.getEntity(object.objectToJoin.getClass());
-
-                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(entity, object.objectToJoin);
-                    }
-
-                    if (object.result_type == RESULT_TYPE.MULTIPLE)
-                    {
-                        Class clss = object.objectToJoin.getClass();
-                        Field f = clss.getField("ResultList");
-                        f.set(object.objectToJoin, join.getList(object.objectToJoin));
-                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(entity, object.objectToJoin);
-                    }
-                }
-            }
-            this.context.addToContext(entity);
-        }
-        catch (Exception ex)
-        {
-            System.err.println("Persistor: join error at:");
-            throw new Exception(ex.getMessage());
-        }
-    }
-
     @Override
     public void loadWithJoin(Object sourceEntity, Object targetEntity) throws Exception
     {
@@ -950,7 +863,102 @@ public class SessionImpl implements Session
         }
     }
 
-    private boolean enabledContext = true;
+    private <T> T executeJoin(T entity, int id) throws Exception
+    {
+        try
+        {
+            Class cls = entity.getClass();
+            Join join = new Join(entity);
+            List<JoinableObject> objectsToJoin = new ArrayList<>();
+            for (Method method : cls.getMethods())
+            {
+                if (method.isAnnotationPresent(OneToOne.class))
+                {
+                    Class clss = Class.forName(method.getReturnType().getName());
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+                    Object entityObj = ctor.newInstance();
+                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+
+                    if (oneToOne.load() == LOAD.MANUAL)
+                    {
+                        continue;
+                    }
+
+                    String sourceName = cls.getSimpleName() + "." + oneToOne.source();
+                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
+                    join.addJoin(oneToOne.join_type(), entityObj, sourceName + " = " + targetName);
+                    JoinableObject objToJoin = new JoinableObject();
+                    objToJoin.result_type = RESULT_TYPE.UNIQUE;
+                    objToJoin.objectToJoin = entityObj;
+                    objectsToJoin.add(objToJoin);
+                }
+
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    Class clss = Class.forName(method.getReturnType().getName());
+                    java.lang.reflect.Constructor ctor = clss.getConstructor();
+                    Object entityObj = ctor.newInstance();
+                    OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+
+                    if (oneToMany.load() == LOAD.MANUAL)
+                    {
+                        continue;
+                    }
+
+                    String sourceName = cls.getSimpleName() + "." + oneToMany.source();
+                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToMany.target();
+                    join.addJoin(oneToMany.join_type(), entityObj, sourceName + " = " + targetName);
+                    JoinableObject objToJoin = new JoinableObject();
+                    objToJoin.result_type = RESULT_TYPE.MULTIPLE;
+                    objToJoin.objectToJoin = entityObj;
+                    objectsToJoin.add(objToJoin);
+                }
+            }
+
+            if (join.joinCount > 0)
+            {
+                SQLHelper helper = new SQLHelper();
+                String pkName = helper.getPrimaryKeyFieldName(entity);
+                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
+                join.execute(this);
+                if(join.hasAllLoaded)
+                {
+                    entity = join.getEntity(entity.getClass());
+                    this.context.addToContext(entity);
+                    return entity;
+                }
+                entity = join.getEntity(entity.getClass());
+
+                for (JoinableObject object : objectsToJoin)
+                {
+                    if (object.result_type == RESULT_TYPE.UNIQUE)
+                    {
+                        object.objectToJoin = join.getEntity(object.objectToJoin.getClass());
+
+                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(entity, object.objectToJoin);
+                    }
+
+                    if (object.result_type == RESULT_TYPE.MULTIPLE)
+                    {
+                        Class clss = object.objectToJoin.getClass();
+                        Field f = clss.getField("ResultList");
+                        f.set(object.objectToJoin, join.getList(object.objectToJoin));
+                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
+                        method.invoke(entity, object.objectToJoin);
+                    }
+                }
+            }
+            this.context.addToContext(entity);
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Persistor: join error at:");
+            throw new Exception(ex.getMessage());
+        }
+
+        return entity;
+    }
 
     @Override
     public void onID(Object entity, int id) throws Exception
@@ -959,8 +967,7 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            if (enabledContext)
-                entity = cls.newInstance();
+
             if (!extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
@@ -984,7 +991,7 @@ public class SessionImpl implements Session
 
             if (hasJoinableObjects(entity))
             {
-                executeJoin(entity, id);
+                entity = executeJoin(entity, id);
                 return;
             }
 
@@ -1020,11 +1027,10 @@ public class SessionImpl implements Session
     public <T> T onID(Class entityCls, int id) throws Exception
     {
         Statement statement = null;
-        Object obj = null;
+        Object entity = null;
         try
         {
-            java.lang.reflect.Constructor constructor = entityCls.getConstructor();
-            obj = constructor.newInstance();
+            entity = entityCls.newInstance();
 
             if (!extendsEntity(entityCls))
             {
@@ -1034,28 +1040,29 @@ public class SessionImpl implements Session
 
             String primaryKeyName = "";
 
-            if (hasJoinableObjects(obj))
+            if (hasJoinableObjects(entity))
             {
-                executeJoin(obj, id);
-                return (T) obj;
+                entity = executeJoin(entity, id);
+                context.addToContext(entity);
+                return (T) entity;
             }
 
             SQLHelper helper = new SQLHelper();
-            primaryKeyName = helper.getPrimaryKeyFieldName(obj);
-            helper.prepareBasicSelect(obj, id);
+            primaryKeyName = helper.getPrimaryKeyFieldName(entity);
+            helper.prepareBasicSelect(entity, id);
             String sqlBase = helper.getSqlBase();
             Field field = entityCls.getField("mountedQuery");
-            field.set(obj, sqlBase);
+            field.set(entity, sqlBase);
 
-            if (context.getFromContext(obj) != null)
-                return (T) context.getFromContext(obj);
+            if (context.getFromContext(entity) != null)
+                return (T) context.getFromContext(entity);
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
-            loadEntity(obj, resultSet);
+            loadEntity(entity, resultSet);
 
             System.out.println("Persistor: \n " + sqlBase);
-            context.addToContext(obj);
+            context.addToContext(entity);
         }
         catch (Exception ex)
         {
@@ -1070,7 +1077,7 @@ public class SessionImpl implements Session
             }
         }
 
-        return (T) obj;
+        return (T) entity;
     }
 
     @Override

@@ -35,6 +35,7 @@ public class PersistenceContext
                 if (clazz == br.com.persistor.interfaces.IPersistenceContext.class)
                 {
                     context = ctor.newInstance();
+                    System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
                     return;
                 }
             }
@@ -72,7 +73,8 @@ public class PersistenceContext
     public void addToContext(Object entity)
     {
         try
-        {
+        { 
+            if(getFromContext(entity) != null) return;
             for (Field f : context.getClass().getDeclaredFields())
             {
                 String base = f.getGenericType().getTypeName();
@@ -100,7 +102,7 @@ public class PersistenceContext
         }
         catch (Exception ex)
         {
-            // System.out.println(ex.getMessage());
+             System.out.println(ex.getMessage());
         }
     }
 }
