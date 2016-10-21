@@ -14,12 +14,14 @@ import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.Limit;
+import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.interfaces.ICriteria;
 import java.io.InputStream;
 import br.com.persistor.interfaces.Session;
 
 public class Criteria implements ICriteria
 {
+
     RESULT_TYPE resultType;
     Object obj;
     String query = "";
@@ -114,7 +116,7 @@ public class Criteria implements ICriteria
         }
         catch (Exception ex)
         {
-            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), " closeResultSet(ResultSet resultSet) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            iSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), " closeResultSet(ResultSet resultSet) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
     }
 
@@ -132,7 +134,7 @@ public class Criteria implements ICriteria
         }
         catch (Exception ex)
         {
-            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), "void closeStatement(Statement statement) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            iSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "void closeStatement(Statement statement) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
     }
 
@@ -156,7 +158,7 @@ public class Criteria implements ICriteria
 
             List<Object> rList = new ArrayList<>();
             Object ob = obj;
-            
+
             Class cls = ob.getClass();
 
             if (!Util.extendsEntity(cls))
@@ -165,12 +167,12 @@ public class Criteria implements ICriteria
                 return;
             }
 
-            if(this.iSession.getPersistenceContext().getFromContext(obj) != null)
+            if (this.iSession.getPersistenceContext().getFromContext(obj) != null)
             {
                 obj = this.iSession.getPersistenceContext().getFromContext(obj);
                 return;
             }
-            
+
             statement = iSession.getActiveConnection().createStatement();
             resultSet = statement.executeQuery(query);
 
@@ -416,7 +418,7 @@ public class Criteria implements ICriteria
         }
         catch (Exception ex)
         {
-            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), "void execute()", Util.getDateTime(), Util.getFullStackTrace(ex), query);
+            iSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "void execute()", Util.getDateTime(), Util.getFullStackTrace(ex), query));
         }
         finally
         {

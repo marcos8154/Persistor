@@ -11,6 +11,7 @@ import java.util.List;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
+import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.interfaces.IJoin;
 import java.io.InputStream;
 import br.com.persistor.interfaces.Session;
@@ -314,7 +315,7 @@ public class Join implements IJoin
         }
         catch (Exception ex)
         {
-            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), "void execute(Session iSession)", Util.getDateTime(), Util.getFullStackTrace(ex), this.mountedQuery);
+            iSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "void execute(Session iSession)", Util.getDateTime(), Util.getFullStackTrace(ex), this.mountedQuery));
         }
         finally
         {
@@ -345,7 +346,7 @@ public class Join implements IJoin
         }
         catch (Exception ex)
         {
-            mainSession.getPersistenceLogger().newNofication(this.getClass().getName(), "<T> T getEntity(Class entityClass)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            mainSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "<T> T getEntity(Class entityClass)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
         return entity;
     }

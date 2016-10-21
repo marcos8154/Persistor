@@ -5,6 +5,7 @@
  */
 package br.com.persistor.test;
 
+import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.interfaces.IPersistenceLogger;
 import java.util.Date;
 
@@ -17,13 +18,13 @@ public class LogTest implements IPersistenceLogger
 {
 
     @Override
-    public void newNofication(String className, String methodName, String date, String description, String query)
+    public void newNofication(PersistenceLog persistenceLog)
     {
-        System.out.println(" Classe: " + className);
-        System.out.println(" Metodo: " + methodName);
-        System.out.println(" Data: " + date);
-        System.out.println(" Descricao: " + description);
-        System.out.println(" Query: " + query);
+        System.out.println(" Classe: " + persistenceLog.getClassName());
+        System.out.println(" Metodo: " + persistenceLog.getMethodName());
+        System.out.println(" Data: " + persistenceLog.getDate());
+        System.out.println(" Descricao: " + persistenceLog.getDescription());
+        System.out.println(" Query: " + persistenceLog.getQuery());
     }
 
 }

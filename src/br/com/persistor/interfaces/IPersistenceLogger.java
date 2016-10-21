@@ -5,6 +5,7 @@
  */
 package br.com.persistor.interfaces;
 
+import br.com.persistor.generalClasses.PersistenceLog;
 import java.util.Date;
 
 /**
@@ -13,5 +14,5 @@ import java.util.Date;
  */
 public interface IPersistenceLogger
 {
-    public void newNofication(String className, String methodName, String date, String description, String query);
+    public void newNofication(PersistenceLog persistenceLog);
 }

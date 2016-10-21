@@ -21,6 +21,7 @@ import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
+import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.interfaces.IPersistenceLogger;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -193,7 +194,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), "<T> List<T> getList(T t)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> List<T> getList(T t)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
         return new ArrayList<>();
     }
@@ -209,7 +210,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), "Query createQuery(Object entity, String queryCommand)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "Query createQuery(Object entity, String queryCommand)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
         return null;
     }
@@ -488,7 +489,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase()));
         }
         finally
         {
@@ -534,7 +535,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase()));
         }
         finally
         {
@@ -581,7 +582,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase()));
         }
         finally
         {
@@ -615,7 +616,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(this.getClass().getName(), "void delete(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
         {
@@ -648,7 +649,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
         {
@@ -883,7 +884,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             System.err.println("Persistor: loadWithJoin error at: \n");
-            logger.newNofication(this.getClass().getName(), "void loadWithJoin(Object sourceEntity, Object targetEntity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void loadWithJoin(Object sourceEntity, Object targetEntity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
     }
 
@@ -1031,7 +1032,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
-            logger.newNofication(this.getClass().getName(), "void onID(Object entity, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void onID(Object entity, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
         {
@@ -1085,7 +1086,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), "<T> T onID(Class entityCls, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T onID(Class entityCls, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
         {
@@ -1109,7 +1110,7 @@ public class SessionImpl implements Session
         {
             System.err.println("Persistor: Executing rollback...");
             rollback();
-            logger.newNofication(this.getClass().getName(), "void commit", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void commit", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
     }
 
@@ -1123,7 +1124,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), "void close()", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void close()", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
     }
 
@@ -1137,7 +1138,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), "void rollback", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void rollback", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
     }
 
@@ -1267,7 +1268,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), " <T> T First(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase);
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), " <T> T First(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase));
         }
         finally
         {
@@ -1318,7 +1319,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase);
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase));
         }
         finally
         {
@@ -1337,7 +1338,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            logger.newNofication(this.getClass().getName(), "Criteria createCriteria(Object entity, RESULT_TYPE result_type)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "Criteria createCriteria(Object entity, RESULT_TYPE result_type)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
         return criteria;
     }
