@@ -21,6 +21,7 @@ import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
+import br.com.persistor.interfaces.IPersistenceLogger;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import br.com.persistor.interfaces.Session;
@@ -30,7 +31,8 @@ public class SessionImpl implements Session
 
     private Connection connection = null;
     private DBConfig config = null;
-    public PersistenceContext context = null;
+    private PersistenceContext context = null;
+    private IPersistenceLogger logger = null;
 
     private boolean enabledContext = true;
 
@@ -56,6 +58,28 @@ public class SessionImpl implements Session
     {
         this.config = config;
         this.context.Initialize(config.getPersistenceContext());
+        if (config.getPersistenceLogger() == null || config.getPersistenceLogger().isEmpty())
+        {
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+        }
+
+        try
+        {
+            this.logger = (IPersistenceLogger) Class.forName(config.getPersistenceLogger()).newInstance();
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS INITIALIZATION ERROR AT: \n" + ex.getMessage());
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+        }
+    }
+
+    @Override
+    public IPersistenceLogger getPersistenceLogger()
+    {
+        return logger;
     }
 
     @Override
@@ -154,20 +178,28 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> List<T> getList(T t) throws Exception
+    public <T> List<T> getList(T t)
     {
-        Field f = t.getClass().getField("ResultList");
-        List<Object> list = (List<Object>) f.get(t);
-        List<T> resultList = new ArrayList<>();
-        for (Object obj : list)
+        try
         {
-            resultList.add((T) obj);
+            Field f = t.getClass().getField("ResultList");
+            List<Object> list = (List<Object>) f.get(t);
+            List<T> resultList = new ArrayList<>();
+            for (Object obj : list)
+            {
+                resultList.add((T) obj);
+            }
+            return resultList;
         }
-        return resultList;
+        catch (Exception ex)
+        {
+            logger.newNofication(this.getClass().getName(), "<T> List<T> getList(T t)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
+        }
+        return new ArrayList<>();
     }
 
     @Override
-    public Query createQuery(Object entity, String queryCommand) throws Exception
+    public Query createQuery(Object entity, String queryCommand)
     {
         try
         {
@@ -177,8 +209,9 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "Query createQuery(Object entity, String queryCommand)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
+        return null;
     }
 
     public Object getAuxiliarPK_value(Object entity, Class cls, String name) throws Exception
@@ -372,7 +405,6 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: internal error at:\n");
             throw new Exception(ex.getMessage());
         }
     }
@@ -427,9 +459,10 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void save(Object entity) throws Exception
+    public void save(Object entity)
     {
         PreparedStatement preparedStatement = null;
+        SQLHelper sql_Helper = new SQLHelper();
         try
         {
             Class cls = entity.getClass();
@@ -440,7 +473,6 @@ public class SessionImpl implements Session
                 return;
             }
 
-            SQLHelper sql_Helper = new SQLHelper();
             sql_Helper.prepareInsert(entity);
             String sqlBase = sql_Helper.getSqlBase();
             preparedStatement = connection.prepareStatement(sqlBase);
@@ -455,9 +487,8 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: save error at: \n");
             rollback();
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase());
         }
         finally
         {
@@ -466,12 +497,12 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void update(Object entity, String andCondition) throws Exception
+    public void update(Object entity, String andCondition)
     {
         PreparedStatement preparedStatement = null;
+        SQLHelper sql_Helper = new SQLHelper();
         try
         {
-            SQLHelper sql_Helper = new SQLHelper();
             sql_Helper.prepareUpdate(entity, connection);
             if (sql_Helper.updateStatus == 0)
             {
@@ -502,9 +533,8 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: update error at: \n");
             rollback();
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase());
         }
         finally
         {
@@ -515,9 +545,10 @@ public class SessionImpl implements Session
     public boolean isVersionViolation = false;
 
     @Override
-    public void update(Object entity) throws Exception
+    public void update(Object entity)
     {
         PreparedStatement preparedStatement = null;
+        SQLHelper sql_Helper = new SQLHelper();
         try
         {
             Class cls = entity.getClass();
@@ -527,7 +558,6 @@ public class SessionImpl implements Session
                 return;
             }
 
-            SQLHelper sql_Helper = new SQLHelper();
             sql_Helper.prepareUpdate(entity, connection);
 
             if (sql_Helper.updateStatus == 0)
@@ -550,9 +580,8 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: update error at: \n");
             rollback();
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase());
         }
         finally
         {
@@ -561,13 +590,13 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void delete(Object entity, String andCondition) throws Exception
+    public void delete(Object entity, String andCondition)
     {
         PreparedStatement preparedStatement = null;
+        SQLHelper sql_helper = new SQLHelper();
         try
         {
             Class cls = entity.getClass();
-            SQLHelper sql_helper = new SQLHelper();
             sql_helper.prepareDelete(entity);
             String sqlBase = sql_helper.getSqlBase();
             sqlBase += " AND " + andCondition;
@@ -585,9 +614,8 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: delete error at: \n");
             rollback();
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void delete(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
         }
         finally
         {
@@ -596,13 +624,13 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void delete(Object entity) throws Exception
+    public void delete(Object entity)
     {
         PreparedStatement preparedStatement = null;
+        SQLHelper sql_helper = new SQLHelper();
         try
         {
             Class cls = entity.getClass();
-            SQLHelper sql_helper = new SQLHelper();
             sql_helper.prepareDelete(entity);
             String sqlBase = sql_helper.getSqlBase();
             if (!extendsEntity(cls))
@@ -619,9 +647,8 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: delete error at: \n");
             rollback();
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
         }
         finally
         {
@@ -771,7 +798,6 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: internal error at");
             throw new Exception(ex.getMessage());
         }
 
@@ -779,8 +805,9 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void loadWithJoin(Object sourceEntity, Object targetEntity) throws Exception
+    public void loadWithJoin(Object sourceEntity, Object targetEntity)
     {
+        SQLHelper sql_helper = new SQLHelper();
         try
         {
             int mode = 0;
@@ -831,12 +858,11 @@ public class SessionImpl implements Session
                 }
             }
 
-            SQLHelper helper = new SQLHelper();
             join.addFinalCondition(" where " + finalCondition
                     + " AND " + sourceEntityClass.getSimpleName()
-                    + "." + helper.getPrimaryKeyFieldName(sourceEntity)
+                    + "." + sql_helper.getPrimaryKeyFieldName(sourceEntity)
                     + " = "
-                    + sourceEntityClass.getMethod(helper.getPrimaryKeyMethodName(sourceEntity)).invoke(sourceEntity));
+                    + sourceEntityClass.getMethod(sql_helper.getPrimaryKeyMethodName(sourceEntity)).invoke(sourceEntity));
 
             join.execute(this);
 
@@ -857,7 +883,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             System.err.println("Persistor: loadWithJoin error at: \n");
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void loadWithJoin(Object sourceEntity, Object targetEntity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
         }
     }
 
@@ -920,7 +946,7 @@ public class SessionImpl implements Session
                 String pkName = helper.getPrimaryKeyFieldName(entity);
                 join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
                 join.execute(this);
-                if(join.hasAllLoaded)
+                if (join.hasAllLoaded)
                 {
                     entity = join.getEntity(entity.getClass());
                     this.context.addToContext(entity);
@@ -960,8 +986,9 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void onID(Object entity, int id) throws Exception
+    public void onID(Object entity, int id)
     {
+        SQLHelper sql_helper = new SQLHelper();
         Statement statement = null;
         try
         {
@@ -973,9 +1000,8 @@ public class SessionImpl implements Session
                 return;
             }
 
-            SQLHelper helper = new SQLHelper();
-            helper.prepareBasicSelect(entity, id);
-            String sqlBase = helper.getSqlBase();
+            sql_helper.prepareBasicSelect(entity, id);
+            String sqlBase = sql_helper.getSqlBase();
             Field field = cls.getField("mountedQuery");
             field.set(entity, sqlBase);
 
@@ -994,12 +1020,6 @@ public class SessionImpl implements Session
                 return;
             }
 
-            if (!extendsEntity(cls))
-            {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return;
-            }
-
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
             loadEntity(entity, resultSet);
@@ -1011,7 +1031,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void onID(Object entity, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
         }
         finally
         {
@@ -1023,8 +1043,9 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T onID(Class entityCls, int id) throws Exception
+    public <T> T onID(Class entityCls, int id)
     {
+        SQLHelper sql_helper = new SQLHelper();
         Statement statement = null;
         Object entity = null;
         try
@@ -1046,10 +1067,9 @@ public class SessionImpl implements Session
                 return (T) entity;
             }
 
-            SQLHelper helper = new SQLHelper();
-            primaryKeyName = helper.getPrimaryKeyFieldName(entity);
-            helper.prepareBasicSelect(entity, id);
-            String sqlBase = helper.getSqlBase();
+            primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
+            sql_helper.prepareBasicSelect(entity, id);
+            String sqlBase = sql_helper.getSqlBase();
             Field field = entityCls.getField("mountedQuery");
             field.set(entity, sqlBase);
 
@@ -1065,8 +1085,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "<T> T onID(Class entityCls, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase());
         }
         finally
         {
@@ -1088,9 +1107,9 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: commit error at: \n" + ex.getMessage());
-            System.err.println("Executing rollback...");
+            System.err.println("Persistor: Executing rollback...");
             rollback();
+            logger.newNofication(this.getClass().getName(), "void commit", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
     }
 
@@ -1104,7 +1123,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: close session error at: \n" + ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void close()", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
     }
 
@@ -1118,7 +1137,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor rollback error at: \n" + ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "void rollback", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
     }
 
@@ -1155,7 +1174,6 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: error at: \n");
             throw new Exception(ex.getMessage());
         }
         finally
@@ -1198,7 +1216,6 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: error at: \n");
             throw new Exception(ex.getMessage());
         }
         finally
@@ -1209,9 +1226,10 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T First(Class cls, String whereCondition) throws Exception
+    public <T> T First(Class cls, String whereCondition)
     {
         Statement statement = null;
+        String sqlBase = "";
         try
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
@@ -1228,7 +1246,7 @@ public class SessionImpl implements Session
             }
 
             String className = cls.getSimpleName().toLowerCase();
-            String sqlBase = "select min(" + primaryKeyName + ") from " + className;
+            sqlBase = "select min(" + primaryKeyName + ") from " + className;
 
             if (!whereCondition.isEmpty())
             {
@@ -1249,18 +1267,19 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: error at: \n");
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), " <T> T First(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase);
         }
         finally
         {
             this.closeStatement(statement);
         }
+        return null;
     }
 
     @Override
-    public <T> T Last(Class cls, String whereCondition) throws Exception
+    public <T> T Last(Class cls, String whereCondition)
     {
+        String sqlBase = "";
         Statement statement = null;
         try
         {
@@ -1278,7 +1297,7 @@ public class SessionImpl implements Session
             }
 
             String className = cls.getSimpleName().toLowerCase();
-            String sqlBase = "select max(" + primaryKeyName + ") from " + className;
+            sqlBase = "select max(" + primaryKeyName + ") from " + className;
 
             if (!whereCondition.isEmpty())
             {
@@ -1299,13 +1318,13 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: error at: \n");
-            throw new Exception(ex.getMessage());
+            logger.newNofication(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase);
         }
         finally
         {
             this.closeStatement(statement);
         }
+        return null;
     }
 
     @Override
@@ -1315,12 +1334,10 @@ public class SessionImpl implements Session
         try
         {
             criteria = new Criteria(this, entity, result_type);
-
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: create criteria error at \n");
-            ex.printStackTrace();
+            logger.newNofication(this.getClass().getName(), "Criteria createCriteria(Object entity, RESULT_TYPE result_type)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
         return criteria;
     }

@@ -4,7 +4,9 @@ import br.com.persistor.enums.DB_TYPE;
 
 public class DBConfig
 {
+
     private String persistenceContext;
+    private String persistenceLogger;
 
     private DB_TYPE db_type;
     private String host;
@@ -17,6 +19,16 @@ public class DBConfig
     private int acquireIncrement = 1;
     private int maxPoolSize = 20;
     private int maxStatements = 180;
+
+    public String getPersistenceLogger()
+    {
+        return persistenceLogger;
+    }
+
+    public void setPersistenceLogger(String persistenceLogger)
+    {
+        this.persistenceLogger = persistenceLogger;
+    }
 
     public String getPersistenceContext()
     {

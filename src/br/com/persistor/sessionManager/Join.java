@@ -1,6 +1,5 @@
 package br.com.persistor.sessionManager;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -9,7 +8,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
@@ -25,6 +23,10 @@ public class Join implements IJoin
     public boolean hasAllLoaded = false;
 
     private boolean restartEntityInstance;
+    private Object primaryObj;
+    private List<Object> objects = new ArrayList<>();
+    private List<Object> resultList = new ArrayList<>();
+    private Session mainSession = null;
 
     public boolean isRestartEntityInstance()
     {
@@ -35,11 +37,6 @@ public class Join implements IJoin
     {
         this.restartEntityInstance = restartEntityInstance;
     }
-
-    Object primaryObj;
-    List<Object> objects = new ArrayList<>();
-    List<Object> resultList = new ArrayList<>();
-    Session mainSession = null;
 
     public Join(Object baseObject)
     {
@@ -77,70 +74,70 @@ public class Join implements IJoin
     List<FieldIndex> fields_index = new ArrayList<>();
 
     @Override
-    public void execute(Session iSession) throws Exception
+    public void execute(Session iSession)
     {
-        this.mainSession = iSession;
-        String fieldsSelect = "";
-        int index = 1;
-
-        FieldIndex field_index;
-
-        for (Object obj : objects)
-        {
-            Class cls = obj.getClass();
-
-            SQLHelper helper = new SQLHelper();
-            String[] fields = helper.getFields(obj).split(",");
-
-            String primaryKeyName = cls.getSimpleName().toLowerCase() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName().toLowerCase();
-
-            fieldsSelect += primaryKeyName + ", ";
-
-            field_index = new FieldIndex();
-            field_index.field = primaryKeyName;
-            field_index.index = index;
-            fields_index.add(field_index);
-
-            index++;
-
-            for (int i = 0; i < fields.length; i++)
-            {
-                String tableName = cls.getSimpleName().toLowerCase();
-                //tableName.field field_tableName -->  field_tableName = query alias
-                String fieldName = tableName + "." + fields[i] + " " + fields[i] + "_" + tableName + ", ";
-                fieldsSelect += fieldName;
-
-                field_index = new FieldIndex();
-                field_index.field = fieldName;
-                field_index.index = index;
-                fields_index.add(field_index);
-
-                index++;
-            }
-        }
-
-        String baseQ = "SELECT \n " + fieldsSelect;
-        baseQ = baseQ.substring(0, baseQ.length() - 2);
-        baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-        mountedQuery = (baseQ + "\n").toLowerCase();
-        mountedQuery += final_condition;
-
         Connection connection;
         Statement statement = null;
         ResultSet resultSet = null;
         String currentFieldName = "";
-
-        primaryObj.getClass().getField("mountedQuery").set(primaryObj, mountedQuery);
-        if (iSession.getPersistenceContext().getFromContext(primaryObj) != null)
-        {
-            resultList.add(iSession.getPersistenceContext().getFromContext(primaryObj));
-            hasAllLoaded = true;
-            return;
-        }
-
+        
         try
         {
+            this.mainSession = iSession;
+            String fieldsSelect = "";
+            int index = 1;
+
+            FieldIndex field_index;
+
+            for (Object obj : objects)
+            {
+                Class cls = obj.getClass();
+
+                SQLHelper helper = new SQLHelper();
+                String[] fields = helper.getFields(obj).split(",");
+
+                String primaryKeyName = cls.getSimpleName().toLowerCase() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName().toLowerCase();
+
+                fieldsSelect += primaryKeyName + ", ";
+
+                field_index = new FieldIndex();
+                field_index.field = primaryKeyName;
+                field_index.index = index;
+                fields_index.add(field_index);
+
+                index++;
+
+                for (int i = 0; i < fields.length; i++)
+                {
+                    String tableName = cls.getSimpleName().toLowerCase();
+                    //tableName.field field_tableName -->  field_tableName = query alias
+                    String fieldName = tableName + "." + fields[i] + " " + fields[i] + "_" + tableName + ", ";
+                    fieldsSelect += fieldName;
+
+                    field_index = new FieldIndex();
+                    field_index.field = fieldName;
+                    field_index.index = index;
+                    fields_index.add(field_index);
+
+                    index++;
+                }
+            }
+
+            String baseQ = "SELECT \n " + fieldsSelect;
+            baseQ = baseQ.substring(0, baseQ.length() - 2);
+            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+            mountedQuery = (baseQ + "\n").toLowerCase();
+            mountedQuery += final_condition;
+
+            primaryObj.getClass().getField("mountedQuery").set(primaryObj, mountedQuery);
+            if (iSession.getPersistenceContext().getFromContext(primaryObj) != null)
+            {
+                resultList.add(iSession.getPersistenceContext().getFromContext(primaryObj));
+                hasAllLoaded = true;
+                return;
+            }
+
             connection = iSession.getActiveConnection();
             statement = connection.createStatement();
             resultSet = statement.executeQuery(mountedQuery);
@@ -152,10 +149,10 @@ public class Join implements IJoin
                     Object otherObj = obj;
 
                     Class cls = otherObj.getClass();
-                    
+
                     if (isRestartEntityInstance())
                         otherObj = cls.newInstance();
-                    
+
                     SQLHelper helper = new SQLHelper();
                     String tableName = cls.getSimpleName().toLowerCase();
 
@@ -317,8 +314,7 @@ public class Join implements IJoin
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: execute join error at: \n");
-            throw new Exception(ex.getMessage());
+            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), "void execute(Session iSession)", Util.getDateTime(), Util.getFullStackTrace(ex), this.mountedQuery);
         }
         finally
         {
@@ -327,7 +323,7 @@ public class Join implements IJoin
         }
     }
 
-    public <T> T getEntity(Class entityClass) throws Exception
+    public <T> T getEntity(Class entityClass)
     {
         Object objToRemove = null;
         T entity = null;
@@ -340,6 +336,7 @@ public class Join implements IJoin
                 {
                     entity = (T) obj;
                     objToRemove = obj;
+                    entity.getClass().getField("mountedQuery").set(entity, this.mountedQuery);
                     break;
                 }
             }
@@ -348,10 +345,8 @@ public class Join implements IJoin
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: internal error join.getResultObj: \n");
-            throw new Exception(ex.getMessage());
+            mainSession.getPersistenceLogger().newNofication(this.getClass().getName(), "<T> T getEntity(Class entityClass)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
-        entity.getClass().getField("mountedQuery").set(entity, this.mountedQuery);
         return entity;
     }
 

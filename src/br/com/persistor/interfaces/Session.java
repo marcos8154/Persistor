@@ -13,37 +13,40 @@ import java.util.List;
 
 public interface Session
 {
+
     PersistenceContext getPersistenceContext();
-    
-    void save(Object entity) throws Exception;
 
-    void update(Object entity) throws Exception;
+    IPersistenceLogger getPersistenceLogger();
 
-    void update(Object entity, String andCondition) throws Exception;
+    void save(Object entity);
 
-    void delete(Object entity) throws Exception;
+    void update(Object entity);
 
-    void delete(Object entity, String andCondition) throws Exception;
+    void update(Object entity, String andCondition);
+
+    void delete(Object entity);
+
+    void delete(Object entity, String andCondition);
 
     void commit();
 
     void rollback();
 
-    void onID(Object entity, int id) throws Exception;
+    void onID(Object entity, int id);
 
-    <T> T onID(Class entityCls, int id) throws Exception;
+    <T> T onID(Class entityCls, int id);
 
-    <T> T Last(Class entity, String whereCondition) throws Exception;
+    <T> T Last(Class entity, String whereCondition);
 
-    <T> T First(Class entity, String whereCondition) throws Exception;
-    
-    <T> List<T> getList(T t) throws Exception;
-    
+    <T> T First(Class entity, String whereCondition);
+
+    <T> List<T> getList(T t);
+
     void close();
 
     Criteria createCriteria(Object entity, RESULT_TYPE result_type);
 
-    Query createQuery(Object entity, String queryCommand) throws Exception;
+    Query createQuery(Object entity, String queryCommand);
 
     Connection getActiveConnection();
 
@@ -55,5 +58,5 @@ public interface Session
 
     DBConfig getConfig();
 
-    void loadWithJoin(Object sourceEntity, Object targetEntity) throws Exception;
+    void loadWithJoin(Object sourceEntity, Object targetEntity);
 }

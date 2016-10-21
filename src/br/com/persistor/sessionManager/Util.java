@@ -7,6 +7,9 @@ package br.com.persistor.sessionManager;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  *
@@ -14,6 +17,23 @@ import java.lang.reflect.Method;
  */
 public class Util
 {
+
+    public static String getFullStackTrace(Exception ex)
+    {
+        String result = ex.getMessage() + "\n";
+        for (StackTraceElement stackTrace : ex.getStackTrace())
+        {
+            result += stackTrace + "\n";
+        }
+        return result;
+    }
+
+    public static String getDateTime()
+    {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date();
+        return dateFormat.format(date);
+    }
 
     public static boolean isNumber(Method method)
     {
@@ -63,7 +83,8 @@ public class Util
             {
                 methodName = "is" + methodName.substring(2, methodName.length());
                 method = obj.getClass().getMethod(methodName);
-            } else
+            }
+            else
             {
                 methodName = "get" + methodName.substring(3, methodName.length());
                 method = obj.getClass().getMethod(methodName);
@@ -76,7 +97,8 @@ public class Util
                 return true;
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println(ex.getMessage());
             throw new Exception(ex.getMessage());

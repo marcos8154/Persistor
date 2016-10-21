@@ -102,7 +102,6 @@ public class PersistenceContext
         }
         catch (Exception ex)
         {
-             System.out.println(ex.getMessage());
         }
     }
 }

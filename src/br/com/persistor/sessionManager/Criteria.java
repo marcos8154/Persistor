@@ -4,7 +4,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -15,20 +14,16 @@ import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.Limit;
-import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
 import java.io.InputStream;
 import br.com.persistor.interfaces.Session;
 
 public class Criteria implements ICriteria
 {
-
     RESULT_TYPE resultType;
     Object obj;
-
     String query = "";
     String tableName = "";
-
     Session iSession;
 
     private boolean hasFbLimit = false;
@@ -101,7 +96,6 @@ public class Criteria implements ICriteria
     public Criteria add(Expressions expression)
     {
         query += expression.getCurrentValue();
-
         return this;
     }
 
@@ -120,7 +114,7 @@ public class Criteria implements ICriteria
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: internal error at: \n" + ex.getMessage());
+            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), " closeResultSet(ResultSet resultSet) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
     }
 
@@ -138,12 +132,12 @@ public class Criteria implements ICriteria
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: internal error at: \n" + ex.getMessage());
+            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), "void closeStatement(Statement statement) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), "");
         }
     }
 
     @Override
-    public void execute() throws Exception
+    public void execute()
     {
         Statement statement = null;
         ResultSet resultSet = null;
@@ -422,9 +416,7 @@ public class Criteria implements ICriteria
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: criteria error at \n" + ex.getMessage());
-            throw new Exception(ex.getMessage());
-
+            iSession.getPersistenceLogger().newNofication(this.getClass().getName(), "void execute()", Util.getDateTime(), Util.getFullStackTrace(ex), query);
         }
         finally
         {
