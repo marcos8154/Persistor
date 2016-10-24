@@ -1,5 +1,6 @@
 package br.com.persistor.sessionManager;
 
+import br.com.persistor.annotations.Column;
 import br.com.persistor.annotations.OneToMany;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -126,7 +127,13 @@ public class SessionImpl implements Session
     {
         try
         {
-            preparedStatement.close();
+            if (preparedStatement != null)
+            {
+                if (!preparedStatement.isClosed())
+                {
+                    preparedStatement.close();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -311,7 +318,8 @@ public class SessionImpl implements Session
                 {
                     if (method.isAnnotationPresent(Version.class))
                     {
-                        preparedStatement.setInt(parameterIndex, 1);
+                        int nextVersion = (int) method.invoke(entity);
+                        preparedStatement.setInt(parameterIndex, (nextVersion + 1));
                         parameterIndex++;
                         continue;
                     }
@@ -463,19 +471,21 @@ public class SessionImpl implements Session
     public void save(Object entity)
     {
         PreparedStatement preparedStatement = null;
-        SQLHelper sql_Helper = new SQLHelper();
+        SQLHelper sql_helper = new SQLHelper();
         try
         {
             Class cls = entity.getClass();
+            sql_helper.prepareInsert(entity);
 
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return;
             }
 
-            sql_Helper.prepareInsert(entity);
-            String sqlBase = sql_Helper.getSqlBase();
+            String sqlBase = sql_helper.getSqlBase();
             preparedStatement = connection.prepareStatement(sqlBase);
             SaveOrUpdateForeignObjects(entity, false);
             loadPreparedStatement(preparedStatement, entity, false);
@@ -489,7 +499,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase()));
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
         {
@@ -501,24 +511,31 @@ public class SessionImpl implements Session
     public void update(Object entity, String andCondition)
     {
         PreparedStatement preparedStatement = null;
-        SQLHelper sql_Helper = new SQLHelper();
+        SQLHelper sql_helper = new SQLHelper();
         try
         {
-            sql_Helper.prepareUpdate(entity, connection);
-            if (sql_Helper.updateStatus == 0)
-            {
-                isVersionViolation = true;
-                return;
-            }
-
             Class cls = entity.getClass();
-            String sqlBase = sql_Helper.getSqlBase();
+            sql_helper.prepareUpdate(entity, connection);
+            String sqlBase = sql_helper.getSqlBase();
             SaveOrUpdateForeignObjects(entity, true);
 
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return;
+            }
+
+            if (this.context.initialized)
+            {
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
             }
 
             sqlBase += " AND " + andCondition;
@@ -535,7 +552,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase()));
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
         {
@@ -549,25 +566,31 @@ public class SessionImpl implements Session
     public void update(Object entity)
     {
         PreparedStatement preparedStatement = null;
-        SQLHelper sql_Helper = new SQLHelper();
+        SQLHelper sql_helper = new SQLHelper();
         try
         {
             Class cls = entity.getClass();
+            sql_helper.prepareUpdate(entity, connection);
+            String sqlBase = sql_helper.getSqlBase();
+
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return;
             }
 
-            sql_Helper.prepareUpdate(entity, connection);
-
-            if (sql_Helper.updateStatus == 0)
+            if (this.context.initialized)
             {
-                isVersionViolation = true;
-                return;
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
             }
-
-            String sqlBase = sql_Helper.getSqlBase();
 
             preparedStatement = connection.prepareStatement(sqlBase);
             SaveOrUpdateForeignObjects(entity, true);
@@ -582,7 +605,7 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_Helper.getSqlBase()));
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
         {
@@ -603,8 +626,21 @@ public class SessionImpl implements Session
             sqlBase += " AND " + andCondition;
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return;
+            }
+
+            if (this.context.initialized)
+            {
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
             }
 
             System.out.println("Persistor: \n " + sqlBase);
@@ -634,10 +670,24 @@ public class SessionImpl implements Session
             Class cls = entity.getClass();
             sql_helper.prepareDelete(entity);
             String sqlBase = sql_helper.getSqlBase();
+
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return;
+            }
+
+            if (this.context.initialized)
+            {
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
             }
 
             System.out.println("Persistor: \n " + sqlBase);
@@ -645,6 +695,7 @@ public class SessionImpl implements Session
             preparedStatement.execute();
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
+            this.context.removeFromContext(entity);
         }
         catch (Exception ex)
         {
@@ -675,17 +726,21 @@ public class SessionImpl implements Session
                             continue;
                         }
 
-                        String name;
+                        String columnName;
                         String fieldName;
 
                         if (method.getName().startsWith("is"))
                         {
-                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                            columnName = method.isAnnotationPresent(Column.class) 
+                                    ?((Column)method.getAnnotation(Column.class)).name()
+                                    :(method.getName().substring(2, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(2, method.getName().length());
                         }
                         else
                         {
-                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                            columnName = method.isAnnotationPresent(Column.class)
+                                    ?((Column)method.getAnnotation(Column.class)).name()
+                                    :(method.getName().substring(3, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(3, method.getName().length());
                         }
 
@@ -694,77 +749,77 @@ public class SessionImpl implements Session
                         if (method.getReturnType() == boolean.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(entity, resultSet.getBoolean(name));
+                            invokeMethod.invoke(entity, resultSet.getBoolean(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == int.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(entity, resultSet.getInt(name));
+                            invokeMethod.invoke(entity, resultSet.getInt(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == double.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(entity, resultSet.getDouble(name));
+                            invokeMethod.invoke(entity, resultSet.getDouble(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == float.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(entity, resultSet.getFloat(name));
+                            invokeMethod.invoke(entity, resultSet.getFloat(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == short.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(entity, resultSet.getShort(name));
+                            invokeMethod.invoke(entity, resultSet.getShort(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == long.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(entity, resultSet.getLong(name));
+                            invokeMethod.invoke(entity, resultSet.getLong(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == String.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(entity, resultSet.getString(name));
+                            invokeMethod.invoke(entity, resultSet.getString(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == java.util.Date.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(entity, resultSet.getDate(name));
+                            invokeMethod.invoke(entity, resultSet.getDate(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == byte.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(entity, resultSet.getByte(name));
+                            invokeMethod.invoke(entity, resultSet.getByte(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == BigDecimal.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(entity, resultSet.getBigDecimal(name));
+                            invokeMethod.invoke(entity, resultSet.getBigDecimal(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == InputStream.class)
                         {
                             Method invokeMethod = entity.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(entity, (InputStream) resultSet.getBinaryStream(name));
+                            invokeMethod.invoke(entity, (InputStream) resultSet.getBinaryStream(columnName));
                             continue;
                         }
                     }
@@ -997,7 +1052,9 @@ public class SessionImpl implements Session
 
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return;
             }
 
@@ -1052,14 +1109,15 @@ public class SessionImpl implements Session
         try
         {
             entity = entityCls.newInstance();
+            sql_helper.prepareBasicSelect(entity, id);
 
             if (!extendsEntity(entityCls))
             {
-                System.err.println("Persistor warning: the class '" + entityCls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + entityCls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return null;
             }
-
-            String primaryKeyName = "";
 
             if (hasJoinableObjects(entity))
             {
@@ -1068,8 +1126,6 @@ public class SessionImpl implements Session
                 return (T) entity;
             }
 
-            primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
-            sql_helper.prepareBasicSelect(entity, id);
             String sqlBase = sql_helper.getSqlBase();
             Field field = entityCls.getField("mountedQuery");
             field.set(entity, sqlBase);
@@ -1083,6 +1139,7 @@ public class SessionImpl implements Session
 
             System.out.println("Persistor: \n " + sqlBase);
             context.addToContext(entity);
+            enabledContext = true;
         }
         catch (Exception ex)
         {
@@ -1108,7 +1165,6 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: Executing rollback...");
             rollback();
             logger.newNofication(new PersistenceLog(this.getClass().getName(), "void commit", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
@@ -1152,12 +1208,6 @@ public class SessionImpl implements Session
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
-            if (!extendsEntity(cls))
-            {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return 0;
-            }
-
             String className = cls.getSimpleName().toLowerCase();
             String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
 
@@ -1194,11 +1244,7 @@ public class SessionImpl implements Session
             Class cls = entity.getClass();
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
-            if (!extendsEntity(cls))
-            {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return;
-            }
+
             String className = cls.getSimpleName().toLowerCase();
             String sqlBase = "select max(" + primaryKeyName + ") from " + className;
             if (!whereCondition.isEmpty())
@@ -1209,6 +1255,7 @@ public class SessionImpl implements Session
             ResultSet resultSet = statement.executeQuery(sqlBase);
             if (resultSet.next())
             {
+                enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
                 this.closeStatement(statement);
                 onID(entity, obtainedId);
@@ -1242,7 +1289,9 @@ public class SessionImpl implements Session
 
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T First(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return null;
             }
 
@@ -1258,6 +1307,7 @@ public class SessionImpl implements Session
             ResultSet resultSet = statement.executeQuery(sqlBase);
             if (resultSet.next())
             {
+                enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
                 this.closeStatement(statement);
                 return onID(cls, obtainedId);
@@ -1293,7 +1343,9 @@ public class SessionImpl implements Session
 
             if (!extendsEntity(cls))
             {
-                System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
                 return null;
             }
 
@@ -1309,6 +1361,7 @@ public class SessionImpl implements Session
             ResultSet resultSet = statement.executeQuery(sqlBase);
             if (resultSet.next())
             {
+                enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
                 this.closeStatement(statement);
                 return onID(cls, obtainedId);

@@ -344,9 +344,7 @@ public class SQLHelper
 
                         if (versionObj < currentVersion)
                         {
-                            System.err.println("Persistor: error on update " + cls.getSimpleName() + ". @Version violation error.");
-                            updateStatus = 0;
-                            return;
+                            throw new Exception("Persistor: unable to update " + cls.getSimpleName() + ". @Version violation error.");
                         }
 
                         String fieldName = method.getName().substring(3, method.getName().length());
@@ -396,7 +394,6 @@ public class SQLHelper
 
         } catch (Exception ex)
         {
-            System.out.println("Persistor: SQL_Helper_error: \n");
             throw new Exception(ex.getMessage());
         }
     }

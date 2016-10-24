@@ -18,23 +18,26 @@ import java.util.List;
  */
 public class PersistenceContext
 {
+
     private Object context = null;
     private List<EntitySet> entitySets = new ArrayList<>();
-    
+    public boolean initialized;
+
     public void Initialize(String className)
     {
         try
         {
-            if(className == null || className == "") return;
-            
+            if (className == null || className == "")
+                return;
+
             Class contextClass = Class.forName(className);
             Constructor ctor = contextClass.getConstructor();
-            boolean initialized = false;
             for (Class clazz : contextClass.getInterfaces())
             {
                 if (clazz == br.com.persistor.interfaces.IPersistenceContext.class)
                 {
                     context = ctor.newInstance();
+                    initialized = true;
                     System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
                     return;
                 }
@@ -56,11 +59,8 @@ public class PersistenceContext
             for (EntitySet es : entitySets)
             {
                 Object obj = es.getEntity();
-                Field field = obj.getClass().getField("mountedQuery");
-                String mountedQueryEs = field.get(obj).toString();
-                String mounStringEntity = entity.getClass().getField("mountedQuery").get(entity).toString();
-                
-                if(mountedQueryEs.equals(mounStringEntity)) return es.getEntity();
+                if (obj == entity)
+                    return obj;
             }
         }
         catch (Exception ex)
@@ -70,11 +70,32 @@ public class PersistenceContext
         return null;
     }
 
+    public void removeFromContext(Object entity)
+    {
+        try
+        {
+            for (EntitySet es : entitySets)
+            {
+                Object obj = es.getEntity();
+                if (obj == entity)
+                {
+                    entitySets.remove(es);
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
     public void addToContext(Object entity)
     {
         try
-        { 
-            if(getFromContext(entity) != null) return;
+        {
+            if (getFromContext(entity) != null)
+                return;
             for (Field f : context.getClass().getDeclaredFields())
             {
                 String base = f.getGenericType().getTypeName();

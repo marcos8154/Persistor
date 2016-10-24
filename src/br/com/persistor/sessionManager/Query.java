@@ -5,6 +5,7 @@
  */
 package br.com.persistor.sessionManager;
 
+import br.com.persistor.annotations.Column;
 import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.COMMIT_MODE;
@@ -228,17 +229,21 @@ public class Query
                 {
                     if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        String name;
+                        String columnName;
                         String fieldName;
                         
                         if (method.getName().startsWith("is"))
                         {
-                            name = (method.getName().substring(2, method.getName().length())).toLowerCase();
+                            columnName = method.isAnnotationPresent(Column.class) 
+                                    ?((Column)method.getAnnotation(Column.class)).name()
+                                    :(method.getName().substring(2, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(2, method.getName().length());
                         }
                         else
                         {
-                            name = (method.getName().substring(3, method.getName().length())).toLowerCase();
+                            columnName = method.isAnnotationPresent(Column.class)
+                                    ?((Column)method.getAnnotation(Column.class)).name()
+                                    :(method.getName().substring(3, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(3, method.getName().length());
                         }
                         
@@ -247,77 +252,77 @@ public class Query
                         if (method.getReturnType() == boolean.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(ob, resultSet.getBoolean(name));
+                            invokeMethod.invoke(ob, resultSet.getBoolean(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == int.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(ob, resultSet.getInt(name));
+                            invokeMethod.invoke(ob, resultSet.getInt(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == double.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(ob, resultSet.getDouble(name));
+                            invokeMethod.invoke(ob, resultSet.getDouble(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == float.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(ob, resultSet.getFloat(name));
+                            invokeMethod.invoke(ob, resultSet.getFloat(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == short.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(ob, resultSet.getShort(name));
+                            invokeMethod.invoke(ob, resultSet.getShort(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == long.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(ob, resultSet.getLong(name));
+                            invokeMethod.invoke(ob, resultSet.getLong(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == String.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(ob, resultSet.getString(name));
+                            invokeMethod.invoke(ob, resultSet.getString(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == java.util.Date.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(ob, resultSet.getDate(name));
+                            invokeMethod.invoke(ob, resultSet.getDate(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == byte.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(ob, resultSet.getByte(name));
+                            invokeMethod.invoke(ob, resultSet.getByte(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == BigDecimal.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
+                            invokeMethod.invoke(ob, resultSet.getBigDecimal(columnName));
                             continue;
                         }
                         
                         if (method.getReturnType() == InputStream.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(name));
+                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(columnName));
                             continue;
                         }
                     }
