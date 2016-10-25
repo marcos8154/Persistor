@@ -6,6 +6,7 @@
 package br.com.persistor.sessionManager;
 
 import br.com.persistor.generalClasses.EntitySet;
+import br.com.persistor.generalClasses.PersistenceLog;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -51,7 +52,7 @@ public class PersistenceContext
             System.err.println("Persistor: PersistenceContext initialization error: " + ex.getMessage());
         }
     }
-    
+
     public void clear()
     {
         System.out.println("Persistor: cleaning up Persistence Context...");
@@ -123,12 +124,50 @@ public class PersistenceContext
         }
     }
 
-    public void addToContext(Object entity)
+    public void addToContext(Object entity) throws Exception
+    {
+        boolean hasAdded = false;
+        if (!initialized)
+            return;
+        if (getFromContext(entity) != null)
+            return;
+        for (Field f : context.getClass().getDeclaredFields())
+        {
+            String base = f.getGenericType().getTypeName();
+            base = base.substring(base.indexOf("<"), base.indexOf(">"));
+            base = base.replace("<", "");
+
+            Class cls = Class.forName(base);
+            if (cls == entity.getClass())
+            {
+                for (Method m : context.getClass().getMethods())
+                {
+                    if (m.getName().startsWith("set"))
+                    {
+                        if (m.getName().contains(cls.getSimpleName()))
+                        {
+                            EntitySet set = new EntitySet<>(entity);
+                            m.invoke(context, set);
+                            entitySets.add(set);
+                            hasAdded = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!hasAdded)
+        {
+            Exception ex = new Exception("Attach entity type '" + entity.getClass().getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
+            throw new Exception(ex.getMessage());
+        }
+    }
+
+    public boolean isEntitySet(Object entity)
     {
         try
         {
-            if (getFromContext(entity) != null)
-                return;
             for (Field f : context.getClass().getDeclaredFields())
             {
                 String base = f.getGenericType().getTypeName();
@@ -144,10 +183,7 @@ public class PersistenceContext
                         {
                             if (m.getName().contains(cls.getSimpleName()))
                             {
-                                EntitySet set = new EntitySet<>(entity);
-                                m.invoke(context, set);
-                                entitySets.add(set);
-                                break;
+                                return true;
                             }
                         }
                     }
@@ -157,5 +193,6 @@ public class PersistenceContext
         catch (Exception ex)
         {
         }
+        return false;
     }
 }

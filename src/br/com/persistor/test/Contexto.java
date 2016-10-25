@@ -29,7 +29,7 @@ public class Contexto implements IPersistenceContext
         this.veiculos = veiculos;
     }
 
-    public EntitySet<Pessoa> getPessoas()
+ /*   public EntitySet<Pessoa> getPessoas()
     {
         return pessoas;
     }
@@ -38,4 +38,6 @@ public class Contexto implements IPersistenceContext
     {
         this.pessoas = pessoas;
     }
+*/
+
 }

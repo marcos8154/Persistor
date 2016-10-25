@@ -480,7 +480,6 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            sql_helper.prepareInsert(entity);
 
             if (!extendsEntity(cls))
             {
@@ -488,6 +487,19 @@ public class SessionImpl implements Session
                 logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
                 rollback();
                 return;
+            }
+
+            sql_helper.prepareInsert(entity);
+
+            if (context.initialized)
+            {
+                if (!context.isEntitySet(entity))
+                {
+                    Exception ex = new Exception("Attach entity type '" + cls.getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
             }
 
             String sqlBase = sql_helper.getSqlBase();
@@ -622,7 +634,7 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void delete(Object entity, String andCondition)
+    public void delete(Object entity, String and_or_condition)
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
@@ -640,7 +652,7 @@ public class SessionImpl implements Session
 
             sql_helper.prepareDelete(entity);
             String sqlBase = sql_helper.getSqlBase();
-            sqlBase += " AND " + andCondition;
+            sqlBase += and_or_condition;
 
             if (this.context.initialized)
             {
@@ -658,6 +670,7 @@ public class SessionImpl implements Session
             preparedStatement.execute();
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
+            this.context.removeFromContext(entity);
         }
         catch (Exception ex)
         {
@@ -965,6 +978,18 @@ public class SessionImpl implements Session
             Join join = new Join(entity);
             join.setRestartEntityInstance(false);
             List<JoinableObject> objectsToJoin = new ArrayList<>();
+
+            if (context.initialized)
+            {
+                if (!context.isEntitySet(entity))
+                {
+                    Exception ex = new Exception("Attach entity type '" + cls.getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
+                    rollback();
+                    return null;
+                }
+            }
+
             for (Method method : cls.getMethods())
             {
                 if (method.isAnnotationPresent(OneToOne.class))
@@ -1051,6 +1076,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
+            entity = null;
             throw new Exception(ex.getMessage());
         }
 
@@ -1278,7 +1304,7 @@ public class SessionImpl implements Session
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
                 this.closeStatement(statement);
-                onID(entity, obtainedId);
+                entity = onID(entity.getClass(), obtainedId);
             }
             this.closeResultSet(resultSet);
         }

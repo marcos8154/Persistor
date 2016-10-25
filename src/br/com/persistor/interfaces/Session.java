@@ -22,11 +22,21 @@ public interface Session
 
     void update(Object entity);
 
-    void update(Object entity, String andCondition);
+    void update(Object entity, String and_or_condition);
 
+    /**
+     * Delete entity from database and context(if initialized)
+     * @param entity 
+     */
     void delete(Object entity);
 
-    void delete(Object entity, String andCondition);
+    /**
+     * Delete entity from database and context(if initialized)
+     * Example: session.delete(people, "and id > 10");
+     * @param entity instance of a valid entity to delete
+     * @param and_or_condition where / or aditional condition
+     */
+    void delete(Object entity, String and_or_condition);
 
     void commit();
 

@@ -32,6 +32,7 @@ public class Pessoa extends Entity
     private Veiculo veiculo;
 
     @Version
+    @Column(name = "version")
     public int getVersion()
     {
         return version;
