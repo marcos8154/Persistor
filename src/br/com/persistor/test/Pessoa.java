@@ -58,7 +58,6 @@ public class Pessoa extends Entity
         this.nome = nome;
     }
 
-    @Column(name = "nome")
     public String getNome()
     {
         return nome;
@@ -69,7 +68,6 @@ public class Pessoa extends Entity
         this.veiculo = veiculo;
     }
 
-    @Column(name = "veiculo_id")
     public void setVeiculo_id(int veiculo_id)
     {
         this.veiculo_id = veiculo_id;

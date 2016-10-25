@@ -51,6 +51,14 @@ public class PersistenceContext
             System.err.println("Persistor: PersistenceContext initialization error: " + ex.getMessage());
         }
     }
+    
+    public void clear()
+    {
+        System.out.println("Persistor: cleaning up Persistence Context...");
+        entitySets.clear();
+        entitySets = null;
+        context = null;
+    }
 
     public Object getFromContext(Object entity)
     {
@@ -58,9 +66,13 @@ public class PersistenceContext
         {
             for (EntitySet es : entitySets)
             {
-                Object obj = es.getEntity();
-                if (obj == entity)
-                    return obj;
+                Object esEntity = es.getEntity();
+
+                String qEntity = entity.getClass().getField("mountedQuery").get(entity).toString();
+                String qEsEntity = esEntity.getClass().getField("mountedQuery").get(esEntity).toString();
+
+                if (esEntity.equals(entity) || qEntity.equals(qEsEntity))
+                    return esEntity;
             }
         }
         catch (Exception ex)
@@ -80,6 +92,27 @@ public class PersistenceContext
                 if (obj == entity)
                 {
                     entitySets.remove(es);
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
+    public void mergeEntity(Object entity)
+    {
+        try
+        {
+            for (EntitySet es : entitySets)
+            {
+                Object obj = es.getEntity();
+                if (obj == entity)
+                {
+                    EntitySet newEs = new EntitySet(entity);
+                    es = newEs;
                     break;
                 }
             }

@@ -6,6 +6,7 @@ import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.Session;
+import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
 
 public class main
@@ -17,9 +18,8 @@ public class main
         Veiculo v = new Veiculo();
         Session session = getSession();
 
-        session.onID(v, 5);
-
-        session.commit();
+        p = session.onID(Pessoa.class, 5);
+        session.update(p);
         session.close();
     }
 

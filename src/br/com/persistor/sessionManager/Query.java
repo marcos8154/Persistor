@@ -10,6 +10,7 @@ import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
+import br.com.persistor.generalClasses.PersistenceLog;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -174,11 +175,11 @@ public class Query
      * If this method will go be invoked for execute INSERT / UPDATE or DELETE
      * more of once, is recommended use "setCommit_mode(COMMIT_MODE.MANUAL)"
      */
-    public void execute() throws Exception
+    public void execute()
     {
         try
         {
-            if (this.query.contains("select"))
+            if (this.query.contains("select") || this.query.contains("desc") || this.query.contains("show"))
             {
                 if (this.getResult_type() == null)
                 {
@@ -195,7 +196,8 @@ public class Query
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.getMessage());
+            this.iSession.getPersistenceLogger().newNofication(
+                    new PersistenceLog(this.getClass().getName(), "void execute()", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
     }
     
@@ -443,7 +445,6 @@ public class Query
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: Execute query error at \n");
             throw new Exception(ex.getMessage());
         }
         finally

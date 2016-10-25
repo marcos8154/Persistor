@@ -57,7 +57,7 @@ public class Join implements IJoin
         mountedQuery += ("\n" + " " + join + " " + table) + "\n";
         if (condition != null)
         {
-            mountedQuery += " ON " + condition;
+            mountedQuery += " on " + condition;
         }
         objects.add(obj);
 
@@ -80,8 +80,8 @@ public class Join implements IJoin
         Connection connection;
         Statement statement = null;
         ResultSet resultSet = null;
-        String currentFieldName = "";
-        
+
+        boolean loaded = false;
         try
         {
             this.mainSession = iSession;
@@ -124,9 +124,9 @@ public class Join implements IJoin
                 }
             }
 
-            String baseQ = "SELECT \n " + fieldsSelect;
+            String baseQ = "select \n " + fieldsSelect;
             baseQ = baseQ.substring(0, baseQ.length() - 2);
-            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+            baseQ += "\nfrom \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
 
             mountedQuery = (baseQ + "\n").toLowerCase();
             mountedQuery += final_condition;
@@ -145,6 +145,7 @@ public class Join implements IJoin
 
             while (resultSet.next())
             {
+                loaded = true;
                 for (Object obj : objects)
                 {
                     Object otherObj = obj;
@@ -210,9 +211,6 @@ public class Join implements IJoin
                                 columnName = (method.getName().substring(3, method.getName().length())).toLowerCase() + "_" + tableName;
                                 methodSetName = "set" + method.getName().substring(3, method.getName().length());
                             }
-
-                            currentFieldName = columnName;
-                            // int indexParam = getFieldIndexByNamer(name.toLowerCase());
 
                             if (method.getReturnType() == char.class)
                             {
@@ -311,7 +309,8 @@ public class Join implements IJoin
                     }
                 }
             }
-            System.out.println("Persistor: \n" + mountedQuery);
+            if (loaded)
+                System.out.println("Persistor: \n" + mountedQuery);
         }
         catch (Exception ex)
         {
@@ -342,13 +341,17 @@ public class Join implements IJoin
                 }
             }
 
-            resultList.remove(objToRemove);
+            if (objToRemove != null)
+            {
+                resultList.remove(objToRemove);
+                return entity;
+            }
         }
         catch (Exception ex)
         {
             mainSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "<T> T getEntity(Class entityClass)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
-        return entity;
+        return null;
     }
 
     public <T> List<T> getList(Object object)

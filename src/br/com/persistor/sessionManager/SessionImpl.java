@@ -73,7 +73,7 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS INITIALIZATION ERROR AT: \n" + ex.getMessage());
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS INITIALIZATION ERROR AT: \n" + Util.getFullStackTrace(ex));
             System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
         }
     }
@@ -95,11 +95,16 @@ public class SessionImpl implements Session
     {
         try
         {
-            statement.close();
+            if (statement != null)
+            {
+                if (!statement.isClosed())
+                    statement.close();
+
+            }
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: error at: \n" + ex.getMessage());
+            // System.err.println("Persistor: error at: \n" + ex.getMessage());
         }
     }
 
@@ -515,9 +520,6 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            sql_helper.prepareUpdate(entity, connection);
-            String sqlBase = sql_helper.getSqlBase();
-            SaveOrUpdateForeignObjects(entity, true);
 
             if (!extendsEntity(cls))
             {
@@ -526,6 +528,10 @@ public class SessionImpl implements Session
                 rollback();
                 return;
             }
+
+            sql_helper.prepareUpdate(entity, connection);
+            String sqlBase = sql_helper.getSqlBase();
+            SaveOrUpdateForeignObjects(entity, true);
 
             if (this.context.initialized)
             {
@@ -547,7 +553,7 @@ public class SessionImpl implements Session
             fieldSaved.set(entity, true);
 
             System.out.println("Persistor: \n " + sqlBase);
-
+            this.context.mergeEntity(entity);
         }
         catch (Exception ex)
         {
@@ -570,8 +576,6 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            sql_helper.prepareUpdate(entity, connection);
-            String sqlBase = sql_helper.getSqlBase();
 
             if (!extendsEntity(cls))
             {
@@ -581,12 +585,15 @@ public class SessionImpl implements Session
                 return;
             }
 
+            sql_helper.prepareUpdate(entity, connection);
+            String sqlBase = sql_helper.getSqlBase();
+
             if (this.context.initialized)
             {
                 if (context.getFromContext(entity) == null)
                 {
                     Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
                     rollback();
                     return;
                 }
@@ -600,6 +607,7 @@ public class SessionImpl implements Session
             fieldSaved.set(entity, true);
 
             System.out.println("Persistor: \n " + sqlBase);
+            this.context.mergeEntity(entity);
 
         }
         catch (Exception ex)
@@ -621,16 +629,18 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            sql_helper.prepareDelete(entity);
-            String sqlBase = sql_helper.getSqlBase();
-            sqlBase += " AND " + andCondition;
+
             if (!extendsEntity(cls))
             {
                 Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
                 rollback();
                 return;
             }
+
+            sql_helper.prepareDelete(entity);
+            String sqlBase = sql_helper.getSqlBase();
+            sqlBase += " AND " + andCondition;
 
             if (this.context.initialized)
             {
@@ -668,16 +678,17 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            sql_helper.prepareDelete(entity);
-            String sqlBase = sql_helper.getSqlBase();
 
             if (!extendsEntity(cls))
             {
                 Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
                 rollback();
                 return;
             }
+
+            sql_helper.prepareDelete(entity);
+            String sqlBase = sql_helper.getSqlBase();
 
             if (this.context.initialized)
             {
@@ -708,13 +719,15 @@ public class SessionImpl implements Session
         }
     }
 
-    private void loadEntity(Object entity, ResultSet resultSet) throws Exception
+    private boolean loadEntity(Object entity, ResultSet resultSet) throws Exception
     {
+        boolean result = false;
         try
         {
             Class cls = entity.getClass();
             while (resultSet.next())
             {
+                result = true;
                 for (Method method : cls.getMethods())
                 {
                     if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
@@ -731,16 +744,16 @@ public class SessionImpl implements Session
 
                         if (method.getName().startsWith("is"))
                         {
-                            columnName = method.isAnnotationPresent(Column.class) 
-                                    ?((Column)method.getAnnotation(Column.class)).name()
-                                    :(method.getName().substring(2, method.getName().length())).toLowerCase();
+                            columnName = method.isAnnotationPresent(Column.class)
+                                    ? ((Column) method.getAnnotation(Column.class)).name()
+                                    : (method.getName().substring(2, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(2, method.getName().length());
                         }
                         else
                         {
                             columnName = method.isAnnotationPresent(Column.class)
-                                    ?((Column)method.getAnnotation(Column.class)).name()
-                                    :(method.getName().substring(3, method.getName().length())).toLowerCase();
+                                    ? ((Column) method.getAnnotation(Column.class)).name()
+                                    : (method.getName().substring(3, method.getName().length())).toLowerCase();
                             fieldName = "set" + method.getName().substring(3, method.getName().length());
                         }
 
@@ -830,6 +843,7 @@ public class SessionImpl implements Session
         {
             throw new Exception(ex.getMessage());
         }
+        return result;
     }
 
     private boolean hasJoinableObjects(Object entity) throws Exception
@@ -1000,15 +1014,18 @@ public class SessionImpl implements Session
             {
                 SQLHelper helper = new SQLHelper();
                 String pkName = helper.getPrimaryKeyFieldName(entity);
-                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
+                join.addFinalCondition("where " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
                 join.execute(this);
+
+                entity = join.getEntity(entity.getClass());
                 if (join.hasAllLoaded)
                 {
-                    entity = join.getEntity(entity.getClass());
-                    this.context.addToContext(entity);
+                    if (entity != null)
+                        context.addToContext(entity);
                     return entity;
                 }
-                entity = join.getEntity(entity.getClass());
+                if (entity == null)
+                    return entity;
 
                 for (JoinableObject object : objectsToJoin)
                 {
@@ -1034,7 +1051,6 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: join error at:");
             throw new Exception(ex.getMessage());
         }
 
@@ -1049,6 +1065,7 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
+            sql_helper.prepareBasicSelect(entity, id);
 
             if (!extendsEntity(cls))
             {
@@ -1058,10 +1075,11 @@ public class SessionImpl implements Session
                 return;
             }
 
-            sql_helper.prepareBasicSelect(entity, id);
-            String sqlBase = sql_helper.getSqlBase();
-            Field field = cls.getField("mountedQuery");
-            field.set(entity, sqlBase);
+            if (hasJoinableObjects(entity))
+            {
+                entity = executeJoin(entity, id);
+                return;
+            }
 
             if (enabledContext)
             {
@@ -1072,23 +1090,22 @@ public class SessionImpl implements Session
                 }
             }
 
-            if (hasJoinableObjects(entity))
-            {
-                entity = executeJoin(entity, id);
-                return;
-            }
+            String sqlBase = sql_helper.getSqlBase();
+            Field field = cls.getField("mountedQuery");
+            field.set(entity, sqlBase);
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
-            loadEntity(entity, resultSet);
-
-            System.out.println("Persistor: \n " + sqlBase);
-            if (enabledContext)
-                this.context.addToContext(entity);
+            if (loadEntity(entity, resultSet))
+            {
+                System.out.println("Persistor: \n " + sqlBase);
+                if (enabledContext)
+                    this.context.addToContext(entity);
+            }
+            enabledContext = true;
         }
         catch (Exception ex)
         {
-            System.err.println("Persistor: load on id error at: \n" + ex.getMessage());
             logger.newNofication(new PersistenceLog(this.getClass().getName(), "void onID(Object entity, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
         }
         finally
@@ -1122,23 +1139,26 @@ public class SessionImpl implements Session
             if (hasJoinableObjects(entity))
             {
                 entity = executeJoin(entity, id);
-                context.addToContext(entity);
-                return (T) entity;
+                if (entity == null)
+                    return (T) entityCls.newInstance();
+                else
+                    return (T) entity;
             }
+
+            if (context.getFromContext(entity) != null)
+                return (T) context.getFromContext(entity);
 
             String sqlBase = sql_helper.getSqlBase();
             Field field = entityCls.getField("mountedQuery");
             field.set(entity, sqlBase);
 
-            if (context.getFromContext(entity) != null)
-                return (T) context.getFromContext(entity);
-
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
-            loadEntity(entity, resultSet);
-
-            System.out.println("Persistor: \n " + sqlBase);
-            context.addToContext(entity);
+            if (loadEntity(entity, resultSet))
+            {
+                System.out.println("Persistor: \n " + sqlBase);
+                context.addToContext(entity);
+            }
             enabledContext = true;
         }
         catch (Exception ex)
@@ -1176,7 +1196,7 @@ public class SessionImpl implements Session
         try
         {
             connection.close();
-            context = null;
+            context.clear();
         }
         catch (Exception ex)
         {
@@ -1189,7 +1209,7 @@ public class SessionImpl implements Session
     {
         try
         {
-            System.out.println("Rollbacking...");
+            System.out.println("Persistor: Rollbacking...");
             connection.rollback();
         }
         catch (Exception ex)

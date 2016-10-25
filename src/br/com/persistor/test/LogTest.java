@@ -20,11 +20,11 @@ public class LogTest implements IPersistenceLogger
     @Override
     public void newNofication(PersistenceLog persistenceLog)
     {
-        System.out.println(" Classe: " + persistenceLog.getClassName());
-        System.out.println(" Metodo: " + persistenceLog.getMethodName());
-        System.out.println(" Data: " + persistenceLog.getDate());
-        System.out.println(" Descricao: " + persistenceLog.getDescription());
-        System.out.println(" Query: " + persistenceLog.getQuery());
+        System.err.println(" Classe: " + persistenceLog.getClassName());
+        System.err.println(" Metodo: " + persistenceLog.getMethodName());
+        System.err.println(" Data: " + persistenceLog.getDate());
+        System.err.println(" Descricao: " + persistenceLog.getDescription());
+        System.err.println(" Query: " + persistenceLog.getQuery());
     }
 
 }

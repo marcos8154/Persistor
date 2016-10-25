@@ -15,7 +15,19 @@ import br.com.persistor.interfaces.IPersistenceContext;
 @Deprecated
 public class Contexto implements IPersistenceContext
 {
+
     private EntitySet<Pessoa> pessoas;
+    private EntitySet<Veiculo> veiculos;
+
+    public EntitySet<Veiculo> getVeiculos()
+    {
+        return veiculos;
+    }
+
+    public void setVeiculos(EntitySet<Veiculo> veiculos)
+    {
+        this.veiculos = veiculos;
+    }
 
     public EntitySet<Pessoa> getPessoas()
     {

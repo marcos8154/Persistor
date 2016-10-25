@@ -253,7 +253,7 @@ public class SQLHelper
                 }
             }
 
-            sqlBase = ("delete from " + cls.getSimpleName() + " where " + primaryKeyName + "=" + primaryKeyValue).toLowerCase();
+            sqlBase = ("delete from " + cls.getSimpleName() + " where " + primaryKeyName + " = " + primaryKeyValue).toLowerCase();
 
             if (getAuxiliarPK_name(cls) != null)
             {
@@ -344,7 +344,7 @@ public class SQLHelper
 
                         if (versionObj < currentVersion)
                         {
-                            throw new Exception("Persistor: unable to update " + cls.getSimpleName() + ". @Version violation error.");
+                            throw new Exception("Persistor: unable to update entity '" + cls.getName()+ "'. @Version violation error.");
                         }
 
                         String fieldName = method.getName().substring(3, method.getName().length());
