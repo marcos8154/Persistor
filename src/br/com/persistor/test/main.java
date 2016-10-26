@@ -14,6 +14,11 @@ public class main
         Veiculo v = new Veiculo();
         Session session = getSession();
 
+        session.onID(v, 2);
+        v.setNome("Teste");
+        session.update(v);
+        session.onID(v, 2);
+        session.close();
     }
 
     private static Session getSession()
@@ -21,9 +26,8 @@ public class main
         try
         {
             DBConfig config = new DBConfig();
-
             config.setPersistenceLogger(LogTest.class.getName());
-           // config.setPersistenceContext("br.com.persistor.test.Contexto");
+            config.setPersistenceContext("br.com.persistor.test.Contexto");
             config.setDb_type(DB_TYPE.MySQL);
             config.setHost("localhost");
             config.setPort(3306);

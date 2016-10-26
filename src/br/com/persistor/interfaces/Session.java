@@ -42,13 +42,49 @@ public interface Session
 
     void rollback();
 
+    /**
+     * Load entity by informed id and valid instance of same
+     * DON'T USE THIS METHOD IF PersistenceContext IS ENABLED
+     * 
+     * Example:
+     *     People people = new People();
+     *     session.onID(people, 5);
+     * 
+     * @param entity valid not null instance of entity to load
+     * @param id     id of database reccord to load entity
+     */
     void onID(Object entity, int id);
 
+    /**
+     * Return loaded loaded entity by informed id and entity class
+     * If PersistenceContext is enabled, is right recommended use
+     * this method to load entity by id
+     * 
+     * Example:
+     *      People people = session.onID(People.class, 7);
+     * 
+     * @param <T> type returned (not necessary cast of type entity)
+     * @param entityCls class of entity to load
+     * @param id primary key id value to get db reccord
+     * @return 
+     */
     <T> T onID(Class entityCls, int id);
 
-    <T> T Last(Class entity, String whereCondition);
+    /**
+     * Return last reccord from database and load entity
+     * 
+     * Example:
+     *    
+     *     People p = session.
+     * 
+     * @param <T> type returned(not necessary cast of type entity)
+     * @param entityClass class of entity to load
+     * @param whereCondition where conditions
+     * @return 
+     */
+    <T> T last(Class entityClass, String whereCondition);
 
-    <T> T First(Class entity, String whereCondition);
+    <T> T first(Class entityClass, String whereCondition);
 
     <T> List<T> getList(T t);
 

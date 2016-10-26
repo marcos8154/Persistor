@@ -1107,18 +1107,18 @@ public class SessionImpl implements Session
                 return;
             }
 
-            if (enabledContext)
-            {
-                if (context.getFromContext(entity) != null)
-                {
-                    entity = context.getFromContext(entity);
-                    return;
-                }
-            }
-
             String sqlBase = sql_helper.getSqlBase();
             Field field = cls.getField("mountedQuery");
             field.set(entity, sqlBase);
+
+            if (enabledContext)
+            {
+                if (context.findByID(entity, id) != null)
+                {
+                    entity = context.findByID(entity, id);
+                    return;
+                }
+            }
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
@@ -1152,6 +1152,7 @@ public class SessionImpl implements Session
         try
         {
             entity = entityCls.newInstance();
+
             sql_helper.prepareBasicSelect(entity, id);
 
             if (!extendsEntity(entityCls))
@@ -1171,12 +1172,12 @@ public class SessionImpl implements Session
                     return (T) entity;
             }
 
-            if (context.getFromContext(entity) != null)
-                return (T) context.getFromContext(entity);
-
             String sqlBase = sql_helper.getSqlBase();
             Field field = entityCls.getField("mountedQuery");
             field.set(entity, sqlBase);
+
+            if (context.findByID(entity, id) != null)
+                return (T) context.findByID(entity, id);
 
             statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlBase);
@@ -1320,7 +1321,7 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T First(Class cls, String whereCondition)
+    public <T> T first(Class cls, String whereCondition)
     {
         Statement statement = null;
         String sqlBase = "";
@@ -1374,7 +1375,7 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T Last(Class cls, String whereCondition)
+    public <T> T last(Class cls, String whereCondition)
     {
         String sqlBase = "";
         Statement statement = null;

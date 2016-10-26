@@ -74,6 +74,9 @@ public class PersistenceContext
 
                 if (esEntity.equals(entity) || qEntity.equals(qEsEntity))
                     return esEntity;
+                
+             //   if(esEntity.getClass().getName().equals(entity.getClass().getName()) && qEntity.equals(qEsEntity))
+              //      return entity;
             }
         }
         catch (Exception ex)
@@ -83,6 +86,29 @@ public class PersistenceContext
         return null;
     }
 
+    public Object findByID(Object entity, Object id)
+    {
+        try
+        {
+            SQLHelper helper = new SQLHelper();
+            
+            for(EntitySet entitySet : entitySets)
+            {
+                Object esObject = entitySet.getEntity();
+                helper.prepareBasicSelect(esObject, (int)id);
+                
+                if(helper.getPrimaryKeyValue().equals(id.toString()))
+                    return esObject;               
+            }
+            
+        }
+        catch(Exception ex)
+        {
+            
+        }
+        return null;
+    }
+    
     public void removeFromContext(Object entity)
     {
         try
@@ -109,11 +135,16 @@ public class PersistenceContext
         {
             for (EntitySet es : entitySets)
             {
-                Object obj = es.getEntity();
-                if (obj == entity)
+                Object oldEs = es.getEntity();
+                if (oldEs == entity)
                 {
                     EntitySet newEs = new EntitySet(entity);
-                    es = newEs;
+                   
+                    for(Field f : newEs.getClass().getFields())
+                    {
+                        oldEs.getClass().getField(f.getName()).set(oldEs, f.get(newEs));
+                    }
+                    
                     break;
                 }
             }
