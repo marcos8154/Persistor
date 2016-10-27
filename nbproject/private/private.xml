@@ -12,10 +12,10 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/sessionManager/Join.java</file>
-            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/test/Pessoa.java</file>
+            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/annotations/NamedQueryes.java</file>
             <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/sessionManager/SessionImpl.java</file>
-            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/test/main.java</file>
+            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/annotations/NamedQuery.java</file>
+            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/test/Pessoa.java</file>
         </group>
     </open-files>
 </project-private>

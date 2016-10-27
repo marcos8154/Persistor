@@ -7,6 +7,7 @@ package br.com.persistor.sessionManager;
 
 import br.com.persistor.annotations.Column;
 import br.com.persistor.annotations.NamedQuery;
+import br.com.persistor.annotations.NamedQueryes;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
@@ -103,6 +104,27 @@ public class Query
 
                 if (!isNamedQuery)
                     this.query = query;
+            }
+
+            if (cls.isAnnotationPresent(NamedQueryes.class))
+            {
+                for (Annotation annotation : cls.getAnnotations())
+                {
+                    if (annotation instanceof NamedQueryes)
+                    {
+                        NamedQueryes namedQueryes = (NamedQueryes) annotation;
+
+                        for (NamedQuery namedQuery : namedQueryes.value())
+                        {
+                            if (namedQuery.queryName().equals(query.replace("@", "")))
+                            {
+                                this.query = namedQuery.queryValue();
+                                isNamedQuery = true;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
             this.preparedStatement = isession.getActiveConnection().prepareStatement(this.query);

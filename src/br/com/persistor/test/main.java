@@ -17,7 +17,7 @@ public class main
         Veiculo v = new Veiculo();
         Session session = getSession();
         
-        Query q = session.createQuery(p, "@listarPorNome");
+        Query q = session.createQuery(p, "@listarPorNomes");
         q.setResult_type(RESULT_TYPE.UNIQUE);
         q.execute();
         
