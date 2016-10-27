@@ -549,7 +549,7 @@ public class SessionImpl implements Session
             {
                 if (context.getFromContext(entity) == null)
                 {
-                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
                     logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
                     rollback();
                     return;
@@ -604,7 +604,7 @@ public class SessionImpl implements Session
             {
                 if (context.getFromContext(entity) == null)
                 {
-                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
                     logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
                     rollback();
                     return;
@@ -658,7 +658,7 @@ public class SessionImpl implements Session
             {
                 if (context.getFromContext(entity) == null)
                 {
-                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
                     logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
                     rollback();
                     return;
@@ -707,7 +707,7 @@ public class SessionImpl implements Session
             {
                 if (context.getFromContext(entity) == null)
                 {
-                    Exception ex = new Exception("The entity type " + entity.getClass().getName() + " is not part of the model for the current context");
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
                     logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
                     rollback();
                     return;
@@ -903,16 +903,14 @@ public class SessionImpl implements Session
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
                     Class clss = Class.forName(method.getReturnType().getName());
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-                    targetEntity = ctor.newInstance();
 
                     if (clss == targetEntity.getClass())
                     {
                         OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+                      
                         if (oneToOne.load() == LOAD.AUTO)
-                        {
                             System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
-                        }
+
                         join.addJoin(oneToOne.join_type(), targetEntity, null);
                         finalCondition = sourceEntityClass.getSimpleName() + "." + oneToOne.source() + " = " + targetEntity.getClass().getSimpleName() + "." + oneToOne.target();
                         mode = 1;
@@ -923,16 +921,14 @@ public class SessionImpl implements Session
                 if (method.isAnnotationPresent(OneToMany.class))
                 {
                     Class clss = Class.forName(method.getReturnType().getName());
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-                    targetEntity = ctor.newInstance();
 
                     if (clss == targetEntity.getClass())
                     {
                         OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+                       
                         if (oneToMany.load() == LOAD.AUTO)
-                        {
                             System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
-                        }
+                        
                         join.addJoin(oneToMany.join_type(), targetEntity, null);
                         finalCondition = sourceEntityClass.getSimpleName() + "." + oneToMany.source() + " = " + targetEntity.getClass().getSimpleName() + "." + oneToMany.target();
                         mode = 2;
@@ -1305,7 +1301,7 @@ public class SessionImpl implements Session
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
                 this.closeStatement(statement);
-                entity = onID(entity.getClass(), obtainedId);
+                onID(entity, obtainedId);
             }
             this.closeResultSet(resultSet);
         }

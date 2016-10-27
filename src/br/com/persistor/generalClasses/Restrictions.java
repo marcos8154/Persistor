@@ -201,12 +201,12 @@ public class Restrictions {
                 value = "%" + value + "%";
                 break;
 
-            case END:
+            case START:
 
                 value += "%";
                 break;
 
-            case START:
+            case END:
 
                 value = "%" + value;
                 break;

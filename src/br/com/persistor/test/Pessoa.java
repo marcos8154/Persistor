@@ -5,23 +5,21 @@
 package br.com.persistor.test;
 
 import br.com.persistor.abstractClasses.Entity;
-import br.com.persistor.abstractClasses.Entity;
 import br.com.persistor.annotations.Column;
+import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.annotations.OneToOne;
-import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
-import java.util.Date;
-import java.io.InputStream;
 
 /**
  *
  * @author Persistor4J
  */
 @Deprecated
+@NamedQuery(queryName = "listarPorNome", queryValue = "select * from pessoa")
 public class Pessoa extends Entity
 {
 
@@ -79,7 +77,7 @@ public class Pessoa extends Entity
         return veiculo_id;
     }
 
-    @OneToOne(source = "veiculo_id", target = "id", load = LOAD.AUTO, join_type = JOIN_TYPE.INNER)
+    @OneToOne(source = "veiculo_id", target = "id", load = LOAD.MANUAL, join_type = JOIN_TYPE.INNER)
     public Veiculo getVeiculo()
     {
         return veiculo;

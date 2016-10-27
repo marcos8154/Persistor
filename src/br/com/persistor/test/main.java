@@ -1,9 +1,15 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.enums.FILTER_TYPE;
+import br.com.persistor.enums.MATCH_MODE;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.Session;
+import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
+import java.util.List;
 
 public class main
 {
@@ -13,12 +19,9 @@ public class main
         Pessoa p = new Pessoa();
         Veiculo v = new Veiculo();
         Session session = getSession();
-
-        session.onID(v, 2);
-        v.setNome("Teste");
-        session.update(v);
-        session.onID(v, 2);
-        session.close();
+        
+        p.setId(16);
+        session.loadWithJoin(p, v);
     }
 
     private static Session getSession()
@@ -34,8 +37,7 @@ public class main
             config.setUser("root");
             config.setPassword("81547686");
             config.setDatabase("cadastro");
-            config.setMaxPoolSize(1);
-            config.setMinPoolSize(1);
+
             SessionFactory sf = new SessionFactory();
             return sf.getSession(config);
         }
