@@ -1,15 +1,9 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
-import br.com.persistor.enums.FILTER_TYPE;
-import br.com.persistor.enums.MATCH_MODE;
-import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
-import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.Session;
-import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
-import java.util.List;
 
 public class main
 {
