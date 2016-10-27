@@ -1,9 +1,12 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.interfaces.Session;
+import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
+import java.util.List;
 
 public class main
 {
@@ -14,8 +17,17 @@ public class main
         Veiculo v = new Veiculo();
         Session session = getSession();
         
-        p.setId(16);
-        session.loadWithJoin(p, v);
+        Query q = session.createQuery(p, "@listarPorNome");
+        q.setResult_type(RESULT_TYPE.UNIQUE);
+        q.execute();
+        
+        System.out.println(p.getNome());
+        
+      /*  List<Pessoa> pes = session.getList(p);
+        for(Pessoa pessoa : pes)
+        {
+            System.out.println(pessoa.getNome());
+        } */
     }
 
     private static Session getSession()
