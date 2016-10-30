@@ -7,6 +7,9 @@ package br.com.persistor.sessionManager;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -17,6 +20,59 @@ import java.util.Date;
  */
 public class Util
 {
+
+    public static void closeStatement(Statement statement)
+    {
+        try
+        {
+            if (statement != null)
+            {
+                if (!statement.isClosed())
+                    statement.close();
+
+            }
+        }
+        catch (Exception ex)
+        {
+            // System.err.println("Persistor: error at: \n" + ex.getMessage());
+        }
+    }
+
+    public static void closeResultSet(ResultSet resultSet)
+    {
+        try
+        {
+            if (resultSet != null)
+            {
+                if (!resultSet.isClosed())
+                {
+                    resultSet.close();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at: \n" + ex.getMessage());
+        }
+    }
+
+    public static void closePreparedStatement(PreparedStatement preparedStatement)
+    {
+        try
+        {
+            if (preparedStatement != null)
+            {
+                if (!preparedStatement.isClosed())
+                {
+                    preparedStatement.close();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.out.println(ex.getMessage());
+        }
+    }
 
     public static String getFullStackTrace(Exception ex)
     {

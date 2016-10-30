@@ -16,8 +16,8 @@ import java.lang.annotation.Target;
  * @author marcosvinicius
  */
 
-
 @Repeatable(NamedQueryes.class)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface NamedQuery
 {
     String queryName();

@@ -90,62 +90,6 @@ public class SessionImpl implements Session
         return this.connection;
     }
 
-    @Override
-    public void closeStatement(Statement statement)
-    {
-        try
-        {
-            if (statement != null)
-            {
-                if (!statement.isClosed())
-                    statement.close();
-
-            }
-        }
-        catch (Exception ex)
-        {
-            // System.err.println("Persistor: error at: \n" + ex.getMessage());
-        }
-    }
-
-    @Override
-    public void closeResultSet(ResultSet resultSet)
-    {
-        try
-        {
-            if (resultSet != null)
-            {
-                if (!resultSet.isClosed())
-                {
-                    resultSet.close();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.err.println("Persistor: internal error at: \n" + ex.getMessage());
-        }
-    }
-
-    @Override
-    public void closePreparedStatement(PreparedStatement preparedStatement)
-    {
-        try
-        {
-            if (preparedStatement != null)
-            {
-                if (!preparedStatement.isClosed())
-                {
-                    preparedStatement.close();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.out.println(ex.getMessage());
-        }
-    }
-
     private boolean extendsEntity(Class entityCls)
     {
         for (Field field : entityCls.getFields())
@@ -520,7 +464,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            closePreparedStatement(preparedStatement);
+           Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -574,7 +518,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            closePreparedStatement(preparedStatement);
+            Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -629,7 +573,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            closePreparedStatement(preparedStatement);
+            Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -679,7 +623,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            closePreparedStatement(preparedStatement);
+            Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -728,7 +672,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            closePreparedStatement(preparedStatement);
+            Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -1134,7 +1078,7 @@ public class SessionImpl implements Session
         {
             if (statement != null)
             {
-                closeStatement(statement);
+                Util.closeStatement(statement);
             }
         }
     }
@@ -1192,7 +1136,7 @@ public class SessionImpl implements Session
         {
             if (statement != null)
             {
-                closeStatement(statement);
+                Util.closeStatement(statement);
             }
         }
 
@@ -1272,7 +1216,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            this.closeStatement(statement);
+           Util.closeStatement(statement);
         }
 
         return result;
@@ -1300,10 +1244,10 @@ public class SessionImpl implements Session
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-                this.closeStatement(statement);
+               Util.closeStatement(statement);
                 onID(entity, obtainedId);
             }
-            this.closeResultSet(resultSet);
+            Util.closeResultSet(resultSet);
         }
         catch (Exception ex)
         {
@@ -1311,7 +1255,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            this.closeStatement(statement);
+           Util.closeStatement(statement);
         }
         enabledContext = true;
     }
@@ -1352,10 +1296,10 @@ public class SessionImpl implements Session
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-                this.closeStatement(statement);
+               Util.closeStatement(statement);
                 return onID(cls, obtainedId);
             }
-            this.closeStatement(statement);
+           Util.closeStatement(statement);
             context.addToContext(entity);
             return (T) entity;
         }
@@ -1365,7 +1309,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            this.closeStatement(statement);
+           Util.closeStatement(statement);
         }
         return null;
     }
@@ -1406,10 +1350,10 @@ public class SessionImpl implements Session
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-                this.closeStatement(statement);
+               Util.closeStatement(statement);
                 return onID(cls, obtainedId);
             }
-            this.closeStatement(statement);
+           Util.closeStatement(statement);
             context.addToContext(entity);
             return (T) entity;
         }
@@ -1419,7 +1363,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-            this.closeStatement(statement);
+           Util.closeStatement(statement);
         }
         return null;
     }

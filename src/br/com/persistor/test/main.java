@@ -1,11 +1,16 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.enums.FILTER_TYPE;
+import br.com.persistor.enums.JOIN_TYPE;
+import br.com.persistor.enums.MATCH_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.Session;
-import br.com.persistor.sessionManager.Query;
+import br.com.persistor.sessionManager.Join;
 import br.com.persistor.sessionManager.SessionFactory;
+import java.util.ArrayList;
 import java.util.List;
 
 public class main
@@ -16,17 +21,34 @@ public class main
         Pessoa p = new Pessoa();
         Veiculo v = new Veiculo();
         Session session = getSession();
-        
-        Query q = session.createQuery(p, "@listarPorNomes");
-        q.setResult_type(RESULT_TYPE.UNIQUE);
-        q.execute();
-        
-        System.out.println(p.getNome());
-        
-      /*  List<Pessoa> pes = session.getList(p);
-        for(Pessoa pessoa : pes)
+
+        session.createCriteria(p, RESULT_TYPE.MULTIPLE)
+                .add(JOIN_TYPE.INNER, v, "pessoa.veiculo_id = veiculo.id")
+                .add(Restrictions.ge(FILTER_TYPE.WHERE, "pessoa.id", 5))
+                .add(Restrictions.like(FILTER_TYPE.AND, "pessoa.nome", "Eva", MATCH_MODE.START))
+                .execute()
+                .loadList(p)
+                .loadList(v);
+
+        //System.out.println(p.getNome());
+       
+     
+        for (Pessoa pes : session.getList(p))
         {
-            System.out.println(pessoa.getNome());
+            System.out.println(pes.getNome());
+        }
+
+        /*  Join join = new Join(p);
+        join.addJoin(JOIN_TYPE.INNER, v, "pessoa.veiculo_id = veiculo.id");
+        join.execute(session);
+
+        p = join.getEntity(Pessoa.class);
+        p.ResultList = join.getList(p);
+        System.out.println(p.getNome());
+
+        for (Pessoa pes : session.getList(p))
+        {
+            System.out.println(pes.getNome());
         } */
     }
 

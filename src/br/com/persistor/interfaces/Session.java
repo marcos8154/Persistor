@@ -96,12 +96,6 @@ public interface Session
 
     Connection getActiveConnection();
 
-    void closeResultSet(ResultSet resultSet);
-
-    void closeStatement(Statement statement);
-
-    void closePreparedStatement(PreparedStatement preparedStatement);
-
     DBConfig getConfig();
 
     void loadWithJoin(Object sourceEntity, Object targetEntity);

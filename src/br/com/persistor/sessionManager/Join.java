@@ -318,8 +318,8 @@ public class Join implements IJoin
         }
         finally
         {
-            iSession.closeResultSet(resultSet);
-            iSession.closeStatement(statement);
+            Util.closeResultSet(resultSet);
+            Util.closeStatement(statement);
         }
     }
 
@@ -352,6 +352,34 @@ public class Join implements IJoin
             mainSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "<T> T getEntity(Class entityClass)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
         return null;
+    }
+
+    public Object loadEntity(Object entity)
+    {
+        Object objToRemove = null;
+        try
+        {
+            for (Object obj : resultList)
+            {
+                if (obj.getClass() == entity.getClass())
+                {
+                    entity = obj;
+                    objToRemove = obj;
+                    entity.getClass().getField("mountedQuery").set(entity, this.mountedQuery);
+                    break;
+                }
+            }
+
+            if (objToRemove != null)
+            {
+                resultList.remove(objToRemove);
+            }
+        }
+        catch (Exception ex)
+        {
+            mainSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "<T> T getEntity(Class entityClass)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
+        }
+        return entity;
     }
 
     public <T> List<T> getList(Object object)

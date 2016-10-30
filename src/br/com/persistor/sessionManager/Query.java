@@ -387,10 +387,10 @@ public class Query
         finally
         {
             if (resultSet != null)
-                iSession.closeResultSet(resultSet);
+                Util.closeResultSet(resultSet);
 
             if (preparedStatement != null)
-                iSession.closePreparedStatement(preparedStatement);
+                Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -431,12 +431,12 @@ public class Query
         {
             if (preparedStatement != null)
             {
-                iSession.closePreparedStatement(preparedStatement);
+                Util.closePreparedStatement(preparedStatement);
             }
 
             if (statement != null)
             {
-                iSession.closeStatement(statement);
+                Util.closeStatement(statement);
             }
         }
     }

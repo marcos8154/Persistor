@@ -1,5 +1,6 @@
 package br.com.persistor.sessionManager;
 
+import br.com.persistor.annotations.Column;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.persistor.annotations.OneToOne;
+import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
@@ -22,21 +24,22 @@ import br.com.persistor.interfaces.Session;
 public class Criteria implements ICriteria
 {
 
+    Join join = null;
     RESULT_TYPE resultType;
-    Object obj;
+    Object baseEntity;
     String query = "";
     String tableName = "";
     Session iSession;
 
     private boolean hasFbLimit = false;
 
-    public Criteria(Session iSession, Object obj, RESULT_TYPE result_type)
+    public Criteria(Session iSession, Object entity, RESULT_TYPE result_type)
     {
         this.iSession = iSession;
         this.resultType = result_type;
-        this.obj = obj;
+        this.baseEntity = entity;
 
-        String name = (obj.getClass().getSimpleName().toLowerCase());
+        String name = (entity.getClass().getSimpleName().toLowerCase());
         this.tableName = name;
     }
 
@@ -95,54 +98,58 @@ public class Criteria implements ICriteria
     }
 
     @Override
+    public Criteria add(JOIN_TYPE join_type, Object entity, String joinCondition)
+    {
+        if (join == null)
+        {
+            join = new Join(baseEntity);
+            join.setRestartEntityInstance(resultType == RESULT_TYPE.MULTIPLE);
+        }
+        join.addJoin(join_type, entity, joinCondition);
+        return this;
+    }
+
+    @Override
     public Criteria add(Expressions expression)
     {
         query += expression.getCurrentValue();
         return this;
     }
 
-    private void closeResultSet(ResultSet resultSet)
+    @Override
+    public ICriteria loadEntity(Object entity)
     {
-        try
-        {
-            if (resultSet != null)
-            {
-                if (!resultSet.isClosed())
-                {
-                    resultSet.close();
-                }
-            }
-
-        }
-        catch (Exception ex)
-        {
-            iSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), " closeResultSet(ResultSet resultSet) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
-    }
-
-    private void closeStatement(Statement statement)
-    {
-        try
-        {
-            if (statement != null)
-            {
-                if (!statement.isClosed())
-                {
-                    statement.close();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            iSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "void closeStatement(Statement statement) (internal Persistor)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
+        entity = join.loadEntity(entity.getClass());
+        return this;
     }
 
     @Override
-    public void execute()
+    public ICriteria loadList(Object entity)
+    {
+        try
+        {
+            entity.getClass().getField("ResultList").set(entity, join.getList(entity));
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+
+        return this;
+    }
+
+    @Override
+    public ICriteria execute()
     {
         Statement statement = null;
         ResultSet resultSet = null;
+
+        if (join != null)
+        {
+            join.addFinalCondition(query);
+            join.execute(iSession);
+            return this;
+        }
 
         if (!hasFbLimit)
         {
@@ -151,269 +158,151 @@ public class Criteria implements ICriteria
 
         try
         {
-            Class clss = obj.getClass();
+            Class clss = baseEntity.getClass();
 
             Field fieldMQ = clss.getField("mountedQuery");
-            fieldMQ.set(obj, query);
+            fieldMQ.set(baseEntity, query);
 
             List<Object> rList = new ArrayList<>();
-            Object ob = obj;
+            Object ob = baseEntity;
 
             Class cls = ob.getClass();
 
             if (!Util.extendsEntity(cls))
             {
                 System.err.println("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
-                return;
+                return null;
             }
 
-            if (this.iSession.getPersistenceContext().getFromContext(obj) != null)
+            if (this.iSession.getPersistenceContext().getFromContext(baseEntity) != null)
             {
-                obj = this.iSession.getPersistenceContext().getFromContext(obj);
-                return;
+                baseEntity = this.iSession.getPersistenceContext().getFromContext(baseEntity);
+                return this;
             }
 
             statement = iSession.getActiveConnection().createStatement();
             resultSet = statement.executeQuery(query);
 
-            if (resultType == RESULT_TYPE.UNIQUE)
+            while (resultSet.next())
             {
-                if (resultSet.next())
-                    for (Method method : cls.getMethods())
-                    {
-                        if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
-                        {
-                            String name;
-                            String fieldName;
-
-                            if (method.getName().startsWith("is"))
-                            {
-                                name = (method.getName().substring(2, method.getName().length())).toLowerCase();
-                                fieldName = "set" + method.getName().substring(2, method.getName().length());
-                            }
-                            else
-                            {
-                                name = (method.getName().substring(3, method.getName().length())).toLowerCase();
-                                fieldName = "set" + method.getName().substring(3, method.getName().length());
-                            }
-
-                            if (method.isAnnotationPresent(OneToOne.class));
-
-                            if (method.getReturnType() == char.class)
-                            {
-                                String str = resultSet.getString(name);
-
-                                if (str.length() > 0)
-                                {
-                                    Method invokeMethod = obj.getClass().getMethod(fieldName, char.class);
-                                    invokeMethod.invoke(ob, str.charAt(0));
-                                    continue;
-                                }
-                            }
-
-                            if (method.getReturnType() == boolean.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
-                                invokeMethod.invoke(ob, resultSet.getBoolean(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == int.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
-                                invokeMethod.invoke(ob, resultSet.getInt(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == double.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
-                                invokeMethod.invoke(ob, resultSet.getDouble(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == float.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
-                                invokeMethod.invoke(ob, resultSet.getFloat(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == short.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
-                                invokeMethod.invoke(ob, resultSet.getShort(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == long.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
-                                invokeMethod.invoke(ob, resultSet.getLong(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == String.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
-                                invokeMethod.invoke(ob, resultSet.getString(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == java.util.Date.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
-                                invokeMethod.invoke(ob, resultSet.getDate(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == byte.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
-                                invokeMethod.invoke(ob, resultSet.getByte(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == BigDecimal.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
-                                invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == InputStream.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                                invokeMethod.invoke(ob, (InputStream) resultSet.getBinaryStream(name));
-                                continue;
-                            }
-                        }
-                    }
-            }
-            else
-            {
-                while (resultSet.next())
+                if (resultType == RESULT_TYPE.MULTIPLE)
                 {
                     Constructor ctor = cls.getConstructor();
                     ob = ctor.newInstance();
-                    ob.getClass().getField("mountedQuery").set(ob, query);
-                    for (Method method : cls.getMethods())
+                }
+
+                for (Method method : cls.getMethods())
+                {
+                    if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
                     {
-                        if (method.getName().contains("is") || method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        String columnName;
+                        String fieldName;
+
+                        if (method.getName().startsWith("is"))
                         {
-                            String name;
-                            String fieldName;
+                            columnName = method.isAnnotationPresent(Column.class)
+                                    ? ((Column) method.getAnnotation(Column.class)).name()
+                                    : (method.getName().substring(2, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(2, method.getName().length());
+                        }
+                        else
+                        {
+                            columnName = method.isAnnotationPresent(Column.class)
+                                    ? ((Column) method.getAnnotation(Column.class)).name()
+                                    : (method.getName().substring(3, method.getName().length())).toLowerCase();
+                            fieldName = "set" + method.getName().substring(3, method.getName().length());
+                        }
 
-                            if (method.getName().startsWith("is"))
-                            {
-                                name = (method.getName().substring(2, method.getName().length())).toLowerCase();
-                                fieldName = "set" + method.getName().substring(2, method.getName().length());
-                            }
-                            else
-                            {
-                                name = (method.getName().substring(3, method.getName().length())).toLowerCase();
-                                fieldName = "set" + method.getName().substring(3, method.getName().length());
-                            }
+                        if (method.isAnnotationPresent(OneToOne.class));
 
-                            if (method.getReturnType() == char.class)
-                            {
-                                String str = resultSet.getString(name);
+                        if (method.getReturnType() == boolean.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, boolean.class);
+                            invokeMethod.invoke(ob, resultSet.getBoolean(columnName));
+                            continue;
+                        }
 
-                                if (str.length() > 0)
-                                {
-                                    Method invokeMethod = obj.getClass().getMethod(fieldName, char.class);
-                                    invokeMethod.invoke(ob, str.charAt(0));
-                                    continue;
-                                }
-                            }
+                        if (method.getReturnType() == int.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, int.class);
+                            invokeMethod.invoke(ob, resultSet.getInt(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == boolean.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
-                                invokeMethod.invoke(ob, resultSet.getBoolean(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == double.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, double.class);
+                            invokeMethod.invoke(ob, resultSet.getDouble(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == int.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
-                                invokeMethod.invoke(ob, resultSet.getInt(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == float.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, float.class);
+                            invokeMethod.invoke(ob, resultSet.getFloat(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == double.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
-                                invokeMethod.invoke(ob, resultSet.getDouble(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == short.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, short.class);
+                            invokeMethod.invoke(ob, resultSet.getShort(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == float.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
-                                invokeMethod.invoke(ob, resultSet.getFloat(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == long.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, long.class);
+                            invokeMethod.invoke(ob, resultSet.getLong(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == short.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
-                                invokeMethod.invoke(ob, resultSet.getShort(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == String.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, String.class);
+                            invokeMethod.invoke(ob, resultSet.getString(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == long.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
-                                invokeMethod.invoke(ob, resultSet.getLong(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == java.util.Date.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, java.util.Date.class);
+                            invokeMethod.invoke(ob, resultSet.getDate(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == String.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
-                                invokeMethod.invoke(ob, resultSet.getString(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == byte.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, byte.class);
+                            invokeMethod.invoke(ob, resultSet.getByte(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == java.util.Date.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
-                                invokeMethod.invoke(ob, resultSet.getDate(name));
-                                continue;
-                            }
+                        if (method.getReturnType() == BigDecimal.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, BigDecimal.class);
+                            invokeMethod.invoke(ob, resultSet.getBigDecimal(columnName));
+                            continue;
+                        }
 
-                            if (method.getReturnType() == byte.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
-                                invokeMethod.invoke(ob, resultSet.getByte(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == BigDecimal.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
-                                invokeMethod.invoke(ob, resultSet.getBigDecimal(name));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == InputStream.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                                invokeMethod.invoke(ob, (InputStream) resultSet.getBinaryStream(name));
-
-                                continue;
-                            }
+                        if (method.getReturnType() == InputStream.class)
+                        {
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(baseEntity, (InputStream) resultSet.getBinaryStream(columnName));
+                            continue;
                         }
                     }
-                    rList.add(ob);
                 }
+                if (resultType == RESULT_TYPE.MULTIPLE)
+                    rList.add(ob);
+                else
+                    break;
             }
 
             System.out.println("Persistor: \n " + query);
 
             Field f = clss.getField("ResultList");
-            f.set(obj, rList);
+            f.set(baseEntity, rList);
             this.iSession.getPersistenceContext().addToContext(ob);
         }
         catch (Exception ex)
@@ -422,8 +311,9 @@ public class Criteria implements ICriteria
         }
         finally
         {
-            closeResultSet(resultSet);
-            closeStatement(statement);
+            Util.closeResultSet(resultSet);
+            Util.closeStatement(statement);
         }
+        return this;
     }
 }

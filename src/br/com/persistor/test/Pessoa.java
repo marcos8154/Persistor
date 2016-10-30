@@ -21,11 +21,11 @@ import br.com.persistor.enums.LOAD;
  */
 @Deprecated
 
-@NamedQueryes(
-{
-    @NamedQuery(queryName = "listarPorNome", queryValue = "select * from pessoa"),
-    @NamedQuery(queryName = "listarPorNomes", queryValue = "select * from pessoa")
-})
+//@NamedQueryes(
+//{
+ //   @NamedQuery(queryName = "listarPorNome", queryValue = "select * from pessoa"),
+     
+@NamedQuery(queryName = "listarPorNomes", queryValue = "select * from pessoa")
 public class Pessoa extends Entity
 {
 
@@ -36,7 +36,7 @@ public class Pessoa extends Entity
     private Veiculo veiculo;
 
     @Version
-    @Column(name = "teste")
+    @Column(name = "version")
     public int getVersion()
     {
         return version;
