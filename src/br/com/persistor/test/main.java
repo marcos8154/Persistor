@@ -2,8 +2,10 @@ package br.com.persistor.test;
 
 import br.com.persistor.connectionManager.Configuration;
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.interfaces.Session;
+import br.com.persistor.sessionManager.Query;
 import br.com.persistor.sessionManager.SessionFactory;
 import javax.swing.JOptionPane;
 
@@ -12,12 +14,11 @@ public class main
 
     public static void main(String[] args)
     {
-        SessionFactory sf = Configuration.createSessionFactory("C:\\Temp\\mysql");
-        if (sf != null)
-        {
-            sf.getSession();
-            JOptionPane.showMessageDialog(null, "Conectado!", "Sucesso", 1);
-        }
+        Fields fs = new Fields();
+        Session session = getSession();
+        Query q = session.createQuery(fs, "desc pessoa");
+        q.setResult_type(RESULT_TYPE.MULTIPLE);
+        q.execute();
     }
 
     private static Session getSession()

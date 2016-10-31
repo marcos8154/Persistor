@@ -101,9 +101,6 @@ public class Query
                         }
                     }
                 }
-
-                if (!isNamedQuery)
-                    this.query = query;
             }
 
             if (cls.isAnnotationPresent(NamedQueryes.class))
@@ -126,6 +123,9 @@ public class Query
                     }
                 }
             }
+
+            if (!isNamedQuery)
+                this.query = query;
 
             this.preparedStatement = isession.getActiveConnection().prepareStatement(this.query);
         }
