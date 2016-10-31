@@ -1,55 +1,23 @@
 package br.com.persistor.test;
 
+import br.com.persistor.connectionManager.Configuration;
 import br.com.persistor.enums.DB_TYPE;
-import br.com.persistor.enums.FILTER_TYPE;
-import br.com.persistor.enums.JOIN_TYPE;
-import br.com.persistor.enums.MATCH_MODE;
-import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
-import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.Session;
-import br.com.persistor.sessionManager.Join;
 import br.com.persistor.sessionManager.SessionFactory;
-import java.util.ArrayList;
-import java.util.List;
+import javax.swing.JOptionPane;
 
 public class main
 {
 
     public static void main(String[] args)
     {
-        Pessoa p = new Pessoa();
-        Veiculo v = new Veiculo();
-        Session session = getSession();
-
-        session.createCriteria(p, RESULT_TYPE.MULTIPLE)
-                .add(JOIN_TYPE.INNER, v, "pessoa.veiculo_id = veiculo.id")
-                .add(Restrictions.ge(FILTER_TYPE.WHERE, "pessoa.id", 5))
-                .add(Restrictions.like(FILTER_TYPE.AND, "pessoa.nome", "Eva", MATCH_MODE.START))
-                .execute()
-                .loadList(p)
-                .loadList(v);
-
-        //System.out.println(p.getNome());
-       
-     
-        for (Pessoa pes : session.getList(p))
+        SessionFactory sf = Configuration.createSessionFactory("C:\\Temp\\mysql");
+        if (sf != null)
         {
-            System.out.println(pes.getNome());
+            sf.getSession();
+            JOptionPane.showMessageDialog(null, "Conectado!", "Sucesso", 1);
         }
-
-        /*  Join join = new Join(p);
-        join.addJoin(JOIN_TYPE.INNER, v, "pessoa.veiculo_id = veiculo.id");
-        join.execute(session);
-
-        p = join.getEntity(Pessoa.class);
-        p.ResultList = join.getList(p);
-        System.out.println(p.getNome());
-
-        for (Pessoa pes : session.getList(p))
-        {
-            System.out.println(pes.getNome());
-        } */
     }
 
     private static Session getSession()

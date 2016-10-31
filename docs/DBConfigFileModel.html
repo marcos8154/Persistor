@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h3> Configuration by DBConfig File descriptor </h3>
+
+        <style>
+            th
+            {
+                text-align: left;
+            }
+        </style>
+
+        <table>
+            <thead>
+            <th style="background: cadetblue; width: 200px;"> Property </th>
+            <th style="background: cadetblue; width: 300px;"> Keys </th>
+            <th style="background: cadetblue; width: 400px;"> Description </th>
+        </thead>
+        <tr>
+            <th> db_type: </th>
+            <th> mysql; postgresql; firebirdsql; sqlserver; </th>
+            <th> Determines the target RDBMS for connect</th>
+        </tr>
+
+        <tr>
+            <th> host: </th>
+            <th> localhost; any valid server IP; </th>
+            <th> Determines the address of database server </th>
+        </tr>
+
+        <tr>
+            <th> port: </th>
+            <th> 3306; 5405; etc; </th>
+            <th> Determines the port of database server </th>
+        </tr>
+
+        <tr>
+            <th> user: </th>
+            <th> root; sa; SYSDBA; SYSTEM; etc; </th>
+            <th> Determines the user of database server </th>
+        </tr>
+
+        <tr>
+            <th> password: </th>
+            <th> yourpasswordkey </th>
+            <th> Determines the password of database server </th>
+        </tr>
+
+        <tr>
+            <th> database: </th>
+            <th> sales; peoples; products; customers; etc; </th>
+            <th> Determines the default database to connect in server </th>
+        </tr>
+
+        <tbody>
+
+        </tbody>
+    </table>
+
+
+    <br/>
+
+    Initialization example:<br/>
+    SessionFactory sf  =  Configuration.createSessionFactory("mysql");
+
+    <br/>
+    <br/>
+    Content file example:
+    
+    <br/>
+    <br/>
+
+    -- Database config --<br/>
+    <br/>
+    db_type:mysql<br/>
+    host:localhost <br/>
+    port:3306<br/>
+    user:root<br/>
+    password:81547686<br/>
+    database:cadastro<br/>
+
+    <br/>
+    -- Connection pool config --
+    <br/>
+
+    <br/>
+    acquire_increment:1<br/>
+    max_statements:5<br/>
+    max_pool_size:40<br/>
+    min_pool_size:3<br/>
+
+    <br/>
+    -- Miscelania --<br/>
+    <br/>
+    persistence_context:com.mycompany.myproject.MyContextClass<br/>
+    persistence_logger:com.mycompany.myproject.MyLoggerClass<br/>
+</body>
+</html>

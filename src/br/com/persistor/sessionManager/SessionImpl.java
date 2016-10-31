@@ -70,6 +70,7 @@ public class SessionImpl implements Session
         try
         {
             this.logger = (IPersistenceLogger) Class.forName(config.getPersistenceLogger()).newInstance();
+            System.err.println("Persistor: Persistence Logger initialization success! Logger class is: " + config.getPersistenceLogger());
         }
         catch (Exception ex)
         {
