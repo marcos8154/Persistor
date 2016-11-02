@@ -8,6 +8,7 @@ package br.com.persistor.connectionManager;
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.sessionManager.SessionFactory;
+import br.com.persistor.sessionManager.Util;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -112,13 +113,13 @@ public class Configuration
                 if (line.startsWith("persistence_context:"))
                 {
                     line = line.substring(20, line.length());
-                    config.setPersistenceContext(line);
+                    config.setPersistenceContext(Class.forName(line));
                 }
 
                 if (line.startsWith("persistence_logger:"))
                 {
                     line = line.substring(19, line.length());
-                    config.setPersistenceLogger(line);
+                    config.setPersistenceLogger(Class.forName(line));
                 }
                 
                 if(line.startsWith("acquire_increment:"))
@@ -153,11 +154,15 @@ public class Configuration
         }
         catch (FileNotFoundException ex)
         {
-            ex.printStackTrace();
+            System.err.println("Persistor: internal error at: \n" + Util.getFullStackTrace(ex));
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
+            System.err.println("Persistor: internal error at: \n" + Util.getFullStackTrace(ex));
+        }
+        catch(Exception ex)
+        {
+            System.err.println("Persistor: internal error at: \n" + Util.getFullStackTrace(ex));
         }
         return null;
     }

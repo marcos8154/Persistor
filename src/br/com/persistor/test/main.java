@@ -6,17 +6,12 @@ import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
 
 public class main
-{
-    
+{    
     public static void main(String[] args)
     {
         Armazens armazen = new Armazens();
         Session session = getSession();
-        
-        armazen.setDescricao("Depósito 1");
-        armazen.setTipo(2);
-        session.onID(armazen, 3);
-        session.commit();
+   
     }
     
     private static Session getSession()
@@ -24,7 +19,7 @@ public class main
         try
         {
             DBConfig config = new DBConfig();
-            config.setPersistenceLogger(LogTest.class.getName());
+            config.setPersistenceLogger(LogTest.class);
             //  config.setPersistenceContext(Contexto.class.getName());
             config.setDb_type(DB_TYPE.SQLServer);
             config.setHost("localhost");

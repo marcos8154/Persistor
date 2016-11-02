@@ -25,9 +25,9 @@ public class DBConfig
         return persistenceLogger;
     }
 
-    public void setPersistenceLogger(String persistenceLogger)
+    public void setPersistenceLogger(Class persistenceLoggerClass)
     {
-        this.persistenceLogger = persistenceLogger;
+        this.persistenceLogger = persistenceLoggerClass.getName();
     }
 
     public String getPersistenceContext()
@@ -35,9 +35,9 @@ public class DBConfig
         return persistenceContext;
     }
 
-    public void setPersistenceContext(String persistenceContext)
+    public void setPersistenceContext(Class persistenceContextClass)
     {
-        this.persistenceContext = persistenceContext;
+        this.persistenceContext = persistenceContextClass.getName();
     }
 
     public int getMinPoolSize()
