@@ -14,11 +14,8 @@ public class main
 
     public static void main(String[] args)
     {
-        Fields fs = new Fields();
-        Session session = getSession();
-        Query q = session.createQuery(fs, "desc pessoa");
-        q.setResult_type(RESULT_TYPE.MULTIPLE);
-        q.execute();
+        SessionFactory sf = Configuration.createSessionFactory("\\mysql");
+        sf.getSession();
     }
 
     private static Session getSession()

@@ -212,7 +212,8 @@ public class Query
     {
         try
         {
-            if (this.query.contains("select") || this.query.contains("desc") || this.query.contains("show"))
+            String tmpQuery = this.query.toLowerCase();
+            if (tmpQuery.startsWith("select") || tmpQuery.startsWith("desc") || tmpQuery.startsWith("show"))
             {
                 if (this.getResult_type() == null)
                 {
@@ -221,7 +222,7 @@ public class Query
                 executeSelect(cls, this.getResult_type());
             }
 
-            if (this.query.contains("update") || this.query.contains("insert"))
+            if (tmpQuery.startsWith("update") || tmpQuery.startsWith("insert"))
             {
                 executeInsertOrUpdate(cls);
             }
