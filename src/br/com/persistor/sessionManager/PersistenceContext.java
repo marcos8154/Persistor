@@ -55,6 +55,8 @@ public class PersistenceContext
 
     public void clear()
     {
+        if(!initialized)
+            return;
         System.out.println("Persistor: cleaning up Persistence Context...");
         entitySets.clear();
         entitySets = null;

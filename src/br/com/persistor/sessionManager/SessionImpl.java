@@ -37,6 +37,7 @@ public class SessionImpl implements Session
     private IPersistenceLogger logger = null;
 
     private boolean enabledContext = true;
+    private boolean showSql = true;
 
     public SessionImpl(Connection connection)
     {
@@ -172,35 +173,6 @@ public class SessionImpl implements Session
         return null;
     }
 
-    public Object getAuxiliarPK_value(Object entity, Class cls, String name) throws Exception
-    {
-        try
-        {
-            return cls.getMethod(name).invoke(entity);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception(ex.getMessage());
-        }
-    }
-
-    public String getAuxiliarPK_name(Class entityCls)
-    {
-        for (Method method : entityCls.getMethods())
-        {
-            if (method.isAnnotationPresent(PrimaryKey.class))
-            {
-                PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
-
-                if (primaryKey.primarykey_type() == PRIMARYKEY_TYPE.AUXILIAR)
-                {
-                    return method.getName();
-                }
-            }
-        }
-        return null;
-    }
-
     private String whereConditionGetLastID = "";
 
     private void loadPreparedStatement(PreparedStatement preparedStatement, Object entity, boolean ignorePrimaryKey) throws Exception
@@ -211,6 +183,7 @@ public class SessionImpl implements Session
             int parameterIndex = 1;
             for (Method method : cls.getMethods())
             {
+                SQLHelper helper = new SQLHelper();
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
                     if (ignorePrimaryKey)
@@ -232,12 +205,12 @@ public class SessionImpl implements Session
                             continue;
                         }
 
-                        if (getAuxiliarPK_name(cls) != null)
+                        if (helper.getAuxiliarPK_name(cls) != null)
                         {
-                            String auxPK_name = getAuxiliarPK_name(cls);
+                            String auxPK_name = helper.getAuxiliarPK_name(cls);
                             String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
 
-                            whereConditionGetLastID = columnAuxPK_name + " = " + getAuxiliarPK_value(entity, cls, auxPK_name);
+                            whereConditionGetLastID = columnAuxPK_name + " = " + helper.getAuxiliarPK_value(entity, cls, auxPK_name);
 
                             nextID = (this.maxId(entity, whereConditionGetLastID) + 1);
                             preparedStatement.setInt(parameterIndex, nextID);
@@ -245,7 +218,7 @@ public class SessionImpl implements Session
                             continue;
                         }
 
-                        if (getAuxiliarPK_name(cls) == null)
+                        if (helper.getAuxiliarPK_name(cls) == null)
                         {
                             nextID = (this.maxId(entity, "") + 1);
                             preparedStatement.setInt(parameterIndex, nextID);
@@ -465,7 +438,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-           Util.closePreparedStatement(preparedStatement);
+            Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -852,7 +825,7 @@ public class SessionImpl implements Session
                     if (clss == targetEntity.getClass())
                     {
                         OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-                      
+
                         if (oneToOne.load() == LOAD.AUTO)
                             System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
 
@@ -870,10 +843,10 @@ public class SessionImpl implements Session
                     if (clss == targetEntity.getClass())
                     {
                         OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
-                       
+
                         if (oneToMany.load() == LOAD.AUTO)
                             System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
-                        
+
                         join.addJoin(oneToMany.join_type(), targetEntity, null);
                         finalCondition = sourceEntityClass.getSimpleName() + "." + oneToMany.source() + " = " + targetEntity.getClass().getSimpleName() + "." + oneToMany.target();
                         mode = 2;
@@ -1065,11 +1038,13 @@ public class SessionImpl implements Session
             ResultSet resultSet = statement.executeQuery(sqlBase);
             if (loadEntity(entity, resultSet))
             {
-                System.out.println("Persistor: \n " + sqlBase);
+                if (showSql)
+                    System.out.println("Persistor: \n " + sqlBase);
                 if (enabledContext)
                     this.context.addToContext(entity);
             }
-            enabledContext = true;
+            this.enabledContext = true;
+            this.showSql = true;
         }
         catch (Exception ex)
         {
@@ -1217,7 +1192,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-           Util.closeStatement(statement);
+            Util.closeStatement(statement);
         }
 
         return result;
@@ -1226,6 +1201,7 @@ public class SessionImpl implements Session
     private void lastID(Object entity, String whereCondition) throws Exception
     {
         enabledContext = false;
+        showSql = false;
         Statement statement = null;
         try
         {
@@ -1245,7 +1221,7 @@ public class SessionImpl implements Session
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-               Util.closeStatement(statement);
+                Util.closeStatement(statement);
                 onID(entity, obtainedId);
             }
             Util.closeResultSet(resultSet);
@@ -1256,9 +1232,8 @@ public class SessionImpl implements Session
         }
         finally
         {
-           Util.closeStatement(statement);
+            Util.closeStatement(statement);
         }
-        enabledContext = true;
     }
 
     @Override
@@ -1297,10 +1272,10 @@ public class SessionImpl implements Session
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-               Util.closeStatement(statement);
+                Util.closeStatement(statement);
                 return onID(cls, obtainedId);
             }
-           Util.closeStatement(statement);
+            Util.closeStatement(statement);
             context.addToContext(entity);
             return (T) entity;
         }
@@ -1310,7 +1285,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-           Util.closeStatement(statement);
+            Util.closeStatement(statement);
         }
         return null;
     }
@@ -1351,10 +1326,10 @@ public class SessionImpl implements Session
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-               Util.closeStatement(statement);
+                Util.closeStatement(statement);
                 return onID(cls, obtainedId);
             }
-           Util.closeStatement(statement);
+            Util.closeStatement(statement);
             context.addToContext(entity);
             return (T) entity;
         }
@@ -1364,7 +1339,7 @@ public class SessionImpl implements Session
         }
         finally
         {
-           Util.closeStatement(statement);
+            Util.closeStatement(statement);
         }
         return null;
     }

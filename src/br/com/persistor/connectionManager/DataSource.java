@@ -27,6 +27,7 @@ public class DataSource
         cpds.setJdbcUrl(dataBaseURL(config));
         cpds.setUser(config.getUser());
         cpds.setPassword(config.getPassword());
+        cpds.setAcquireRetryAttempts(1);
 
         // the settings below are optional -- c3p0 can work with defaults
         cpds.setMinPoolSize(config.getMinPoolSize());
@@ -40,9 +41,7 @@ public class DataSource
         if (DataSources.getDataSource(config) == null)
         {
             datasource = new DataSource(config);
-            
             DataSources.add(datasource);
-            
             return datasource;
 
         } else
@@ -67,7 +66,7 @@ public class DataSource
             case PostgreSQL:
                 return "jdbc:postgresql://" + config.getHost() + ":" + config.getPort() + "/" + config.getDatabase();
             case SQLServer:
-                return "jdbc:sqlserver://" + config.getHost() + ":" + config.getPort() + ";" + "databaseName=" + config.getDatabase() + ";user=" + config.getUser() + ";password=" + config.getPassword() + ";";
+                return "jdbc:sqlserver://" + config.getHost() + ":" + config.getPort() + ";Databasename=" + config.getDatabase();
             case FirebirdSQL:
                 return "jdbc:firebirdsql://" + config.getHost() + ":" + config.getPort() + "/" + config.getDatabase() + "?encoding=ISO8859_1";
         }
