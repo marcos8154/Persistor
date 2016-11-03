@@ -39,7 +39,7 @@ public class PersistenceContext
                 {
                     context = ctor.newInstance();
                     initialized = true;
-                    System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
+                 //   System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
                     return;
                 }
             }

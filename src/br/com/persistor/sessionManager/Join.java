@@ -298,7 +298,7 @@ public class Join implements IJoin
                             if (method.getReturnType() == InputStream.class)
                             {
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, InputStream.class);
-                                invokeMethod.invoke(obj, resultSet.getBinaryStream(columnName));
+                                invokeMethod.invoke(otherObj, resultSet.getBinaryStream(columnName));
                                 continue;
                             }
                         }
