@@ -21,7 +21,7 @@ import br.com.persistor.interfaces.ICriteria;
 import java.io.InputStream;
 import br.com.persistor.interfaces.Session;
 
-public class Criteria implements ICriteria
+public class Criteria<T> implements ICriteria<T>
 {
 
     Join join = null;
@@ -117,25 +117,27 @@ public class Criteria implements ICriteria
     }
 
     @Override
-    public ICriteria loadEntity(Object entity)
+    public T loadEntity(T entity)
     {
-        entity = join.loadEntity(entity.getClass());
-        return this;
+        entity = (T)join.loadEntity(entity);
+        return entity;
     }
 
     @Override
-    public ICriteria loadList(Object entity)
+    public List<T> loadList(Object entity)
     {
         try
         {
-            entity.getClass().getField("ResultList").set(entity, join.getList(entity));
+            List<T> list =join.getList(entity);
+            entity.getClass().getField("ResultList").set(entity, list);
+            return list;
         }
         catch (Exception ex)
         {
             ex.printStackTrace();
         }
 
-        return this;
+        return new ArrayList<>();
     }
 
     @Override

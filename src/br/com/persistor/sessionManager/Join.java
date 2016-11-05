@@ -361,7 +361,7 @@ public class Join implements IJoin
         {
             for (Object obj : resultList)
             {
-                if (obj.getClass() == entity.getClass())
+                if (obj.getClass().equals(entity.getClass()))
                 {
                     entity = obj;
                     objToRemove = obj;

@@ -4,7 +4,7 @@ import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.Expressions;
 import java.util.List;
 
-public interface ICriteria
+public interface ICriteria<T>
 {
     ICriteria add(Expressions expression);
 
@@ -12,7 +12,7 @@ public interface ICriteria
     
     ICriteria execute();
     
-    ICriteria loadEntity(Object entity);
+    T loadEntity(T entity);
     
-    ICriteria loadList(Object entity);
+    List<T> loadList(Object entity);
 }
