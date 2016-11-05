@@ -38,6 +38,7 @@ public class SessionImpl implements Session
 
     private boolean enabledContext = true;
     private boolean showSql = true;
+    private boolean isRollbacked = false;
 
     public SessionImpl(Connection connection)
     {
@@ -71,7 +72,7 @@ public class SessionImpl implements Session
         try
         {
             this.logger = (IPersistenceLogger) Class.forName(config.getPersistenceLogger()).newInstance();
-          //  System.err.println("Persistor: Persistence Logger initialization success! Logger class is: " + config.getPersistenceLogger());
+            //  System.err.println("Persistor: Persistence Logger initialization success! Logger class is: " + config.getPersistenceLogger());
         }
         catch (Exception ex)
         {
@@ -1124,6 +1125,8 @@ public class SessionImpl implements Session
     {
         try
         {
+            if (isRollbacked)
+                return;
             connection.commit();
         }
         catch (Exception ex)
@@ -1154,6 +1157,7 @@ public class SessionImpl implements Session
         {
             System.out.println("Persistor: Rollbacking...");
             connection.rollback();
+            isRollbacked = true;
         }
         catch (Exception ex)
         {
