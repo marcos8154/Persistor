@@ -1,37 +1,20 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
-import br.com.persistor.enums.FILTER_TYPE;
-import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
-import br.com.persistor.generalClasses.Restrictions;
-import br.com.persistor.interfaces.ICriteria;
 import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
+import br.com.persistor.sessionManager.Util;
 import java.util.List;
+import javax.swing.JOptionPane;
 
 public class main
 {
 
     public static void main(String[] args)
     {
-        Pessoa pessoa = new Pessoa();
-        Veiculo veiculo = new Veiculo();
-        Session session = getSession();
-
-        ICriteria c = session.createCriteria(pessoa, RESULT_TYPE.MULTIPLE)
-                .add(JOIN_TYPE.INNER, veiculo, "pessoa.veiculo_id = veiculo.id")
-           //     .add(Restrictions.eq(FILTER_TYPE.WHERE, "pessoa.id", 13))
-                .execute();
-
-        List<Pessoa> pessoas = c.loadList(pessoa);
-        
-        for(Pessoa p : pessoas)
-        {
-            veiculo = (Veiculo) c.loadEntity(veiculo);
-            System.err.println(veiculo.getNome());
-        }
+       Util.runPresentation();
     }
 
     private static Session getSession()
@@ -40,7 +23,7 @@ public class main
         {
             DBConfig config = new DBConfig();
             config.setPersistenceLogger(LogTest.class);
-            //  config.setPersistenceContext(Contexto.class.getName());
+            config.setPersistenceContext(Contexto.class);
             config.setDb_type(DB_TYPE.MySQL);
             config.setHost("localhost");
             config.setPort(3306);

@@ -119,7 +119,7 @@ public class Criteria<T> implements ICriteria<T>
     @Override
     public T loadEntity(T entity)
     {
-        entity = (T)join.loadEntity(entity);
+        entity = (T) join.loadEntity(entity);
         return entity;
     }
 
@@ -128,7 +128,7 @@ public class Criteria<T> implements ICriteria<T>
     {
         try
         {
-            List<T> list =join.getList(entity);
+            List<T> list = join.getList(entity);
             entity.getClass().getField("ResultList").set(entity, list);
             return list;
         }
@@ -195,8 +195,11 @@ public class Criteria<T> implements ICriteria<T>
 
                 for (Method method : cls.getMethods())
                 {
-                    if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                     {
+                        if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
+                        
                         String columnName;
                         String fieldName;
 

@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -20,6 +21,15 @@ import java.util.Date;
  */
 public class Util
 {
+    public static void runPresentation()
+    {
+        JOptionPane.showMessageDialog(null, "Persistor - " + Util.getVersion(), "Version", 1);
+    }
+    
+    public static String getVersion()
+    {
+        return "1.9.50 - 2016";
+    }
 
     public static void closeStatement(Statement statement)
     {

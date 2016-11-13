@@ -22,6 +22,11 @@ public class DataSources
         dataSources.add(dataSource);
     }
     
+    public static void clear()
+    {
+        dataSources.clear();
+    }
+    
     public static DataSource getDataSource(DBConfig config)
     {
         for(DataSource ds : dataSources)

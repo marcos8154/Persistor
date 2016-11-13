@@ -80,27 +80,25 @@ public class SQLHelper
 
         for (Method method : cls.getMethods())
         {
-            if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+            if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
             {
+                if (method.getReturnType().getName().equals("java.lang.Class"))
+                    continue;
+
                 if (method.isAnnotationPresent(OneToOne.class))
-                {
                     continue;
-                }
                 if (method.isAnnotationPresent(PrimaryKey.class))
-                {
                     continue;
-                }
                 if (method.isAnnotationPresent(OneToMany.class))
-                {
                     continue;
-                }
 
                 String name = "";
 
                 if (method.getName().startsWith("is"))
                 {
                     name = method.getName().substring(2, method.getName().length());
-                } else
+                }
+                else
                 {
                     name = method.getName().substring(3, method.getName().length());
                 }
@@ -129,8 +127,11 @@ public class SQLHelper
                         continue;
                     }
 
-                    if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") && !method.getName().contains("class Test"))
                     {
+                        if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
+
                         primaryKeyName = method.getName();
                         this.setPrimaryKeyValue(method.invoke(obj).toString());
                     }
@@ -138,7 +139,8 @@ public class SQLHelper
                     break;
                 }
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at: \n");
             throw new Exception(ex.getMessage());
@@ -164,8 +166,11 @@ public class SQLHelper
                         continue;
                     }
 
-                    if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") && !method.getName().contains("class Test"))
                     {
+                        if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
+
                         primaryKeyName = (method.getName().substring(3, method.getName().length())).toLowerCase();
                         this.setPrimaryKeyValue(method.invoke(obj) == null ? "" : method.invoke(obj).toString());
                     }
@@ -173,7 +178,8 @@ public class SQLHelper
                     break;
                 }
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at: \n");
             throw new Exception(ex.getMessage());
@@ -226,7 +232,8 @@ public class SQLHelper
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: SQL_Helper_error: \n");
             throw new Exception(ex.getMessage());
@@ -243,8 +250,11 @@ public class SQLHelper
             {
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().contains("get") && !method.getName().contains("class Test"))
                     {
+                        if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
+
                         primaryKeyName = method.getName().substring(3, method.getName().length());
                         primaryKeyValue = (method.invoke(obj)).toString();
                     }
@@ -266,7 +276,8 @@ public class SQLHelper
             Field field = cls.getField("mountedQuery");
             field.set(obj, sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: SQL_Helper_error: \n");
             throw new Exception(ex.getMessage());
@@ -290,7 +301,8 @@ public class SQLHelper
                 sqlBase += " AND " + columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error at:");
             throw new Exception(ex.getMessage());
@@ -323,8 +335,11 @@ public class SQLHelper
 
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
-                    if (method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") && !method.getName().contains("class Test"))
                     {
+                        if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
+
                         primaryKeyName = method.getName().substring(3, method.getName().length());
                         continue;
                     }
@@ -332,8 +347,11 @@ public class SQLHelper
 
                 if (method.isAnnotationPresent(Version.class))
                 {
-                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (isNumber(method) && method.getName().startsWith("get") && !method.getName().contains("class Test"))
                     {
+                        if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
+
                         int versionObj = Integer.parseInt(method.invoke(obj).toString());
 
                         String field = ("get" + primaryKeyName);
@@ -344,7 +362,7 @@ public class SQLHelper
 
                         if (versionObj < currentVersion)
                         {
-                            throw new Exception("Persistor: unable to update entity '" + cls.getName()+ "'. @Version violation error.");
+                            throw new Exception("Persistor: unable to update entity '" + cls.getName() + "'. @Version violation error.");
                         }
 
                         String fieldName = method.getName().substring(3, method.getName().length());
@@ -354,17 +372,17 @@ public class SQLHelper
                     }
                 }
 
-                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                 {
+                    if (method.getReturnType().getName().equals("java.lang.Class"))
+                        continue;
+
                     String fieldName;
 
                     if (method.getName().startsWith("is"))
-                    {
                         fieldName = method.getName().substring(2, method.getName().length());
-                    } else
-                    {
+                    else
                         fieldName = method.getName().substring(3, method.getName().length());
-                    }
 
                     sql += fieldName + " = ?, ";
                 }
@@ -392,7 +410,8 @@ public class SQLHelper
             Field fieldMQ = cls.getField("mountedQuery");
             fieldMQ.set(obj, sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             throw new Exception(ex.getMessage());
         }
@@ -404,7 +423,8 @@ public class SQLHelper
         {
             return cls.getMethod(name).invoke(obj);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             throw new Exception(ex.getMessage());
         }
@@ -440,7 +460,8 @@ public class SQLHelper
 
             return resultSet.getInt(1);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: internal error on get currentVersion \n");
             throw new Exception(ex.getMessage());
@@ -468,30 +489,25 @@ public class SQLHelper
                         sql += method.getName().substring(3, method.getName().length()) + ", ";
                         parameters += "?, ";
                         continue;
-                    } else
-                    {
-                        continue;
                     }
+                    else
+                        continue;
                 }
 
                 if (method.isAnnotationPresent(OneToOne.class))
-                {
                     continue;
-                }
                 if (method.isAnnotationPresent(OneToMany.class))
-                {
                     continue;
-                }
 
-                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                 {
+                    if (method.getReturnType().getName().equals("java.lang.Class"))
+                        continue;
+
                     if (method.getName().startsWith("is"))
-                    {
                         sql += method.getName().substring(2, method.getName().length()) + ", ";
-                    } else
-                    {
+                    else
                         sql += method.getName().substring(3, method.getName().length()) + ", ";
-                    }
 
                     parameters += "?, ";
                 }
@@ -514,11 +530,12 @@ public class SQLHelper
             Field fieldMQ = cls.getField("mountedQuery");
             fieldMQ.set(obj, sqlBase);
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             System.err.println("Persistor: SQL_Helper_exception at :\n ");
             throw new Exception(ex.getMessage());
         }
     }
-    
+
 }

@@ -12,7 +12,7 @@ import br.com.persistor.generalClasses.DBConfig;
 public class DataSource
 {
 
-    private static DataSource datasource;
+    public static DataSource datasource;
     private ComboPooledDataSource cpds;
 
     public DBConfig config;
@@ -55,6 +55,11 @@ public class DataSource
         Connection connection = this.cpds.getConnection();
         connection.setAutoCommit(false);
         return connection;
+    }
+    
+    public void reset()
+    {
+        DataSources.clear();
     }
 
     private String dataBaseURL(DBConfig config)

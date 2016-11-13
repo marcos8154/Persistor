@@ -27,6 +27,8 @@ import br.com.persistor.interfaces.IPersistenceLogger;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import br.com.persistor.interfaces.Session;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 public class SessionImpl implements Session
 {
@@ -188,9 +190,7 @@ public class SessionImpl implements Session
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
                     if (ignorePrimaryKey)
-                    {
                         continue;
-                    }
 
                     PrimaryKey primaryKey = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
 
@@ -234,12 +234,13 @@ public class SessionImpl implements Session
                 }
 
                 if (method.isAnnotationPresent(OneToOne.class) || method.isAnnotationPresent(OneToMany.class))
-                {
                     continue;
-                }
 
-                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                 {
+                    if (method.getReturnType().getName().equals("java.lang.Class"))
+                        continue;
+
                     if (method.isAnnotationPresent(Version.class))
                     {
                         int nextVersion = (int) method.invoke(entity);
@@ -325,12 +326,12 @@ public class SessionImpl implements Session
                             parameterIndex++;
                             continue;
                         }
-                        java.sql.Date dt = new java.sql.Date(date.getYear(), date.getMonth(), date.getDay());
 
+                        DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                        java.sql.Date dt = java.sql.Date.valueOf(format.format(date));
                         Calendar calendar = Calendar.getInstance();
-                        calendar.set(date.getYear(), date.getMonth(), date.getDay(), date.getHours(), date.getMinutes(), date.getSeconds());
 
-                        preparedStatement.setDate(parameterIndex, dt, calendar);
+                        preparedStatement.setDate(parameterIndex, dt);
                         parameterIndex++;
                     }
                 }
@@ -354,9 +355,7 @@ public class SessionImpl implements Session
                 if (object == null)
                 {
                     if (isUpdateMode)
-                    {
                         continue;
-                    }
 
                     Class clss = Class.forName(method.getReturnType().getName());
                     java.lang.reflect.Constructor ctor = clss.getConstructor();
@@ -662,14 +661,13 @@ public class SessionImpl implements Session
                 result = true;
                 for (Method method : cls.getMethods())
                 {
-                    if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                    if (method.getName().startsWith("get") || method.getName().startsWith("is") && !method.getName().contains("class Test"))
                     {
-                        //   Method oneToOneMtd = cls.getMethod(method.getName().replace("set", "get"));
+                        if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
 
                         if (method.isAnnotationPresent(OneToOne.class))
-                        {
                             continue;
-                        }
 
                         String columnName;
                         String fieldName;
@@ -790,9 +788,7 @@ public class SessionImpl implements Session
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
 
                     if (oneToOne.load() == LOAD.MANUAL)
-                    {
                         return false;
-                    }
 
                     return true;
                 }
@@ -804,85 +800,6 @@ public class SessionImpl implements Session
         }
 
         return false;
-    }
-
-    @Override
-    public void loadWithJoin(Object sourceEntity, Object targetEntity)
-    {
-        SQLHelper sql_helper = new SQLHelper();
-        try
-        {
-            int mode = 0;
-            Class sourceEntityClass = sourceEntity.getClass();
-            Join join = new Join(sourceEntity);
-            String finalCondition = "";
-
-            for (Method method : sourceEntityClass.getMethods())
-            {
-                if (method.isAnnotationPresent(OneToOne.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-
-                    if (clss == targetEntity.getClass())
-                    {
-                        OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-
-                        if (oneToOne.load() == LOAD.AUTO)
-                            System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
-
-                        join.addJoin(oneToOne.join_type(), targetEntity, null);
-                        finalCondition = sourceEntityClass.getSimpleName() + "." + oneToOne.source() + " = " + targetEntity.getClass().getSimpleName() + "." + oneToOne.target();
-                        mode = 1;
-                        break;
-                    }
-                }
-
-                if (method.isAnnotationPresent(OneToMany.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-
-                    if (clss == targetEntity.getClass())
-                    {
-                        OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
-
-                        if (oneToMany.load() == LOAD.AUTO)
-                            System.err.println("Persistor: not allowed join between " + sourceEntityClass.getSimpleName() + " and " + method.getReturnType().getSimpleName() + ". \nLOAD mode in " + sourceEntityClass.getSimpleName() + "." + method.getName() + " is AUTO!");
-
-                        join.addJoin(oneToMany.join_type(), targetEntity, null);
-                        finalCondition = sourceEntityClass.getSimpleName() + "." + oneToMany.source() + " = " + targetEntity.getClass().getSimpleName() + "." + oneToMany.target();
-                        mode = 2;
-                        break;
-                    }
-                }
-            }
-
-            join.addFinalCondition(" where " + finalCondition
-                    + " AND " + sourceEntityClass.getSimpleName()
-                    + "." + sql_helper.getPrimaryKeyFieldName(sourceEntity)
-                    + " = "
-                    + sourceEntityClass.getMethod(sql_helper.getPrimaryKeyMethodName(sourceEntity)).invoke(sourceEntity));
-
-            join.execute(this);
-
-            if (mode == 1) //OneToOne
-            {
-                sourceEntity = join.getEntity(sourceEntity.getClass());
-                targetEntity = join.getEntity(targetEntity.getClass());
-            }
-
-            if (mode == 2) // OneToMany
-            {
-                sourceEntity = join.getEntity(sourceEntity.getClass());
-                targetEntity.getClass().getField("ResultList").set(targetEntity, join.getList(targetEntity));
-                Method method = sourceEntityClass.getMethod("set" + targetEntity.getClass().getSimpleName(), targetEntity.getClass());
-                method.invoke(sourceEntity, targetEntity);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.err.println("Persistor: loadWithJoin error at: \n");
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void loadWithJoin(Object sourceEntity, Object targetEntity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
     }
 
     private <T> T executeJoin(T entity, int id) throws Exception

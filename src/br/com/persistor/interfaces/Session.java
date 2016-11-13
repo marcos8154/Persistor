@@ -98,5 +98,4 @@ public interface Session
 
     DBConfig getConfig();
 
-    void loadWithJoin(Object sourceEntity, Object targetEntity);
 }

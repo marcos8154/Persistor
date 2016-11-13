@@ -15,6 +15,7 @@ import br.com.persistor.interfaces.IPersistenceContext;
 @Deprecated
 public class Contexto implements IPersistenceContext
 {
+
     private EntitySet<Pessoa> pessoas;
     private EntitySet<Veiculo> veiculos;
 
@@ -28,7 +29,7 @@ public class Contexto implements IPersistenceContext
         this.veiculos = veiculos;
     }
 
-   public EntitySet<Pessoa> getPessoas()
+    public EntitySet<Pessoa> getPessoas()
     {
         return pessoas;
     }

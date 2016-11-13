@@ -35,6 +35,12 @@ public class SessionFactory
         return null;
     }
 
+    public void reset()
+    {
+        mainDataSource.reset();
+        mainDataSource = null;
+    }
+
     public DBConfig getConfig()
     {
         return this.mainConfig;

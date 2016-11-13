@@ -162,8 +162,11 @@ public class Join implements IJoin
 
                     for (Method method : cls.getMethods())
                     {
-                        if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test") && !method.getName().contains("Class"))
+                        if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                         {
+                            if (method.getReturnType().getName().equals("java.lang.Class"))
+                                continue;
+                            
                             if (method.isAnnotationPresent(PrimaryKey.class))
                             {
                                 String mtdName = method.getName().substring(3, method.getName().length());
