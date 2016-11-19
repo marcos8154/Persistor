@@ -74,7 +74,6 @@ public class SessionImpl implements Session
         try
         {
             this.logger = (IPersistenceLogger) Class.forName(config.getPersistenceLogger()).newInstance();
-            //  System.err.println("Persistor: Persistence Logger initialization success! Logger class is: " + config.getPersistenceLogger());
         }
         catch (Exception ex)
         {
@@ -426,10 +425,9 @@ public class SessionImpl implements Session
             loadPreparedStatement(preparedStatement, entity, false);
             preparedStatement.execute();
             System.out.println("Persistor: \n " + sqlBase);
+            lastID(entity, whereConditionGetLastID);
             Field fieldSaved = cls.getField("saved");
             fieldSaved.set(entity, true);
-            lastID(entity, whereConditionGetLastID);
-
         }
         catch (Exception ex)
         {
