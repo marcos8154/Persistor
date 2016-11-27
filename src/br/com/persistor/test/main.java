@@ -14,10 +14,7 @@ public class main
 
     public static void main(String[] args)
     {
-        // Util.runPresentation();
-
-        System.err.println( getSession().count(Veiculo.class, "nome = 'Teste'"));
-
+         Util.runPresentation();
     }
 
     private static Session getSession()
