@@ -97,5 +97,7 @@ public interface Session
     Connection getActiveConnection();
 
     DBConfig getConfig();
+    
+    int count(Class entityClass, String whereCondition);
 
 }

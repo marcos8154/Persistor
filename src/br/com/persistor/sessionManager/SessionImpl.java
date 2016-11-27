@@ -581,12 +581,12 @@ public class SessionImpl implements Session
                 }
             }
 
-            System.out.println("Persistor: \n " + sqlBase);
             preparedStatement = connection.prepareStatement(sqlBase);
             preparedStatement.execute();
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
             this.context.removeFromContext(entity);
+            System.out.println("Persistor: \n " + sqlBase);
         }
         catch (Exception ex)
         {
@@ -1083,6 +1083,7 @@ public class SessionImpl implements Session
     private int maxId(Object entity, String where) throws Exception
     {
         Statement statement = null;
+        ResultSet resultSet = null;
         int result = 0;
         try
         {
@@ -1099,11 +1100,10 @@ public class SessionImpl implements Session
             }
 
             statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sqlBase);
+            resultSet = statement.executeQuery(sqlBase);
+           
             if (resultSet.next())
-            {
                 result = resultSet.getInt(1);
-            }
         }
         catch (Exception ex)
         {
@@ -1111,6 +1111,7 @@ public class SessionImpl implements Session
         }
         finally
         {
+            Util.closeResultSet(resultSet);
             Util.closeStatement(statement);
         }
 
@@ -1122,6 +1123,7 @@ public class SessionImpl implements Session
         enabledContext = false;
         showSql = false;
         Statement statement = null;
+        ResultSet resultSet = null;
         try
         {
             Class cls = entity.getClass();
@@ -1135,15 +1137,13 @@ public class SessionImpl implements Session
                 sqlBase += " where " + whereCondition;
             }
             statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sqlBase);
+            resultSet = statement.executeQuery(sqlBase);
             if (resultSet.next())
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-                Util.closeStatement(statement);
                 onID(entity, obtainedId);
             }
-            Util.closeResultSet(resultSet);
         }
         catch (Exception ex)
         {
@@ -1151,6 +1151,7 @@ public class SessionImpl implements Session
         }
         finally
         {
+            Util.closeResultSet(resultSet);
             Util.closeStatement(statement);
         }
     }
@@ -1159,6 +1160,7 @@ public class SessionImpl implements Session
     public <T> T first(Class cls, String whereCondition)
     {
         Statement statement = null;
+        ResultSet resultSet = null;
         String sqlBase = "";
         try
         {
@@ -1186,15 +1188,17 @@ public class SessionImpl implements Session
             }
 
             statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sqlBase);
+            resultSet = statement.executeQuery(sqlBase);
             if (resultSet.next())
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
+
+                Util.closeResultSet(resultSet);
                 Util.closeStatement(statement);
+
                 return onID(cls, obtainedId);
             }
-            Util.closeStatement(statement);
             context.addToContext(entity);
             return (T) entity;
         }
@@ -1204,6 +1208,7 @@ public class SessionImpl implements Session
         }
         finally
         {
+            Util.closeResultSet(resultSet);
             Util.closeStatement(statement);
         }
         return null;
@@ -1214,6 +1219,7 @@ public class SessionImpl implements Session
     {
         String sqlBase = "";
         Statement statement = null;
+        ResultSet resultSet = null;
         try
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
@@ -1240,15 +1246,18 @@ public class SessionImpl implements Session
             }
 
             statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sqlBase);
+            resultSet = statement.executeQuery(sqlBase);
             if (resultSet.next())
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
+
+                Util.closeResultSet(resultSet);
                 Util.closeStatement(statement);
+
                 return onID(cls, obtainedId);
             }
-            Util.closeStatement(statement);
+
             context.addToContext(entity);
             return (T) entity;
         }
@@ -1259,6 +1268,7 @@ public class SessionImpl implements Session
         finally
         {
             Util.closeStatement(statement);
+            Util.closeResultSet(resultSet);
         }
         return null;
     }
@@ -1276,5 +1286,54 @@ public class SessionImpl implements Session
             logger.newNofication(new PersistenceLog(this.getClass().getName(), "Criteria createCriteria(Object entity, RESULT_TYPE result_type)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
         return criteria;
+    }
+
+    @Override
+    public int count(Class entityClass, String whereCondition)
+    {
+        String sql = "";
+        int result = 0;
+
+        if (whereCondition == null)
+            whereCondition = "";
+
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try
+        {
+            java.lang.reflect.Constructor constructor = entityClass.getConstructor();
+            Object entity = constructor.newInstance();
+
+            String tableName = (entity.getClass().getSimpleName().toLowerCase());
+            sql = "select count(*) from " + tableName;
+            if (!whereCondition.isEmpty())
+                sql += " where " + whereCondition;
+
+            if (!extendsEntity(entityClass))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + entityClass.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
+                rollback();
+                return 0;
+            }
+
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            if (resultSet.next())
+                result = resultSet.getInt(1);
+
+            System.out.println(sql);
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
+        }
+        finally
+        {
+            Util.closeResultSet(resultSet);
+            Util.closeStatement(statement);
+        }
+
+        return result;
     }
 }
