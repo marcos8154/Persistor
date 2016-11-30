@@ -6,7 +6,8 @@ import br.com.persistor.enums.FILTER_TYPE;
 import br.com.persistor.enums.MATCH_MODE;
 import br.com.persistor.enums.ORDER_MODE;
 
-public class Restrictions {
+public class Restrictions
+{
 
     /**
      * Represents the equals expression, "="
@@ -108,6 +109,38 @@ public class Restrictions {
         }
 
         return new Expressions(baseCondition + column + " IS NULL ");
+    }
+
+    public static Expressions in(FILTER_TYPE filter_type, String column, String[] values)
+    {
+        String baseCondition = "";
+
+        switch (filter_type)
+        {
+            case WHERE:
+
+                baseCondition = " WHERE ";
+                break;
+
+            case AND:
+
+                baseCondition = " AND ";
+                break;
+
+            case OR:
+
+                baseCondition = " OR ";
+                break;
+        }
+
+        String in = "";
+        for (int i = 0; i < values.length; i++)
+        {
+            in += values[i] + ", ";
+        }
+        
+        in = in.substring(0, in.length() - 2);
+        return new Expressions(baseCondition + column + " IN (" + in + ")");
     }
 
     /**
@@ -245,7 +278,8 @@ public class Restrictions {
         if (value2 instanceof Date || value1 instanceof Date || value1 instanceof String || value2 instanceof String)
         {
             baseCondition += column + " BETWEEN '" + value1 + "' AND '" + value2 + "' ";
-        } else
+        }
+        else
         {
             baseCondition += column + " BETWEEN " + value1 + " AND " + value2 + " ";
         }
@@ -282,7 +316,8 @@ public class Restrictions {
 
             baseCondition += column + " > " + value + " ";
 
-        } else
+        }
+        else
         {
             System.err.println("Persistor: \n Restrictions.gt: only numeric types are allowed");
             return null;
@@ -320,7 +355,8 @@ public class Restrictions {
 
             baseCondition += column + " < " + value + " ";
 
-        } else
+        }
+        else
         {
             System.err.println("Persistor: \n Expressions.it: only numeric types are allowed");
             return null;
@@ -357,7 +393,8 @@ public class Restrictions {
             }
 
             baseCondition += column + " >= " + value + " ";
-        } else
+        }
+        else
         {
             System.err.println("Persistor: \n Expressions.ge: only numeric types are allowed");
         }
@@ -393,7 +430,8 @@ public class Restrictions {
             }
 
             baseCondition += column + " <= " + value + " ";
-        } else
+        }
+        else
         {
             System.err.println("Persistor: \n Expressions.le: only numeric types are allowed");
             return null;

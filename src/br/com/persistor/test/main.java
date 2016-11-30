@@ -1,8 +1,10 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.enums.FILTER_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
 import br.com.persistor.sessionManager.Util;
@@ -15,6 +17,13 @@ public class main
     public static void main(String[] args)
     {
          Util.runPresentation();
+       
+        /*
+        Veiculo v = new Veiculo();
+        getSession().createCriteria(v, RESULT_TYPE.MULTIPLE)
+                .add(Restrictions.in(FILTER_TYPE.WHERE, "id", new String[]{"1", "2"}))
+                .execute();
+*/
     }
 
     private static Session getSession()
@@ -23,7 +32,7 @@ public class main
         {
             DBConfig config = new DBConfig();
             config.setPersistenceLogger(LogTest.class);
-            config.setPersistenceContext(Contexto.class);
+           // config.setPersistenceContext(Contexto.class);
             config.setDb_type(DB_TYPE.MySQL);
             config.setHost("localhost");
             config.setPort(3306);

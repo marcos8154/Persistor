@@ -17,6 +17,7 @@ import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.INCREMENT;
+import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
@@ -125,9 +126,13 @@ public class SessionImpl implements Session
 
             Object value = method.invoke(entity);
 
-            if (value != null && (int) value != 0)
+            if (value != null)
             {
-                return true;
+                if(value instanceof String)
+                    return (Integer.parseInt(value.toString()) > 0);
+                
+                if (value instanceof Number)
+                    return (Integer.parseInt(value.toString()) > 0);
             }
         }
         catch (Exception ex)
@@ -362,6 +367,9 @@ public class SessionImpl implements Session
                 }
 
                 OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+                if(oneToOne.join_type() == JOIN_TYPE.LEFT)
+                    continue;
+                
                 String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
 
                 if (methodHasValue(entity, field))
@@ -550,13 +558,14 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void delete(Object entity, String and_or_condition)
+    public void delete(Object entity, String and_or_where_condition)
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
         try
         {
             Class cls = entity.getClass();
+            String tableName = cls.getSimpleName().toLowerCase();
 
             if (!extendsEntity(cls))
             {
@@ -566,9 +575,16 @@ public class SessionImpl implements Session
                 return;
             }
 
+            String sqlBase = "";
+
             sql_helper.prepareDelete(entity);
-            String sqlBase = sql_helper.getSqlBase();
-            sqlBase += and_or_condition;
+            if (sql_helper.getPrimaryKeyName().isEmpty())
+                sqlBase = "delete from " + tableName + " where " + and_or_where_condition;
+            else
+            {
+                sqlBase = sql_helper.getSqlBase();
+                sqlBase += and_or_where_condition;
+            }
 
             if (this.context.initialized)
             {
@@ -1101,7 +1117,7 @@ public class SessionImpl implements Session
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);
-           
+
             if (resultSet.next())
                 result = resultSet.getInt(1);
         }
@@ -1129,6 +1145,9 @@ public class SessionImpl implements Session
             Class cls = entity.getClass();
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
+
+            if (primaryKeyName.isEmpty())
+                return;
 
             String className = cls.getSimpleName().toLowerCase();
             String sqlBase = "select max(" + primaryKeyName + ") from " + className;

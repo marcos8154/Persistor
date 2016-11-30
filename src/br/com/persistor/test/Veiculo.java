@@ -24,9 +24,10 @@ import java.io.InputStream;
 @Deprecated
 public class Veiculo extends Entity
 {
-   private int id; 
+ //  private int id; 
    private String nome; 
 
+   /*
    public void setId(int id)
    {
        this.id = id;
@@ -37,7 +38,7 @@ public class Veiculo extends Entity
    {
        return id;
    }
-
+*/
    public void setNome(String nome)
    {
        this.nome = nome;
