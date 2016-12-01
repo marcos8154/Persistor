@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.persistor.annotations.PrimaryKey;
+import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
 import br.com.persistor.generalClasses.PersistenceLog;
@@ -166,7 +167,7 @@ public class Join implements IJoin
                         {
                             if (method.getReturnType().getName().equals("java.lang.Class"))
                                 continue;
-                            
+
                             if (method.isAnnotationPresent(PrimaryKey.class))
                             {
                                 String mtdName = method.getName().substring(3, method.getName().length());
@@ -300,7 +301,11 @@ public class Join implements IJoin
 
                             if (method.getReturnType() == InputStream.class)
                             {
-                                InputStream is = resultSet.getBlob(columnName).getBinaryStream();
+                                InputStream is;
+                                if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
+                                    is = resultSet.getBlob(columnName).getBinaryStream();
+                                else
+                                    is = resultSet.getBinaryStream(columnName);
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, InputStream.class);
                                 invokeMethod.invoke(otherObj, is);
                                 continue;

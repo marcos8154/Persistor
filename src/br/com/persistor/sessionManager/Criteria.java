@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.persistor.annotations.OneToOne;
+import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
@@ -292,7 +293,12 @@ public class Criteria<T> implements ICriteria<T>
 
                         if (method.getReturnType() == InputStream.class)
                         {
-                            InputStream is = resultSet.getBlob(columnName).getBinaryStream();
+                            InputStream is;
+                            if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
+                                is = resultSet.getBlob(columnName).getBinaryStream();
+                            else
+                                is = resultSet.getBinaryStream(columnName);
+                            
                             Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
                             invokeMethod.invoke(baseEntity, is);
                             continue;

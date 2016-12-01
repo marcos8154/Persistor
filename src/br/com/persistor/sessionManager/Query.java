@@ -10,6 +10,7 @@ import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.NamedQueryes;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.COMMIT_MODE;
+import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.PersistenceLog;
 
@@ -358,7 +359,12 @@ public class Query
 
                         if (method.getReturnType() == InputStream.class)
                         {
-                            InputStream is = resultSet.getBlob(columnName).getBinaryStream();
+                            InputStream is;
+                            if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
+                                is = resultSet.getBlob(columnName).getBinaryStream();
+                            else
+                                is = resultSet.getBinaryStream(columnName);
+                            
                             Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
                             invokeMethod.invoke(obj, is);
                             continue;

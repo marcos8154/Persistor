@@ -16,6 +16,7 @@ import java.util.List;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
+import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
@@ -775,8 +776,12 @@ public class SessionImpl implements Session
 
                         if (method.getReturnType() == InputStream.class)
                         {
+                            InputStream is;
+                            if (config.getDb_type() == DB_TYPE.SQLServer)
+                                is = resultSet.getBlob(columnName).getBinaryStream();
+                            else
+                                is = resultSet.getBinaryStream(columnName);
                             
-                            InputStream is = resultSet.getBlob(columnName).getBinaryStream();
                             Method invokeMethod = entity.getClass().getMethod(fieldName, InputStream.class);
                             invokeMethod.invoke(entity, is);
                             continue;
