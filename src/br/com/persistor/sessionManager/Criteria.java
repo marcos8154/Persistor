@@ -292,8 +292,9 @@ public class Criteria<T> implements ICriteria<T>
 
                         if (method.getReturnType() == InputStream.class)
                         {
+                            InputStream is = resultSet.getBlob(columnName).getBinaryStream();
                             Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(baseEntity, (InputStream) resultSet.getBinaryStream(columnName));
+                            invokeMethod.invoke(baseEntity, is);
                             continue;
                         }
                     }

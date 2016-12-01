@@ -358,8 +358,9 @@ public class Query
 
                         if (method.getReturnType() == InputStream.class)
                         {
+                            InputStream is = resultSet.getBlob(columnName).getBinaryStream();
                             Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(obj, (InputStream) resultSet.getBinaryStream(columnName));
+                            invokeMethod.invoke(obj, is);
                             continue;
                         }
                     }

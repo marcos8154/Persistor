@@ -128,9 +128,9 @@ public class SessionImpl implements Session
 
             if (value != null)
             {
-                if(value instanceof String)
+                if (value instanceof String)
                     return (Integer.parseInt(value.toString()) > 0);
-                
+
                 if (value instanceof Number)
                     return (Integer.parseInt(value.toString()) > 0);
             }
@@ -367,9 +367,9 @@ public class SessionImpl implements Session
                 }
 
                 OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-                if(oneToOne.join_type() == JOIN_TYPE.LEFT)
+                if (oneToOne.join_type() == JOIN_TYPE.LEFT)
                     continue;
-                
+
                 String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
 
                 if (methodHasValue(entity, field))
@@ -775,8 +775,10 @@ public class SessionImpl implements Session
 
                         if (method.getReturnType() == InputStream.class)
                         {
+                            
+                            InputStream is = resultSet.getBlob(columnName).getBinaryStream();
                             Method invokeMethod = entity.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(entity, (InputStream) resultSet.getBinaryStream(columnName));
+                            invokeMethod.invoke(entity, is);
                             continue;
                         }
                     }
@@ -995,7 +997,8 @@ public class SessionImpl implements Session
     public <T> T onID(Class entityCls, int id)
     {
         SQLHelper sql_helper = new SQLHelper();
-        Statement statement = null;
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
         Object entity = null;
         try
         {
@@ -1027,8 +1030,8 @@ public class SessionImpl implements Session
             if (context.findByID(entity, id) != null)
                 return (T) context.findByID(entity, id);
 
-            statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sqlBase);
+            ps = connection.prepareStatement(sqlBase);
+            resultSet = ps.executeQuery();
             if (loadEntity(entity, resultSet))
             {
                 System.out.println("Persistor: \n " + sqlBase);
@@ -1042,10 +1045,10 @@ public class SessionImpl implements Session
         }
         finally
         {
-            if (statement != null)
-            {
-                Util.closeStatement(statement);
-            }
+            if (resultSet != null)
+                Util.closeResultSet(resultSet);
+            if (ps != null)
+                Util.closeStatement(ps);
         }
 
         return (T) entity;

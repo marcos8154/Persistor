@@ -28,7 +28,7 @@ public class Util
     
     public static String getVersion()
     {
-        return "2.0.2 - 2016";
+        return "2.0.8 - 2016";
     }
 
     public static void closeStatement(Statement statement)
