@@ -24,7 +24,7 @@ public class Util
     public static void runPresentation()
     {
         JOptionPane.showMessageDialog(null, "Persistor - " + Util.getVersion(), "Version", 1);
-    }
+    }  
     
     public static String getVersion()
     {
