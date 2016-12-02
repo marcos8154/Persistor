@@ -11,8 +11,9 @@ package br.com.persistor.enums;
  */
 public enum DB_TYPE
 {
-        MySQL,
-        PostgreSQL,
-        FirebirdSQL,
-        SQLServer;
+    MySQL,
+    PostgreSQL,
+    FirebirdSQL,
+    SQLServer,
+    ORACLE;
 }

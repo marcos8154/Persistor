@@ -16,12 +16,12 @@ public class DataSource
     private ComboPooledDataSource cpds;
 
     public DBConfig config;
-    
+
     private DataSource(DBConfig config) throws IOException, SQLException, PropertyVetoException
     {
 
         this.config = config;
-        
+
         cpds = new ComboPooledDataSource();
         cpds.setDriverClass(decodeDriver(config)); //loads the jdbc driver
         cpds.setJdbcUrl(dataBaseURL(config));
@@ -44,7 +44,8 @@ public class DataSource
             DataSources.add(datasource);
             return datasource;
 
-        } else
+        }
+        else
         {
             return DataSources.getDataSource(config);
         }
@@ -56,7 +57,7 @@ public class DataSource
         connection.setAutoCommit(false);
         return connection;
     }
-    
+
     public void reset()
     {
         DataSources.clear();
@@ -74,6 +75,8 @@ public class DataSource
                 return "jdbc:sqlserver://" + config.getHost() + ":" + config.getPort() + ";Databasename=" + config.getDatabase();
             case FirebirdSQL:
                 return "jdbc:firebirdsql://" + config.getHost() + ":" + config.getPort() + "/" + config.getDatabase() + "?encoding=ISO8859_1";
+            case ORACLE:
+                return "jdbc:oracle:thin:@" + config.getHost() + ":" + config.getPort() + ":" + config.getDatabase();
         }
 
         return null;
@@ -91,6 +94,8 @@ public class DataSource
                 return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
             case FirebirdSQL:
                 return "org.firebirdsql.jdbc.FBDriver";
+            case ORACLE:
+                return "oracle.jdbc.driver.OracleDriver";
         }
 
         return null;
