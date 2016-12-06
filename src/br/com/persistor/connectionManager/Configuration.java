@@ -8,7 +8,7 @@ package br.com.persistor.connectionManager;
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.sessionManager.SessionFactory;
-import br.com.persistor.sessionManager.Util;
+import br.com.persistor.generalClasses.Util;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;

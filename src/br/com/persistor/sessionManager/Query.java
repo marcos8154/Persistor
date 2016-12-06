@@ -13,6 +13,7 @@ import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.PersistenceLog;
+import br.com.persistor.generalClasses.Util;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;

@@ -1,74 +1,59 @@
-
-/* AUTO-GENERATED CLASS */
- /* DOES NOT ADD ACCESSOR METHODS */
- /* DOES NOT CHANGE NAME OF ACCESSOR METHODS */
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package br.com.persistor.test;
 
 import br.com.persistor.abstractClasses.Entity;
 import br.com.persistor.annotations.PrimaryKey;
+import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.INCREMENT;
-import br.com.persistor.annotations.OneToOne;
-import br.com.persistor.enums.JOIN_TYPE;
-import br.com.persistor.enums.LOAD;
+import java.util.Date;
 
+/**
+ *
+ * @author Marcos VinÃ­cius
+ */
 public class Pessoa extends Entity
 {
-
     private int id;
     private String nome;
     private int version;
-    private int veiculo_id;
-    private Veiculo veiculo;
-
-    public void setId(int id)
-    {
-        this.id = id;
-    }
+    private Date data_nasc;
 
     @PrimaryKey(increment = INCREMENT.AUTO)
-    public int getId()
-    {
+    public int getId() {
         return id;
     }
 
-    public void setNome(String nome)
-    {
-        this.nome = nome;
+    public Date getData_nasc() {
+		return data_nasc;
+	}
+
+	public void setData_nasc(Date data_nasc) {
+		this.data_nasc = data_nasc;
+	}
+
+	public void setId(int id) {
+        this.id = id;
     }
 
-    public String getNome()
-    {
+    public String getNome() {
         return nome;
     }
 
-    public void setVersion(int version)
-    {
-        this.version = version;
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
-    public int getVersion()
-    {
+    @Version
+    public int getVersion() {
         return version;
     }
 
-    public void setVeiculo(Veiculo veiculo)
-    {
-        this.veiculo = veiculo;
+    public void setVersion(int version) {
+        this.version = version;
     }
 
-    public void setVeiculo_Id(int veiculo_id)
-    {
-        this.veiculo_id = veiculo_id;
-    }
-
-    public int getVeiculo_Id()
-    {
-        return veiculo_id;
-    }
-
-    @OneToOne(source = "veiculo_id", target = "id", load = LOAD.AUTO, join_type = JOIN_TYPE.INNER)
-    public Veiculo getVeiculo()
-    {
-        return veiculo;
-    }
 }

@@ -13,6 +13,7 @@ import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
 import br.com.persistor.generalClasses.PersistenceLog;
+import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.IJoin;
 import java.io.InputStream;
 import br.com.persistor.interfaces.Session;

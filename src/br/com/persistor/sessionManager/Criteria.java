@@ -18,6 +18,7 @@ import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.PersistenceLog;
+import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
 import java.io.InputStream;
 import br.com.persistor.interfaces.Session;

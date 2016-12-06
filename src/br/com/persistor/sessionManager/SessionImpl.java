@@ -25,6 +25,7 @@ import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.JoinableObject;
 import br.com.persistor.generalClasses.PersistenceLog;
+import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.IPersistenceLogger;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -333,10 +334,7 @@ public class SessionImpl implements Session
                         }
 
                         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-                        java.sql.Date dt = java.sql.Date.valueOf(format.format(date));
-                        Calendar calendar = Calendar.getInstance();
-
-                        preparedStatement.setDate(parameterIndex, dt);
+                        preparedStatement.setDate(parameterIndex, java.sql.Date.valueOf(format.format(date)));
                         parameterIndex++;
                     }
                 }

@@ -7,24 +7,23 @@ package br.com.persistor.test;
 
 import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.interfaces.IPersistenceLogger;
-import java.util.Date;
 
 /**
  *
  * @author Marcos Vinícius
  */
-@Deprecated
 public class LogTest implements IPersistenceLogger
 {
 
     @Override
-    public void newNofication(PersistenceLog persistenceLog)
+    public void newNofication(PersistenceLog pl)
     {
-        System.err.println(" Classe: " + persistenceLog.getClassName());
-        System.err.println(" Metodo: " + persistenceLog.getMethodName());
-        System.err.println(" Data: " + persistenceLog.getDate());
-        System.err.println(" Descricao: " + persistenceLog.getDescription());
-        System.err.println(" Query: " + persistenceLog.getQuery());
+        System.err.println(" *** ERRO ***");
+        System.err.println("Class: " + pl.getClassName());
+        System.err.println("Method: " + pl.getMethodName());
+        System.err.println("Date: " + pl.getDate());
+        System.err.println("Query: " + pl.getQuery());
+        System.err.println("Ex: " + pl.getDescription());
     }
-
+    
 }
