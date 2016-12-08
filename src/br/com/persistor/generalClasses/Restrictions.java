@@ -10,7 +10,12 @@ public class Restrictions
 {
 
     /**
-     * Represents the equals expression, "="
+     * (...) column = value (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
      */
     public static Expressions eq(FILTER_TYPE filter_type, String column, Object value)
     {
@@ -47,7 +52,12 @@ public class Restrictions
     }
 
     /**
-     * Representes Not Equals expression, "<>"
+     * (...) column != value (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
      */
     public static Expressions ne(FILTER_TYPE filter_type, String column, Object value)
     {
@@ -84,7 +94,11 @@ public class Restrictions
     }
 
     /**
-     * Represents the Is Null expression, "Is Null"
+     * (...) column = is null (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @return
      */
     public static Expressions isNull(FILTER_TYPE filter_type, String column)
     {
@@ -111,6 +125,14 @@ public class Restrictions
         return new Expressions(baseCondition + column + " IS NULL ");
     }
 
+    /**
+     * (...) column in (1, 3, 5) (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
+     */
     public static Expressions in(FILTER_TYPE filter_type, String column, String[] values)
     {
         String baseCondition = "";
@@ -138,13 +160,17 @@ public class Restrictions
         {
             in += values[i] + ", ";
         }
-        
+
         in = in.substring(0, in.length() - 2);
         return new Expressions(baseCondition + column + " IN (" + in + ")");
     }
 
     /**
-     * Represents the Is Not Null expression, "Is Not Null"
+     * (...) column is not null (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @return
      */
     public static Expressions isNotNull(FILTER_TYPE filter_type, String column)
     {
@@ -172,10 +198,18 @@ public class Restrictions
     }
 
     /**
-     * Represents the Exact Like expression, "LIKE 'term'"
+     * This result in a EXACT like expression
+     *
+     * (...) column like 'search term'
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
      */
     public static Expressions like(FILTER_TYPE filter_type, String column, String value)
     {
+        value = value.replace("'", "");
         String baseCondition = "";
 
         switch (filter_type)
@@ -202,11 +236,23 @@ public class Restrictions
     }
 
     /**
-     * Represents the Like expression. It can be customized with the parameter
-     * enum MatchMode
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value  espected value
+     * @param matchMode Used to specify how to match specified values
+     *
+     * Avainable Match Modes:
+     *
+     * --> ANYWHERE: Any part in String. Ex.: '%search term%' --> END: End of
+     * String. Ex.: '%search term' --> EXACT: Exact match. Ex.: 'search term'
+     * --> START: String start. Ex.: 'search term%'
+     *
+     * @return
      */
     public static Expressions like(FILTER_TYPE filter_type, String column, String value, MATCH_MODE matchMode)
     {
+        value = value.replace("'", "");
         String baseCondition = "";
 
         switch (filter_type)
@@ -251,7 +297,13 @@ public class Restrictions
     }
 
     /**
-     * Represents the Between expression, "Between 50 AND 60"
+     * (...) column between value1 and value2 (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value1 initial value
+     * @param value2 final value
+     * @return
      */
     public static Expressions between(FILTER_TYPE filter_type, String column, Object value1, Object value2)
     {
@@ -288,7 +340,12 @@ public class Restrictions
     }
 
     /**
-     * Represents More Than expression. ">"
+     * (...) column > value (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
      */
     public static Expressions gt(FILTER_TYPE filter_type, String column, Object value)
     {
@@ -327,7 +384,13 @@ public class Restrictions
     }
 
     /**
-     * Represents Less Than expression. "<"
+     * (...) column < value (...)
+     * @para
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
      */
     public static Expressions it(FILTER_TYPE filter_type, String column, Object value)
     {
@@ -366,7 +429,12 @@ public class Restrictions
     }
 
     /**
-     * Represents greater than or equal to expression. ">="
+     * (...) column >= value (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
      */
     public static Expressions ge(FILTER_TYPE filter_type, String column, Object value)
     {
@@ -403,7 +471,11 @@ public class Restrictions
     }
 
     /**
-     * Represents less than or equal to expression. "<="
+     * (...) column <= value (...)
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
      */
     public static Expressions le(FILTER_TYPE filter_type, String column, Object value)
     {
@@ -440,9 +512,12 @@ public class Restrictions
         return new Expressions(baseCondition);
     }
 
+
     /**
-     * Represents the Order By expression. It can be customized with the
-     * parameter enum ORDER_MODE
+     * (...) order by column ASC / DESC (...)
+     * @param column column in table
+     * @param order_mode type or ordenation (ASC / DESC)
+     * @return 
      */
     public static Expressions OrderBy(String column, ORDER_MODE order_mode)
     {

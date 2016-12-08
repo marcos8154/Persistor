@@ -19,23 +19,25 @@ public class main
 
     public static void main(String[] args)
     {
-        //Util.runPresentation();
+        Util.runPresentation();
 
         try
         {
-            Pessoa p = new Pessoa();
+       /*     Pessoa p = new Pessoa();
 
             Session session = getSession();
 
             p.setNome("Oficial");
-            p.setData_nasc(Util.getDateFromString("06/12/2016", "dd/MM/yyyy"));
+            p.setData_nasc(Util.getDateFromString("06/12/2016 12:25:41", "dd/MM/yyyy HH:mm:ss"));
             session.save(p);
             session.commit();
             session.close();
+            
+            System.out.println(Util.getDateFromString("06/12/2016 12:25:41", "dd/MM/yyyy HH:mm:ss")); */
         }
         catch (Exception ex)
         {
-
+            ex.printStackTrace();
         }
     }
 

@@ -40,7 +40,7 @@ public class Util
 
     public static String getVersion()
     {
-        return "2.1.2 - 2016";
+        return "2.1.5 - 2016";
     }
 
     /**
