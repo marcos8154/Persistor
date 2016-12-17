@@ -4,6 +4,7 @@ import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.FILTER_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
@@ -19,21 +20,24 @@ public class main
 
     public static void main(String[] args)
     {
-        Util.runPresentation();
+        //  Util.runPresentation();
 
         try
         {
-       /*     Pessoa p = new Pessoa();
-
-            Session session = getSession();
-
-            p.setNome("Oficial");
-            p.setData_nasc(Util.getDateFromString("06/12/2016 12:25:41", "dd/MM/yyyy HH:mm:ss"));
-            session.save(p);
-            session.commit();
-            session.close();
+            Cidades c = new Cidades();
+            Pessoa p = new Pessoa();
             
-            System.out.println(Util.getDateFromString("06/12/2016 12:25:41", "dd/MM/yyyy HH:mm:ss")); */
+            Session session = getSession();
+            session.createCriteria(p, RESULT_TYPE.MULTIPLE)
+                    .addLimit(Limit.paginate(1, 5, "id"))
+                    .execute();
+
+            System.out.println("");
+            System.out.println("*-----------------|RESULTADOS|-------------------*");
+            for (Pessoa pes : session.getList(p))
+            {
+                System.out.println(pes.getId() + " " + pes.getNome());
+            }
         }
         catch (Exception ex)
         {

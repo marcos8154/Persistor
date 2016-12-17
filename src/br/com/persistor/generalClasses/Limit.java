@@ -18,7 +18,18 @@ public class Limit
 
     private int pagePosition;
     private int pageSize;
-    
+    private String fieldToOrder;
+
+    public String getFieldToOrder()
+    {
+        return fieldToOrder;
+    }
+
+    public void setFieldToOrder(String fieldToOrder)
+    {
+        this.fieldToOrder = fieldToOrder;
+    }
+
     public int getPagePosition()
     {
         return pagePosition;
@@ -39,24 +50,28 @@ public class Limit
         this.pageSize = pageSize;
     }
 
-    public  static Limit simpleLimit(int limitSize)
+    public static Limit simpleLimit(int limitSize)
     {
         Limit limit = new Limit();
-        
+
         limit.limit_type = LIMIT_TYPE.simple;
         limit.setPageSize(limitSize);
-        
+
         return limit;
     }
     
-    public static Limit paginate(int pagePosition, int pageSize)
+    public static Limit paginate(int pagePosition, int pageSize, String... fieldToOrder)
     {
         Limit limit = new Limit();
-        
+
         limit.limit_type = LIMIT_TYPE.paginate;
-        limit.setPagePosition(pagePosition);
         limit.setPageSize(pageSize);
-        
+        limit.setPagePosition(pagePosition);
+
+        if (fieldToOrder != null)
+            if (fieldToOrder.length > 0)
+                limit.setFieldToOrder(fieldToOrder[0]);
+
         return limit;
     }
 }

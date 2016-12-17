@@ -15,6 +15,7 @@ import java.util.Date;
  *
  * @author Marcos VinÃ­cius
  */
+@Deprecated
 public class Pessoa extends Entity
 {
     private int id;

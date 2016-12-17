@@ -67,6 +67,23 @@ public class Criteria<T> implements ICriteria<T>
 
                 break;
 
+            case SQLServer:
+
+                if (limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    this.query += " ORDER BY " + limit.getFieldToOrder() + " OFFSET " + limit.getPagePosition()
+                            + " ROWS FETCH NEXT " + limit.getPageSize() + " ROWS ONLY";
+                }
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    String q = query;
+                    this.query = ("SELECT TOP " + limit.getPageSize() + " * FROM " + this.tableName + " " + q);
+                    hasFbLimit = true;
+                }
+                
+                break;
+
             case PostgreSQL:
 
                 if (limit.limit_type == LIMIT_TYPE.paginate)
@@ -201,7 +218,7 @@ public class Criteria<T> implements ICriteria<T>
                     {
                         if (method.getReturnType().getName().equals("java.lang.Class"))
                             continue;
-                        
+
                         String columnName;
                         String fieldName;
 
@@ -299,7 +316,7 @@ public class Criteria<T> implements ICriteria<T>
                                 is = resultSet.getBlob(columnName).getBinaryStream();
                             else
                                 is = resultSet.getBinaryStream(columnName);
-                            
+
                             Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
                             invokeMethod.invoke(baseEntity, is);
                             continue;
