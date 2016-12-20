@@ -116,6 +116,21 @@ public class Criteria<T> implements ICriteria<T>
         return this;
     }
 
+    private boolean isPrecedencePending = false;
+    @Override
+    public Criteria beginPrecedence()
+    {
+        isPrecedencePending = true;
+        return this;
+    }
+    
+    @Override
+    public Criteria endPrecedence()
+    {
+        query += ") ";
+        return this;
+    }
+    
     @Override
     public Criteria add(JOIN_TYPE join_type, Object entity, String joinCondition)
     {
@@ -131,6 +146,23 @@ public class Criteria<T> implements ICriteria<T>
     @Override
     public Criteria add(Expressions expression)
     {
+        if(isPrecedencePending)
+        {
+            String value = expression.getCurrentValue();
+            
+            if(value.toLowerCase().startsWith(" where"))
+                value = value.replace("WHERE", "WHERE (");
+            
+            if(value.toLowerCase().startsWith(" or"))
+                value = value.replace("OR", "OR (");
+            
+            if(value.toLowerCase().startsWith(" and"))
+                value = value.replace("AND", "AND (");
+            
+            isPrecedencePending = false;
+            expression.setCurrentValue(value);
+            
+        }
         query += expression.getCurrentValue();
         return this;
     }

@@ -5,6 +5,7 @@
  */
 package br.com.persistor.annotations;
 
+import br.com.persistor.enums.RESULT_TYPE;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -22,4 +23,6 @@ public @interface NamedQuery
 {
     String queryName();
     String queryValue();
+    RESULT_TYPE result_type() default RESULT_TYPE.MULTIPLE;
+    boolean closeAfterExecute() default true;
 }

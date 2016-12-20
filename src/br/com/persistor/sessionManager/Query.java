@@ -98,6 +98,8 @@ public class Query
                         if (namedQuery.queryName().equals(query.replace("@", "")))
                         {
                             this.query = namedQuery.queryValue();
+                            this.result_type = namedQuery.result_type();
+                            this.closeSessionAfterExecute = namedQuery.closeAfterExecute();
                             isNamedQuery = true;
                             break;
                         }

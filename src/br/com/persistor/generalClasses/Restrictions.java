@@ -5,9 +5,23 @@ import java.util.Date;
 import br.com.persistor.enums.FILTER_TYPE;
 import br.com.persistor.enums.MATCH_MODE;
 import br.com.persistor.enums.ORDER_MODE;
+import java.beans.Expression;
 
 public class Restrictions
 {
+
+    private static boolean precedencePending = false;
+
+    public static Expressions beginPrecedence()
+    {
+        precedencePending = true;
+        return new Expressions("");
+    }
+
+    public static Expressions endPrecendence()
+    {
+        return new Expressions(")");
+    }
 
     /**
      * (...) column = value (...)
@@ -37,6 +51,12 @@ public class Restrictions
 
                 baseCondition = " OR ";
                 break;
+        }
+
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
         }
 
         if (value instanceof Number)
@@ -81,6 +101,12 @@ public class Restrictions
                 break;
         }
 
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
+        }
+
         if (value instanceof Number)
         {
             baseCondition += column + " <> " + value + " ";
@@ -122,6 +148,12 @@ public class Restrictions
                 break;
         }
 
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
+        }
+
         return new Expressions(baseCondition + column + " IS NULL ");
     }
 
@@ -153,6 +185,12 @@ public class Restrictions
 
                 baseCondition = " OR ";
                 break;
+        }
+
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
         }
 
         String in = "";
@@ -194,6 +232,12 @@ public class Restrictions
                 break;
         }
 
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
+        }
+
         return new Expressions(baseCondition + column + " IS NOT NULL ");
     }
 
@@ -230,6 +274,12 @@ public class Restrictions
                 break;
         }
 
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
+        }
+
         baseCondition += column + " LIKE '" + value + "' ";
 
         return new Expressions(baseCondition);
@@ -239,7 +289,7 @@ public class Restrictions
      *
      * @param filter_type Enum WHERE / OR / AND
      * @param column column in table
-     * @param value  espected value
+     * @param value espected value
      * @param matchMode Used to specify how to match specified values
      *
      * Avainable Match Modes:
@@ -271,6 +321,12 @@ public class Restrictions
 
                 baseCondition = " OR ";
                 break;
+        }
+
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
         }
 
         switch (matchMode)
@@ -327,6 +383,12 @@ public class Restrictions
                 break;
         }
 
+        if (precedencePending)
+        {
+            baseCondition += " (";
+            precedencePending = false;
+        }
+
         if (value2 instanceof Date || value1 instanceof Date || value1 instanceof String || value2 instanceof String)
         {
             baseCondition += column + " BETWEEN '" + value1 + "' AND '" + value2 + "' ";
@@ -371,6 +433,12 @@ public class Restrictions
                     break;
             }
 
+            if (precedencePending)
+            {
+                baseCondition += " (";
+                precedencePending = false;
+            }
+
             baseCondition += column + " > " + value + " ";
 
         }
@@ -384,8 +452,8 @@ public class Restrictions
     }
 
     /**
-     * (...) column < value (...)
-     * @para
+     * (...) column < value (...) @para
+     *
      *
      * @param filter_type Enum WHERE / OR / AND
      * @param column column in table
@@ -414,6 +482,12 @@ public class Restrictions
 
                     baseCondition = " OR ";
                     break;
+            }
+
+            if (precedencePending)
+            {
+                baseCondition += " (";
+                precedencePending = false;
             }
 
             baseCondition += column + " < " + value + " ";
@@ -460,6 +534,12 @@ public class Restrictions
                     break;
             }
 
+            if (precedencePending)
+            {
+                baseCondition += " (";
+                precedencePending = false;
+            }
+
             baseCondition += column + " >= " + value + " ";
         }
         else
@@ -471,10 +551,13 @@ public class Restrictions
     }
 
     /**
-     * (...) column <= value (...)
-     * @param filter_type Enum WHERE / OR / AND
-     * @param column column in table
-     * @param value espected value
+     * (...) column <= value (...) @param
+     *
+     * filter_type Enum WHERE / OR / AND @param column column in table @param
+     * value espected va
+     *
+     * l
+     * ue
      * @return
      */
     public static Expressions le(FILTER_TYPE filter_type, String column, Object value)
@@ -501,6 +584,12 @@ public class Restrictions
                     break;
             }
 
+            if (precedencePending)
+            {
+                baseCondition += " (";
+                precedencePending = false;
+            }
+
             baseCondition += column + " <= " + value + " ";
         }
         else
@@ -512,12 +601,12 @@ public class Restrictions
         return new Expressions(baseCondition);
     }
 
-
     /**
      * (...) order by column ASC / DESC (...)
+     *
      * @param column column in table
      * @param order_mode type or ordenation (ASC / DESC)
-     * @return 
+     * @return
      */
     public static Expressions OrderBy(String column, ORDER_MODE order_mode)
     {

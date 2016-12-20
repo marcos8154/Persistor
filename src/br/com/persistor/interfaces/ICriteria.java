@@ -15,4 +15,8 @@ public interface ICriteria<T>
     T loadEntity(T entity);
     
     List<T> loadList(Object entity);
+    
+    ICriteria beginPrecedence();
+    
+    ICriteria endPrecedence();
 }

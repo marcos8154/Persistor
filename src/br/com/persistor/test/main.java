@@ -20,16 +20,24 @@ public class main
 
     public static void main(String[] args)
     {
-        //  Util.runPresentation();
+        Util.runPresentation();
 
         try
         {
-            Cidades c = new Cidades();
+     /*       Cidades c = new Cidades();
             Pessoa p = new Pessoa();
             
             Session session = getSession();
             session.createCriteria(p, RESULT_TYPE.MULTIPLE)
-                    .addLimit(Limit.paginate(1, 5, "id"))
+                    .beginPrecedence()
+                    .add(Restrictions.gt(FILTER_TYPE.WHERE, "id", 0))
+                    .endPrecedence()
+                    .beginPrecedence()
+                    .add(Restrictions.eq(FILTER_TYPE.OR, "nome", "Haha"))
+                    .endPrecedence()
+                    .beginPrecedence()
+                    .add(Restrictions.ne(FILTER_TYPE.AND, "nome", "HA"))
+                    .endPrecedence()
                     .execute();
 
             System.out.println("");
@@ -37,7 +45,7 @@ public class main
             for (Pessoa pes : session.getList(p))
             {
                 System.out.println(pes.getId() + " " + pes.getNome());
-            }
+            } */
         }
         catch (Exception ex)
         {
@@ -58,7 +66,8 @@ public class main
             config.setUser("root");
             config.setPassword("81547686");
             config.setDatabase("cadastro");
-
+            config.setMaxPoolSize(1);
+            
             SessionFactory sf = new SessionFactory();
             return sf.getSession(config);
         }

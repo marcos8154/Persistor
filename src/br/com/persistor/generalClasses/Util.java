@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import javax.swing.JOptionPane;
 
@@ -40,21 +41,22 @@ public class Util
 
     public static String getVersion()
     {
-        return "2.1.5 - 2016";
+        return "2.2.1 - Build 161220";
     }
 
     /**
      * Default format is yyyy-MM-dd
      *
-     * @param date
+     * @param dateFormat
      * @return
      */
-    public static Date getDateFromString(String date)
+    public static Date getDateFromFormat(String dateFormat)
     {
         try
         {
-            SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd");
-            Date resultDate = (Date) sdf1.parse(date);
+            Date d = new Date();
+            DateFormat sdf1 = DateFormat.getDateTimeInstance();
+            Date resultDate = sdf1.parse(sdf1.format(d));
             return resultDate;
         }
         catch (Exception ex)
@@ -64,25 +66,11 @@ public class Util
         }
     }
 
-    /**
-     *
-     * @param date
-     * @param format - Format to date
-     * @return
-     */
-    public static Date getDateFromString(String date, String format)
+    public static String getDateTime()
     {
-        try
-        {
-            SimpleDateFormat sdf1 = new SimpleDateFormat(format);
-            Date resultDate = (Date) sdf1.parse(date);
-            return resultDate;
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-            return null;
-        }
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date();
+        return dateFormat.format(date);
     }
 
     public static void closeStatement(Statement statement)
@@ -146,13 +134,6 @@ public class Util
             result += stackTrace + "\n";
         }
         return result;
-    }
-
-    public static String getDateTime()
-    {
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date date = new Date();
-        return dateFormat.format(date);
     }
 
     public static boolean isNumber(Method method)
