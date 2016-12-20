@@ -10,19 +10,6 @@ import java.beans.Expression;
 public class Restrictions
 {
 
-    private static boolean precedencePending = false;
-
-    public static Expressions beginPrecedence()
-    {
-        precedencePending = true;
-        return new Expressions("");
-    }
-
-    public static Expressions endPrecendence()
-    {
-        return new Expressions(")");
-    }
-
     /**
      * (...) column = value (...)
      *
@@ -51,12 +38,6 @@ public class Restrictions
 
                 baseCondition = " OR ";
                 break;
-        }
-
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
         }
 
         if (value instanceof Number)
@@ -101,12 +82,6 @@ public class Restrictions
                 break;
         }
 
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
-        }
-
         if (value instanceof Number)
         {
             baseCondition += column + " <> " + value + " ";
@@ -148,12 +123,6 @@ public class Restrictions
                 break;
         }
 
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
-        }
-
         return new Expressions(baseCondition + column + " IS NULL ");
     }
 
@@ -185,12 +154,6 @@ public class Restrictions
 
                 baseCondition = " OR ";
                 break;
-        }
-
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
         }
 
         String in = "";
@@ -231,13 +194,7 @@ public class Restrictions
                 baseCondition = " OR ";
                 break;
         }
-
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
-        }
-
+        
         return new Expressions(baseCondition + column + " IS NOT NULL ");
     }
 
@@ -272,12 +229,6 @@ public class Restrictions
 
                 baseCondition = " OR ";
                 break;
-        }
-
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
         }
 
         baseCondition += column + " LIKE '" + value + "' ";
@@ -322,13 +273,7 @@ public class Restrictions
                 baseCondition = " OR ";
                 break;
         }
-
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
-        }
-
+        
         switch (matchMode)
         {
             case ANYWHERE:
@@ -382,13 +327,7 @@ public class Restrictions
                 baseCondition = " OR ";
                 break;
         }
-
-        if (precedencePending)
-        {
-            baseCondition += " (";
-            precedencePending = false;
-        }
-
+        
         if (value2 instanceof Date || value1 instanceof Date || value1 instanceof String || value2 instanceof String)
         {
             baseCondition += column + " BETWEEN '" + value1 + "' AND '" + value2 + "' ";
@@ -432,15 +371,8 @@ public class Restrictions
                     baseCondition = " OR ";
                     break;
             }
-
-            if (precedencePending)
-            {
-                baseCondition += " (";
-                precedencePending = false;
-            }
-
+            
             baseCondition += column + " > " + value + " ";
-
         }
         else
         {
@@ -483,15 +415,8 @@ public class Restrictions
                     baseCondition = " OR ";
                     break;
             }
-
-            if (precedencePending)
-            {
-                baseCondition += " (";
-                precedencePending = false;
-            }
-
+            
             baseCondition += column + " < " + value + " ";
-
         }
         else
         {
@@ -533,13 +458,7 @@ public class Restrictions
                     baseCondition = " OR ";
                     break;
             }
-
-            if (precedencePending)
-            {
-                baseCondition += " (";
-                precedencePending = false;
-            }
-
+            
             baseCondition += column + " >= " + value + " ";
         }
         else
@@ -582,12 +501,6 @@ public class Restrictions
 
                     baseCondition = " OR ";
                     break;
-            }
-
-            if (precedencePending)
-            {
-                baseCondition += " (";
-                precedencePending = false;
             }
 
             baseCondition += column + " <= " + value + " ";
