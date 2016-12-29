@@ -325,7 +325,7 @@ public class SessionImpl implements Session
                             preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(entity), ((InputStream) method.invoke(entity)).available());
                         else
                             preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(entity));
-                       
+
                         parameterIndex++;
                         continue;
                     }
@@ -342,6 +342,20 @@ public class SessionImpl implements Session
 
                         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                         preparedStatement.setDate(parameterIndex, java.sql.Date.valueOf(format.format(date)));
+                        parameterIndex++;
+                    }
+
+                    if (method.getReturnType() == Calendar.class)
+                    {
+                        Calendar c = (Calendar) method.invoke(entity);
+                        if (c == null)
+                        {
+                            preparedStatement.setDate(parameterIndex, null);
+                            parameterIndex++;
+                            continue;
+                        }
+
+                        preparedStatement.setDate(parameterIndex, new java.sql.Date(c.getTimeInMillis()));
                         parameterIndex++;
                     }
                 }

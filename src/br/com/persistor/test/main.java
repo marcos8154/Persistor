@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 public class main
@@ -20,11 +21,20 @@ public class main
 
     public static void main(String[] args)
     {
-        Util.runPresentation();
+        //  Util.runPresentation();
 
         try
         {
-     /*       Cidades c = new Cidades();
+         /*   Session session = getSession();
+
+            Pessoa p = new Pessoa();
+            p.setData_nasc(Util.getCalendar(29, 12, 2016));
+            p.setNome("Teste novo com data");
+
+            session.save(p);
+            session.commit();
+*/
+            /*       Cidades c = new Cidades();
             Pessoa p = new Pessoa();
             
             Session session = getSession();
@@ -67,7 +77,7 @@ public class main
             config.setPassword("81547686");
             config.setDatabase("cadastro");
             config.setMaxPoolSize(1);
-            
+
             SessionFactory sf = new SessionFactory();
             return sf.getSession(config);
         }

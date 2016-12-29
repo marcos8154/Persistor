@@ -44,20 +44,34 @@ public class Util
         return "2.2.2 - Build 161229";
     }
 
-    /**
-     * Default format is yyyy-MM-dd
-     *
-     * @param dateFormat
-     * @return
-     */
-    public static Date getDateFromFormat(String dateFormat)
+    public static Calendar getCalendar(int day, int month, int year)
     {
         try
         {
-            Date d = new Date();
-            DateFormat sdf1 = DateFormat.getDateTimeInstance();
-            Date resultDate = sdf1.parse(sdf1.format(d));
-            return resultDate;
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.YEAR, year);
+            c.set(Calendar.MONTH, (month - 1));
+            c.set(Calendar.DATE, day);
+
+            return c;
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Date getDate(int day, int month, int year)
+    {
+        try
+        {
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.YEAR, year);
+            c.set(Calendar.MONTH, (month - 1));
+            c.set(Calendar.DATE, day);
+
+            return c.getTime();
         }
         catch (Exception ex)
         {
