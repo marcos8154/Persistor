@@ -38,7 +38,6 @@ public class FileExtractor
     public void extract()
     {
         FileOutputStream outputStream = null;
-        
         try
         {
            File file = new File(fileToExtract);
@@ -53,7 +52,6 @@ public class FileExtractor
            
         } catch (Exception ex)
         {
-            ex.printStackTrace();
             
         } finally
         {
@@ -68,7 +66,7 @@ public class FileExtractor
             outputStream.close();
         }catch(Exception ex)
         {
-            ex.printStackTrace();
+          //  ex.printStackTrace();
         }
     }
 }

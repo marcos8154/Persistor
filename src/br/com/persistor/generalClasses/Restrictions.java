@@ -40,15 +40,11 @@ public class Restrictions
                 break;
         }
 
-        if (value instanceof Number)
-        {
-            baseCondition += column + " = " + value + " ";
-        }
         if (value instanceof String)
-        {
             baseCondition += column + " = '" + value + "' ";
-        }
-
+        else
+            baseCondition += column + " = " + value + " ";
+        
         return new Expressions(baseCondition);
     }
 
@@ -82,15 +78,11 @@ public class Restrictions
                 break;
         }
 
-        if (value instanceof Number)
-        {
-            baseCondition += column + " <> " + value + " ";
-        }
         if (value instanceof String)
-        {
             baseCondition += column + " <> '" + value + "' ";
-        }
-
+        else
+            baseCondition += column + " <> " + value + " ";
+        
         return new Expressions(baseCondition);
     }
 
@@ -194,7 +186,7 @@ public class Restrictions
                 baseCondition = " OR ";
                 break;
         }
-        
+
         return new Expressions(baseCondition + column + " IS NOT NULL ");
     }
 
@@ -273,7 +265,7 @@ public class Restrictions
                 baseCondition = " OR ";
                 break;
         }
-        
+
         switch (matchMode)
         {
             case ANYWHERE:
@@ -327,15 +319,11 @@ public class Restrictions
                 baseCondition = " OR ";
                 break;
         }
-        
+
         if (value2 instanceof Date || value1 instanceof Date || value1 instanceof String || value2 instanceof String)
-        {
             baseCondition += column + " BETWEEN '" + value1 + "' AND '" + value2 + "' ";
-        }
         else
-        {
             baseCondition += column + " BETWEEN " + value1 + " AND " + value2 + " ";
-        }
 
         return new Expressions(baseCondition);
     }
@@ -371,7 +359,7 @@ public class Restrictions
                     baseCondition = " OR ";
                     break;
             }
-            
+
             baseCondition += column + " > " + value + " ";
         }
         else
@@ -415,7 +403,7 @@ public class Restrictions
                     baseCondition = " OR ";
                     break;
             }
-            
+
             baseCondition += column + " < " + value + " ";
         }
         else
@@ -458,7 +446,7 @@ public class Restrictions
                     baseCondition = " OR ";
                     break;
             }
-            
+
             baseCondition += column + " >= " + value + " ";
         }
         else
@@ -476,8 +464,7 @@ public class Restrictions
      * value espected va
      *
      * l
-     * ue
-     * @return
+     * ue @return
      */
     public static Expressions le(FILTER_TYPE filter_type, String column, Object value)
     {

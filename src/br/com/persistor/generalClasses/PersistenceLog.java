@@ -11,6 +11,7 @@ package br.com.persistor.generalClasses;
  */
 public class PersistenceLog
 {
+
     String className;
     String methodName;
     String date;
@@ -21,11 +22,24 @@ public class PersistenceLog
     {
         this.className = className;
         this.methodName = methodName;
-        this.date = date;
         this.description = description;
         this.query = query;
+        this.date = ((date == null || "".equals(date))
+                ? getDate()
+                : date);
     }
-    
+
+    public PersistenceLog(String className, String methodName, String date, Exception ex, String query)
+    {
+        this.className = className;
+        this.methodName = methodName;
+        this.description = Util.getFullStackTrace(ex);
+        this.query = query;
+        this.date = ((date == null || "".equals(date))
+                ? getDate()
+                : date);
+    }
+
     public String getClassName()
     {
         return className;

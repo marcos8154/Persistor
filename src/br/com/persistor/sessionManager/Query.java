@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import br.com.persistor.interfaces.Session;
 import java.sql.Date;
+import java.sql.Types;
 
 /**
  *
@@ -150,53 +151,48 @@ public class Query
             if (value == null)
             {
                 preparedStatement.setObject(parameter_index, null);
+                return;
             }
-
+            
             if (value instanceof String)
-            {
                 preparedStatement.setString(parameter_index, String.valueOf(value));
-            }
+
             if (value instanceof Integer)
-            {
                 preparedStatement.setInt(parameter_index, (int) value);
-            }
+
             if (value instanceof Double)
-            {
                 preparedStatement.setDouble(parameter_index, (double) value);
-            }
+
             if (value instanceof Float)
-            {
                 preparedStatement.setFloat(parameter_index, (float) value);
-            }
+
             if (value instanceof BigDecimal)
-            {
                 preparedStatement.setBigDecimal(parameter_index, (BigDecimal) value);
-            }
+
             if (value instanceof Boolean)
-            {
                 preparedStatement.setBoolean(parameter_index, (boolean) value);
-            }
+
             if (value instanceof InputStream)
             {
-                preparedStatement.setBinaryStream(parameter_index, (InputStream) value);
-            }
-            if (value instanceof Short)
-            {
-                preparedStatement.setShort(parameter_index, (short) value);
-            }
-            if (value instanceof Character)
-            {
-                preparedStatement.setString(parameter_index, String.valueOf(value));
-            }
-            if (value instanceof Long)
-            {
-                preparedStatement.setLong(parameter_index, (long) value);
+                if (value == null)
+                    preparedStatement.setNull(parameter_index, Types.BINARY);
+                else if (iSession.getConfig().getDb_type() == DB_TYPE.PostgreSQL)
+                    preparedStatement.setBinaryStream(parameter_index, (InputStream) value, ((InputStream) value).available());
+                else
+                    preparedStatement.setBinaryStream(parameter_index, (InputStream) value);
             }
 
+            if (value instanceof Short)
+                preparedStatement.setShort(parameter_index, (short) value);
+
+            if (value instanceof Character)
+                preparedStatement.setString(parameter_index, String.valueOf(value));
+
+            if (value instanceof Long)
+                preparedStatement.setLong(parameter_index, (long) value);
+
             if (value instanceof java.util.Date)
-            {
                 preparedStatement.setDate(parameter_index, (Date) value);
-            }
         }
         catch (Exception ex)
         {
@@ -226,7 +222,7 @@ public class Query
                 executeSelect(cls, this.getResult_type());
             }
 
-            if (tmpQuery.startsWith("update") || tmpQuery.startsWith("insert"))
+            if (tmpQuery.startsWith("update") || tmpQuery.startsWith("insert") || tmpQuery.startsWith("truncate"))
             {
                 executeInsertOrUpdate(cls);
             }
@@ -367,7 +363,7 @@ public class Query
                                 is = resultSet.getBlob(columnName).getBinaryStream();
                             else
                                 is = resultSet.getBinaryStream(columnName);
-                            
+
                             Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
                             invokeMethod.invoke(obj, is);
                             continue;
@@ -387,7 +383,6 @@ public class Query
                 Field f = clss.getField("ResultList");
                 f.set(obj, resList);
             }
-
         }
         catch (Exception ex)
         {
@@ -402,6 +397,10 @@ public class Query
 
             if (preparedStatement != null)
                 Util.closePreparedStatement(preparedStatement);
+
+            if (this.isCloseSessionAfterExecute())
+                iSession.close();
+
         }
     }
 
@@ -425,8 +424,6 @@ public class Query
             preparedStatement.execute();
             if (this.getCommit_mode() == COMMIT_MODE.AUTO)
                 iSession.commit();
-            if (this.isCloseSessionAfterExecute())
-                iSession.close();
 
             Field fieldSv = cls.getField("saved");
             fieldSv.set(obj, true);
@@ -441,14 +438,14 @@ public class Query
         finally
         {
             if (preparedStatement != null)
-            {
                 Util.closePreparedStatement(preparedStatement);
-            }
 
             if (statement != null)
-            {
                 Util.closeStatement(statement);
-            }
+
+            if (this.isCloseSessionAfterExecute())
+                iSession.close();
+
         }
     }
 }

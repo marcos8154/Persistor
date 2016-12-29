@@ -30,6 +30,7 @@ import br.com.persistor.interfaces.IPersistenceLogger;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import br.com.persistor.interfaces.Session;
+import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -318,7 +319,13 @@ public class SessionImpl implements Session
 
                     if (method.getReturnType() == InputStream.class)
                     {
-                        preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(entity));
+                        if (method.invoke(entity) == null)
+                            preparedStatement.setNull(parameterIndex, Types.BINARY);
+                        else if (config.getDb_type() == DB_TYPE.PostgreSQL)
+                            preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(entity), ((InputStream) method.invoke(entity)).available());
+                        else
+                            preparedStatement.setBinaryStream(parameterIndex, (InputStream) method.invoke(entity));
+                       
                         parameterIndex++;
                         continue;
                     }
@@ -372,20 +379,14 @@ public class SessionImpl implements Session
                 String field = "set" + oneToOne.source().substring(0, 1).toUpperCase() + oneToOne.source().substring(1);
 
                 if (methodHasValue(entity, field))
-                {
                     continue;
-                }
 
                 SessionImpl session = new SessionImpl(this.connection);
 
                 if (isUpdateMode)
-                {
                     session.update(object);
-                }
                 else
-                {
                     session.save(object);
-                }
 
                 SQLHelper helper = new SQLHelper();
                 Method pkObject = object.getClass().getMethod(helper.getPrimaryKeyMethodName(object));
@@ -466,7 +467,6 @@ public class SessionImpl implements Session
 
             sql_helper.prepareUpdate(entity, connection);
             String sqlBase = sql_helper.getSqlBase();
-            SaveOrUpdateForeignObjects(entity, true);
 
             if (this.context.initialized)
             {
@@ -779,7 +779,7 @@ public class SessionImpl implements Session
                                 is = resultSet.getBlob(columnName).getBinaryStream();
                             else
                                 is = resultSet.getBinaryStream(columnName);
-                            
+
                             Method invokeMethod = entity.getClass().getMethod(fieldName, InputStream.class);
                             invokeMethod.invoke(entity, is);
                             continue;

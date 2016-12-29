@@ -41,7 +41,7 @@ public class Util
 
     public static String getVersion()
     {
-        return "2.2.1 - Build 161220";
+        return "2.2.2 - Build 161229";
     }
 
     /**
