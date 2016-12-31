@@ -21,41 +21,10 @@ public class main
 
     public static void main(String[] args)
     {
-        //  Util.runPresentation();
+        Util.runPresentation();
 
         try
         {
-         /*   Session session = getSession();
-
-            Pessoa p = new Pessoa();
-            p.setData_nasc(Util.getCalendar(29, 12, 2016));
-            p.setNome("Teste novo com data");
-
-            session.save(p);
-            session.commit();
-*/
-            /*       Cidades c = new Cidades();
-            Pessoa p = new Pessoa();
-            
-            Session session = getSession();
-            session.createCriteria(p, RESULT_TYPE.MULTIPLE)
-                    .beginPrecedence()
-                    .add(Restrictions.gt(FILTER_TYPE.WHERE, "id", 0))
-                    .endPrecedence()
-                    .beginPrecedence()
-                    .add(Restrictions.eq(FILTER_TYPE.OR, "nome", "Haha"))
-                    .endPrecedence()
-                    .beginPrecedence()
-                    .add(Restrictions.ne(FILTER_TYPE.AND, "nome", "HA"))
-                    .endPrecedence()
-                    .execute();
-
-            System.out.println("");
-            System.out.println("*-----------------|RESULTADOS|-------------------*");
-            for (Pessoa pes : session.getList(p))
-            {
-                System.out.println(pes.getId() + " " + pes.getNome());
-            } */
         }
         catch (Exception ex)
         {
@@ -70,12 +39,12 @@ public class main
             DBConfig config = new DBConfig();
             config.setPersistenceLogger(LogTest.class);
             // config.setPersistenceContext(Contexto.class);
-            config.setDb_type(DB_TYPE.MySQL);
+            config.setDb_type(DB_TYPE.PostgreSQL);
             config.setHost("localhost");
-            config.setPort(3306);
-            config.setUser("root");
+            config.setPort(5432);
+            config.setUser("postgres");
             config.setPassword("81547686");
-            config.setDatabase("cadastro");
+            config.setDatabase("mmn_teste");
             config.setMaxPoolSize(1);
 
             SessionFactory sf = new SessionFactory();

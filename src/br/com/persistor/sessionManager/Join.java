@@ -100,7 +100,6 @@ public class Join implements IJoin
                 String[] fields = helper.getFields(obj).split(",");
 
                 String primaryKeyName = cls.getSimpleName().toLowerCase() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName().toLowerCase();
-
                 fieldsSelect += primaryKeyName + ", ";
 
                 field_index = new FieldIndex();
@@ -151,15 +150,12 @@ public class Join implements IJoin
                 for (Object obj : objects)
                 {
                     Object otherObj = obj;
-
                     Class cls = otherObj.getClass();
 
                     if (isRestartEntityInstance())
                         otherObj = cls.newInstance();
 
-                    SQLHelper helper = new SQLHelper();
                     String tableName = cls.getSimpleName().toLowerCase();
-
                     Object ignoreObj = null;
 
                     for (Method method : cls.getMethods())
@@ -314,9 +310,7 @@ public class Join implements IJoin
                         }
                     }
                     if (ignoreObj == null)
-                    {
                         resultList.add(otherObj);
-                    }
                 }
             }
             if (loaded)
@@ -324,7 +318,12 @@ public class Join implements IJoin
         }
         catch (Exception ex)
         {
-            iSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "void execute(Session iSession)", Util.getDateTime(), Util.getFullStackTrace(ex), this.mountedQuery));
+            iSession.getPersistenceLogger().newNofication(
+                    new PersistenceLog(this.getClass().getName(), 
+                            "void execute(Session iSession)", 
+                            Util.getDateTime(), 
+                            Util.getFullStackTrace(ex), 
+                            this.mountedQuery));
         }
         finally
         {
@@ -387,7 +386,12 @@ public class Join implements IJoin
         }
         catch (Exception ex)
         {
-            mainSession.getPersistenceLogger().newNofication(new PersistenceLog(this.getClass().getName(), "<T> T getEntity(Class entityClass)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
+            mainSession.getPersistenceLogger().newNofication(
+                    new PersistenceLog(this.getClass().getName(), 
+                            "<T> T getEntity(Class entityClass)", 
+                            Util.getDateTime(), 
+                            Util.getFullStackTrace(ex), 
+                            ""));
         }
         return entity;
     }

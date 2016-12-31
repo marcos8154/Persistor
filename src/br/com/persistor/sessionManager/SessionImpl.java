@@ -46,6 +46,14 @@ public class SessionImpl implements Session
     private boolean showSql = true;
     private boolean isRollbacked = false;
 
+    private boolean isVersionViolation = false;
+    private String whereConditionGetLastID = "";
+    
+    public boolean isVersionViolation()
+    {
+        return isVersionViolation;
+    }
+
     public SessionImpl(Connection connection)
     {
         this.connection = connection;
@@ -64,28 +72,6 @@ public class SessionImpl implements Session
         return this.config;
     }
 
-    public void setConfig(DBConfig config)
-    {
-        this.config = config;
-        this.context.Initialize(config.getPersistenceContext());
-        if (config.getPersistenceLogger() == null || config.getPersistenceLogger().isEmpty())
-        {
-            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
-            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
-            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
-        }
-
-        try
-        {
-            this.logger = (IPersistenceLogger) Class.forName(config.getPersistenceLogger()).newInstance();
-        }
-        catch (Exception ex)
-        {
-            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS INITIALIZATION ERROR AT: \n" + Util.getFullStackTrace(ex));
-            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
-        }
-    }
-
     @Override
     public IPersistenceLogger getPersistenceLogger()
     {
@@ -96,6 +82,747 @@ public class SessionImpl implements Session
     public Connection getActiveConnection()
     {
         return this.connection;
+    }
+
+    @Override
+    public <T> List<T> getList(T t)
+    {
+        try
+        {
+            Field f = t.getClass().getField("ResultList");
+            List<Object> list = (List<Object>) f.get(t);
+            List<T> resultList = new ArrayList<>();
+            for (Object obj : list)
+            {
+                resultList.add((T) obj);
+            }
+            return resultList;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "<T> List<T> getList(T t)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    public Query createQuery(Object entity, String queryCommand)
+    {
+        try
+        {
+            Query query = new Query();
+            query.createQuery(this, entity, queryCommand);
+            return query;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "Query createQuery(Object entity, String queryCommand)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex), ""));
+        }
+        return null;
+    }
+
+    @Override
+    public void save(Object entity)
+    {
+        PreparedStatement preparedStatement = null;
+        SQLHelper sql_helper = new SQLHelper();
+        try
+        {
+            Class cls = entity.getClass();
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
+                return;
+            }
+
+            sql_helper.prepareInsert(entity);
+
+            if (context.initialized)
+            {
+                if (!context.isEntitySet(entity))
+                {
+                    Exception ex = new Exception("Attach entity type '" + cls.getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
+            }
+
+            String sqlBase = sql_helper.getSqlBase();
+            preparedStatement = connection.prepareStatement(sqlBase);
+            saveOrUpdateForeignObjects(entity, false);
+            loadPreparedStatement(preparedStatement, entity, false);
+            preparedStatement.execute();
+            System.out.println("Persistor: \n " + sqlBase);
+            lastID(entity, whereConditionGetLastID);
+            Field fieldSaved = cls.getField("saved");
+            fieldSaved.set(entity, true);
+        }
+        catch (Exception ex)
+        {
+            rollback();
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "void save(Object entity)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sql_helper.getSqlBase()));
+        }
+        finally
+        {
+            Util.closePreparedStatement(preparedStatement);
+        }
+    }
+
+    @Override
+    public void update(Object entity, String andCondition)
+    {
+        PreparedStatement preparedStatement = null;
+        SQLHelper sql_helper = new SQLHelper();
+        try
+        {
+            Class cls = entity.getClass();
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
+                return;
+            }
+
+            sql_helper.prepareUpdate(entity, connection);
+            String sqlBase = sql_helper.getSqlBase();
+
+            if (this.context.initialized)
+            {
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
+            }
+
+            sqlBase += " AND " + andCondition;
+            preparedStatement = connection.prepareStatement(sqlBase);
+            saveOrUpdateForeignObjects(entity, true);
+            loadPreparedStatement(preparedStatement, entity, true);
+            preparedStatement.execute();
+            Field fieldSaved = cls.getField("updated");
+            fieldSaved.set(entity, true);
+
+            System.out.println("Persistor: \n " + sqlBase);
+            this.context.mergeEntity(entity);
+        }
+        catch (Exception ex)
+        {
+            rollback();
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "void update(Object entity, String andCondition)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sql_helper.getSqlBase()));
+        }
+        finally
+        {
+            Util.closePreparedStatement(preparedStatement);
+        }
+    }
+
+    @Override
+    public void update(Object entity)
+    {
+        PreparedStatement preparedStatement = null;
+        SQLHelper sql_helper = new SQLHelper();
+        try
+        {
+            Class cls = entity.getClass();
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
+                return;
+            }
+
+            sql_helper.prepareUpdate(entity, connection);
+            String sqlBase = sql_helper.getSqlBase();
+
+            if (this.context.initialized)
+            {
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
+            }
+
+            preparedStatement = connection.prepareStatement(sqlBase);
+            saveOrUpdateForeignObjects(entity, true);
+            loadPreparedStatement(preparedStatement, entity, true);
+            preparedStatement.execute();
+            Field fieldSaved = cls.getField("updated");
+            fieldSaved.set(entity, true);
+
+            System.out.println("Persistor: \n " + sqlBase);
+            this.context.mergeEntity(entity);
+
+        }
+        catch (Exception ex)
+        {
+            rollback();
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "void update(Object entity)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sql_helper.getSqlBase()));
+        }
+        finally
+        {
+            Util.closePreparedStatement(preparedStatement);
+        }
+    }
+
+    @Override
+    public void delete(Object entity, String and_or_where_condition)
+    {
+        PreparedStatement preparedStatement = null;
+        SQLHelper sql_helper = new SQLHelper();
+        try
+        {
+            Class cls = entity.getClass();
+            String tableName = cls.getSimpleName().toLowerCase();
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
+                rollback();
+                return;
+            }
+
+            String sqlBase = "";
+            sql_helper.prepareDelete(entity);
+
+            if (sql_helper.getPrimaryKeyName().isEmpty())
+                sqlBase = "delete from " + tableName + " where " + and_or_where_condition;
+            else
+            {
+                sqlBase = sql_helper.getSqlBase();
+                sqlBase += and_or_where_condition;
+            }
+
+            if (this.context.initialized)
+            {
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
+            }
+
+            preparedStatement = connection.prepareStatement(sqlBase);
+            preparedStatement.execute();
+            Field fieldDel = cls.getField("deleted");
+            fieldDel.set(entity, true);
+            this.context.removeFromContext(entity);
+            System.out.println("Persistor: \n " + sqlBase);
+        }
+        catch (Exception ex)
+        {
+            rollback();
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "void delete(Object entity, String andCondition)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sql_helper.getSqlBase()));
+        }
+        finally
+        {
+            Util.closePreparedStatement(preparedStatement);
+        }
+    }
+
+    @Override
+    public void delete(Object entity)
+    {
+        PreparedStatement preparedStatement = null;
+        SQLHelper sql_helper = new SQLHelper();
+        try
+        {
+            Class cls = entity.getClass();
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
+                rollback();
+                return;
+            }
+
+            sql_helper.prepareDelete(entity);
+            String sqlBase = sql_helper.getSqlBase();
+
+            if (this.context.initialized)
+            {
+                if (context.getFromContext(entity) == null)
+                {
+                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
+                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                    rollback();
+                    return;
+                }
+            }
+
+            System.out.println("Persistor: \n " + sqlBase);
+            preparedStatement = connection.prepareStatement(sqlBase);
+            preparedStatement.execute();
+            Field fieldDel = cls.getField("deleted");
+            fieldDel.set(entity, true);
+            this.context.removeFromContext(entity);
+        }
+        catch (Exception ex)
+        {
+            rollback();
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            "void delete(Object entity)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sql_helper.getSqlBase()));
+        }
+        finally
+        {
+            Util.closePreparedStatement(preparedStatement);
+        }
+    }
+
+    @Override
+    public void onID(Object entity, int id)
+    {
+        SQLHelper sql_helper = new SQLHelper();
+        Statement statement = null;
+        try
+        {
+            Class cls = entity.getClass();
+            sql_helper.prepareBasicSelect(entity, id);
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
+                return;
+            }
+
+            if (hasJoinableObjects(entity))
+            {
+                entity = executeJoin(entity, id);
+                return;
+            }
+
+            String sqlBase = sql_helper.getSqlBase();
+            Field field = cls.getField("mountedQuery");
+            field.set(entity, sqlBase);
+
+            if (enabledContext)
+            {
+                if (context.findByID(entity, id) != null)
+                {
+                    entity = context.findByID(entity, id);
+                    return;
+                }
+            }
+
+            statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sqlBase);
+            if (loadEntity(entity, resultSet))
+            {
+                if (showSql)
+                    System.out.println("Persistor: \n " + sqlBase);
+                if (enabledContext)
+                    this.context.addToContext(entity);
+            }
+            this.enabledContext = true;
+            this.showSql = true;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "void onID(Object entity, int id)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sql_helper.getSqlBase()));
+        }
+        finally
+        {
+            if (statement != null)
+                Util.closeStatement(statement);
+        }
+    }
+
+    @Override
+    public <T> T onID(Class entityCls, int id)
+    {
+        SQLHelper sql_helper = new SQLHelper();
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
+        Object entity = null;
+        try
+        {
+            entity = entityCls.newInstance();
+
+            sql_helper.prepareBasicSelect(entity, id);
+
+            if (!extendsEntity(entityCls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + entityCls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
+                return null;
+            }
+
+            if (hasJoinableObjects(entity))
+            {
+                entity = executeJoin(entity, id);
+                if (entity == null)
+                    return (T) entityCls.newInstance();
+                else
+                    return (T) entity;
+            }
+
+            String sqlBase = sql_helper.getSqlBase();
+            Field field = entityCls.getField("mountedQuery");
+            field.set(entity, sqlBase);
+
+            if (context.findByID(entity, id) != null)
+                return (T) context.findByID(entity, id);
+
+            ps = connection.prepareStatement(sqlBase);
+            resultSet = ps.executeQuery();
+            if (loadEntity(entity, resultSet))
+            {
+                System.out.println("Persistor: \n " + sqlBase);
+                context.addToContext(entity);
+            }
+            enabledContext = true;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "<T> T onID(Class entityCls, int id)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sql_helper.getSqlBase()));
+        }
+        finally
+        {
+            if (resultSet != null)
+                Util.closeResultSet(resultSet);
+            if (ps != null)
+                Util.closeStatement(ps);
+        }
+
+        return (T) entity;
+    }
+
+    @Override
+    public void commit()
+    {
+        try
+        {
+            if (isRollbacked)
+                return;
+            connection.commit();
+        }
+        catch (Exception ex)
+        {
+            rollback();
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            "void commit",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
+        }
+    }
+
+    @Override
+    public void close()
+    {
+        try
+        {
+            connection.close();
+            context.clear();
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            "void close()",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
+        }
+    }
+
+    @Override
+    public void rollback()
+    {
+        try
+        {
+            System.out.println("Persistor: Rollbacking...");
+            connection.rollback();
+            isRollbacked = true;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "void rollback",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
+        }
+    }
+
+    @Override
+    public <T> T first(Class cls, String whereCondition)
+    {
+        Statement statement = null;
+        ResultSet resultSet = null;
+        String sqlBase = "";
+        try
+        {
+            java.lang.reflect.Constructor constructor = cls.getConstructor();
+            Object entity = constructor.newInstance();
+            if (context.getFromContext(entity) != null)
+                return (T) context.getFromContext(entity);
+            SQLHelper sql_helper = new SQLHelper();
+            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T First(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
+                return null;
+            }
+
+            String className = cls.getSimpleName().toLowerCase();
+            sqlBase = "select min(" + primaryKeyName + ") from " + className;
+
+            if (!whereCondition.isEmpty())
+            {
+                sqlBase += " where " + whereCondition;
+            }
+
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sqlBase);
+            if (resultSet.next())
+            {
+                enabledContext = false;
+                int obtainedId = resultSet.getInt(1);
+
+                Util.closeResultSet(resultSet);
+                Util.closeStatement(statement);
+
+                return onID(cls, obtainedId);
+            }
+            context.addToContext(entity);
+            return (T) entity;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            " <T> T First(Class cls, String whereCondition)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sqlBase));
+        }
+        finally
+        {
+            Util.closeResultSet(resultSet);
+            Util.closeStatement(statement);
+        }
+        return null;
+    }
+
+    @Override
+    public <T> T last(Class cls, String whereCondition)
+    {
+        String sqlBase = "";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try
+        {
+            java.lang.reflect.Constructor constructor = cls.getConstructor();
+            Object entity = constructor.newInstance();
+            if (context.getFromContext(entity) != null)
+                return (T) context.getFromContext(entity);
+            SQLHelper sql_helper = new SQLHelper();
+            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
+
+            if (!extendsEntity(cls))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
+                rollback();
+                return null;
+            }
+
+            String className = cls.getSimpleName().toLowerCase();
+            sqlBase = "select max(" + primaryKeyName + ") from " + className;
+
+            if (!whereCondition.isEmpty())
+            {
+                sqlBase += " where " + whereCondition;
+            }
+
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sqlBase);
+            if (resultSet.next())
+            {
+                enabledContext = false;
+                int obtainedId = resultSet.getInt(1);
+
+                Util.closeResultSet(resultSet);
+                Util.closeStatement(statement);
+
+                return onID(cls, obtainedId);
+            }
+
+            context.addToContext(entity);
+            return (T) entity;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase));
+        }
+        finally
+        {
+            Util.closeStatement(statement);
+            Util.closeResultSet(resultSet);
+        }
+        return null;
+    }
+
+    @Override
+    public Criteria createCriteria(Object entity, RESULT_TYPE result_type)
+    {
+        Criteria criteria = null;
+        try
+        {
+            criteria = new Criteria(this, entity, result_type);
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "Criteria createCriteria(Object entity, RESULT_TYPE result_type)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
+        }
+        return criteria;
+    }
+
+    @Override
+    public int count(Class entityClass, String whereCondition)
+    {
+        String sql = "";
+        int result = 0;
+
+        if (whereCondition == null)
+            whereCondition = "";
+
+        Statement statement = null;
+        ResultSet resultSet = null;
+        try
+        {
+            java.lang.reflect.Constructor constructor = entityClass.getConstructor();
+            Object entity = constructor.newInstance();
+
+            String tableName = (entity.getClass().getSimpleName().toLowerCase());
+            sql = "select count(*) from " + tableName;
+
+            if (!whereCondition.isEmpty())
+                sql += " where " + whereCondition;
+
+            if (!extendsEntity(entityClass))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + entityClass.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
+                rollback();
+                return 0;
+            }
+
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            if (resultSet.next())
+                result = resultSet.getInt(1);
+
+            System.out.println("Persistor: \n" + sql);
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
+        }
+        finally
+        {
+            Util.closeResultSet(resultSet);
+            Util.closeStatement(statement);
+        }
+
+        return result;
+    }
+
+    public void setConfig(DBConfig config)
+    {
+        this.config = config;
+        this.context.Initialize(config.getPersistenceContext());
+        if (config.getPersistenceLogger() == null || config.getPersistenceLogger().isEmpty())
+        {
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+            System.exit(0);
+        }
+
+        try
+        {
+            this.logger = (IPersistenceLogger) Class.forName(config.getPersistenceLogger()).newInstance();
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS INITIALIZATION ERROR AT: \n" + Util.getFullStackTrace(ex));
+            System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
+            System.exit(0);
+        }
     }
 
     private boolean extendsEntity(Class entityCls)
@@ -140,50 +867,17 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "boolean methodHasValue(Object entity, String methodName)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
             throw new Exception(ex.getMessage());
         }
 
         return false;
     }
-
-    @Override
-    public <T> List<T> getList(T t)
-    {
-        try
-        {
-            Field f = t.getClass().getField("ResultList");
-            List<Object> list = (List<Object>) f.get(t);
-            List<T> resultList = new ArrayList<>();
-            for (Object obj : list)
-            {
-                resultList.add((T) obj);
-            }
-            return resultList;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> List<T> getList(T t)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
-        return new ArrayList<>();
-    }
-
-    @Override
-    public Query createQuery(Object entity, String queryCommand)
-    {
-        try
-        {
-            Query query = new Query();
-            query.createQuery(this, entity, queryCommand);
-            return query;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "Query createQuery(Object entity, String queryCommand)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
-        return null;
-    }
-
-    private String whereConditionGetLastID = "";
 
     private void loadPreparedStatement(PreparedStatement preparedStatement, Object entity, boolean ignorePrimaryKey) throws Exception
     {
@@ -363,11 +1057,18 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            "void loadPreparedStatement(PreparedStatement preparedStatement, Object entity, boolean ignorePrimaryKey)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
             throw new Exception(ex.getMessage());
         }
     }
 
-    private void SaveOrUpdateForeignObjects(Object entity, boolean isUpdateMode) throws Exception
+    private void saveOrUpdateForeignObjects(Object entity, boolean isUpdateMode) throws Exception
     {
         Class cls = entity.getClass();
         for (Method method : cls.getMethods())
@@ -408,272 +1109,6 @@ public class SessionImpl implements Session
                 Method mtd = entity.getClass().getMethod(field, int.class);
                 mtd.invoke(entity, pkObject.invoke(object));
             }
-        }
-    }
-
-    @Override
-    public void save(Object entity)
-    {
-        PreparedStatement preparedStatement = null;
-        SQLHelper sql_helper = new SQLHelper();
-        try
-        {
-            Class cls = entity.getClass();
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return;
-            }
-
-            sql_helper.prepareInsert(entity);
-
-            if (context.initialized)
-            {
-                if (!context.isEntitySet(entity))
-                {
-                    Exception ex = new Exception("Attach entity type '" + cls.getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
-
-            String sqlBase = sql_helper.getSqlBase();
-            preparedStatement = connection.prepareStatement(sqlBase);
-            SaveOrUpdateForeignObjects(entity, false);
-            loadPreparedStatement(preparedStatement, entity, false);
-            preparedStatement.execute();
-            System.out.println("Persistor: \n " + sqlBase);
-            lastID(entity, whereConditionGetLastID);
-            Field fieldSaved = cls.getField("saved");
-            fieldSaved.set(entity, true);
-        }
-        catch (Exception ex)
-        {
-            rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
-        finally
-        {
-            Util.closePreparedStatement(preparedStatement);
-        }
-    }
-
-    @Override
-    public void update(Object entity, String andCondition)
-    {
-        PreparedStatement preparedStatement = null;
-        SQLHelper sql_helper = new SQLHelper();
-        try
-        {
-            Class cls = entity.getClass();
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return;
-            }
-
-            sql_helper.prepareUpdate(entity, connection);
-            String sqlBase = sql_helper.getSqlBase();
-
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
-
-            sqlBase += " AND " + andCondition;
-            preparedStatement = connection.prepareStatement(sqlBase);
-            SaveOrUpdateForeignObjects(entity, true);
-            loadPreparedStatement(preparedStatement, entity, true);
-            preparedStatement.execute();
-            Field fieldSaved = cls.getField("updated");
-            fieldSaved.set(entity, true);
-
-            System.out.println("Persistor: \n " + sqlBase);
-            this.context.mergeEntity(entity);
-        }
-        catch (Exception ex)
-        {
-            rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
-        finally
-        {
-            Util.closePreparedStatement(preparedStatement);
-        }
-    }
-
-    public boolean isVersionViolation = false;
-
-    @Override
-    public void update(Object entity)
-    {
-        PreparedStatement preparedStatement = null;
-        SQLHelper sql_helper = new SQLHelper();
-        try
-        {
-            Class cls = entity.getClass();
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return;
-            }
-
-            sql_helper.prepareUpdate(entity, connection);
-            String sqlBase = sql_helper.getSqlBase();
-
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
-
-            preparedStatement = connection.prepareStatement(sqlBase);
-            SaveOrUpdateForeignObjects(entity, true);
-            loadPreparedStatement(preparedStatement, entity, true);
-            preparedStatement.execute();
-            Field fieldSaved = cls.getField("updated");
-            fieldSaved.set(entity, true);
-
-            System.out.println("Persistor: \n " + sqlBase);
-            this.context.mergeEntity(entity);
-
-        }
-        catch (Exception ex)
-        {
-            rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
-        finally
-        {
-            Util.closePreparedStatement(preparedStatement);
-        }
-    }
-
-    @Override
-    public void delete(Object entity, String and_or_where_condition)
-    {
-        PreparedStatement preparedStatement = null;
-        SQLHelper sql_helper = new SQLHelper();
-        try
-        {
-            Class cls = entity.getClass();
-            String tableName = cls.getSimpleName().toLowerCase();
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-                rollback();
-                return;
-            }
-
-            String sqlBase = "";
-
-            sql_helper.prepareDelete(entity);
-            if (sql_helper.getPrimaryKeyName().isEmpty())
-                sqlBase = "delete from " + tableName + " where " + and_or_where_condition;
-            else
-            {
-                sqlBase = sql_helper.getSqlBase();
-                sqlBase += and_or_where_condition;
-            }
-
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
-
-            preparedStatement = connection.prepareStatement(sqlBase);
-            preparedStatement.execute();
-            Field fieldDel = cls.getField("deleted");
-            fieldDel.set(entity, true);
-            this.context.removeFromContext(entity);
-            System.out.println("Persistor: \n " + sqlBase);
-        }
-        catch (Exception ex)
-        {
-            rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
-        finally
-        {
-            Util.closePreparedStatement(preparedStatement);
-        }
-    }
-
-    @Override
-    public void delete(Object entity)
-    {
-        PreparedStatement preparedStatement = null;
-        SQLHelper sql_helper = new SQLHelper();
-        try
-        {
-            Class cls = entity.getClass();
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-                rollback();
-                return;
-            }
-
-            sql_helper.prepareDelete(entity);
-            String sqlBase = sql_helper.getSqlBase();
-
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
-
-            System.out.println("Persistor: \n " + sqlBase);
-            preparedStatement = connection.prepareStatement(sqlBase);
-            preparedStatement.execute();
-            Field fieldDel = cls.getField("deleted");
-            fieldDel.set(entity, true);
-            this.context.removeFromContext(entity);
-        }
-        catch (Exception ex)
-        {
-            rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
-        finally
-        {
-            Util.closePreparedStatement(preparedStatement);
         }
     }
 
@@ -804,6 +1239,12 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "boolean loadEntity(Object entity, ResultSet resultSet)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
             throw new Exception(ex.getMessage());
         }
         return result;
@@ -819,16 +1260,25 @@ public class SessionImpl implements Session
                 if (method.isAnnotationPresent(OneToOne.class))
                 {
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+                    return (!(oneToOne.load() == LOAD.MANUAL));
+                }
 
-                    if (oneToOne.load() == LOAD.MANUAL)
-                        return false;
-
-                    return true;
+                if (method.isAnnotationPresent(OneToMany.class))
+                {
+                    OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+                    return (!(oneToMany.load() == LOAD.MANUAL));
                 }
             }
         }
         catch (Exception ex)
         {
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            "boolean hasJoinableObjects(Object entity)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
             throw new Exception(ex.getMessage());
         }
 
@@ -841,7 +1291,7 @@ public class SessionImpl implements Session
         {
             Class cls = entity.getClass();
             Join join = new Join(entity);
-            join.setRestartEntityInstance(false);
+            join.setRestartEntityInstance(true);
             List<JoinableObject> objectsToJoin = new ArrayList<>();
 
             if (context.initialized)
@@ -865,9 +1315,7 @@ public class SessionImpl implements Session
                     OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
 
                     if (oneToOne.load() == LOAD.MANUAL)
-                    {
                         continue;
-                    }
 
                     String sourceName = cls.getSimpleName() + "." + oneToOne.source();
                     String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
@@ -886,9 +1334,7 @@ public class SessionImpl implements Session
                     OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
 
                     if (oneToMany.load() == LOAD.MANUAL)
-                    {
                         continue;
-                    }
 
                     String sourceName = cls.getSimpleName() + "." + oneToMany.source();
                     String targetName = entityObj.getClass().getSimpleName() + "." + oneToMany.target();
@@ -914,6 +1360,7 @@ public class SessionImpl implements Session
                         context.addToContext(entity);
                     return entity;
                 }
+
                 if (entity == null)
                     return entity;
 
@@ -942,178 +1389,16 @@ public class SessionImpl implements Session
         catch (Exception ex)
         {
             entity = null;
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "<T> T executeJoin(T entity, int id)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            ""));
             throw new Exception(ex.getMessage());
         }
 
         return entity;
-    }
-
-    @Override
-    public void onID(Object entity, int id)
-    {
-        SQLHelper sql_helper = new SQLHelper();
-        Statement statement = null;
-        try
-        {
-            Class cls = entity.getClass();
-            sql_helper.prepareBasicSelect(entity, id);
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return;
-            }
-
-            if (hasJoinableObjects(entity))
-            {
-                entity = executeJoin(entity, id);
-                return;
-            }
-
-            String sqlBase = sql_helper.getSqlBase();
-            Field field = cls.getField("mountedQuery");
-            field.set(entity, sqlBase);
-
-            if (enabledContext)
-            {
-                if (context.findByID(entity, id) != null)
-                {
-                    entity = context.findByID(entity, id);
-                    return;
-                }
-            }
-
-            statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sqlBase);
-            if (loadEntity(entity, resultSet))
-            {
-                if (showSql)
-                    System.out.println("Persistor: \n " + sqlBase);
-                if (enabledContext)
-                    this.context.addToContext(entity);
-            }
-            this.enabledContext = true;
-            this.showSql = true;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void onID(Object entity, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
-        finally
-        {
-            if (statement != null)
-            {
-                Util.closeStatement(statement);
-            }
-        }
-    }
-
-    @Override
-    public <T> T onID(Class entityCls, int id)
-    {
-        SQLHelper sql_helper = new SQLHelper();
-        PreparedStatement ps = null;
-        ResultSet resultSet = null;
-        Object entity = null;
-        try
-        {
-            entity = entityCls.newInstance();
-
-            sql_helper.prepareBasicSelect(entity, id);
-
-            if (!extendsEntity(entityCls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + entityCls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return null;
-            }
-
-            if (hasJoinableObjects(entity))
-            {
-                entity = executeJoin(entity, id);
-                if (entity == null)
-                    return (T) entityCls.newInstance();
-                else
-                    return (T) entity;
-            }
-
-            String sqlBase = sql_helper.getSqlBase();
-            Field field = entityCls.getField("mountedQuery");
-            field.set(entity, sqlBase);
-
-            if (context.findByID(entity, id) != null)
-                return (T) context.findByID(entity, id);
-
-            ps = connection.prepareStatement(sqlBase);
-            resultSet = ps.executeQuery();
-            if (loadEntity(entity, resultSet))
-            {
-                System.out.println("Persistor: \n " + sqlBase);
-                context.addToContext(entity);
-            }
-            enabledContext = true;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T onID(Class entityCls, int id)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-        }
-        finally
-        {
-            if (resultSet != null)
-                Util.closeResultSet(resultSet);
-            if (ps != null)
-                Util.closeStatement(ps);
-        }
-
-        return (T) entity;
-    }
-
-    @Override
-    public void commit()
-    {
-        try
-        {
-            if (isRollbacked)
-                return;
-            connection.commit();
-        }
-        catch (Exception ex)
-        {
-            rollback();
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void commit", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
-    }
-
-    @Override
-    public void close()
-    {
-        try
-        {
-            connection.close();
-            context.clear();
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void close()", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
-    }
-
-    @Override
-    public void rollback()
-    {
-        try
-        {
-            System.out.println("Persistor: Rollbacking...");
-            connection.rollback();
-            isRollbacked = true;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "void rollback", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
     }
 
     private int maxId(Object entity, String where) throws Exception
@@ -1121,6 +1406,7 @@ public class SessionImpl implements Session
         Statement statement = null;
         ResultSet resultSet = null;
         int result = 0;
+        String sqlBase = "";
         try
         {
             Class cls = entity.getClass();
@@ -1128,12 +1414,10 @@ public class SessionImpl implements Session
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
             String className = cls.getSimpleName().toLowerCase();
-            String sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
+            sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
 
             if (!where.isEmpty())
-            {
                 sqlBase += " where " + where;
-            }
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);
@@ -1143,6 +1427,13 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            "int maxId(Object entity, String where)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sqlBase));
             throw new Exception(ex.getMessage());
         }
         finally
@@ -1160,6 +1451,7 @@ public class SessionImpl implements Session
         showSql = false;
         Statement statement = null;
         ResultSet resultSet = null;
+        String sqlBase = "";
         try
         {
             Class cls = entity.getClass();
@@ -1170,11 +1462,11 @@ public class SessionImpl implements Session
                 return;
 
             String className = cls.getSimpleName().toLowerCase();
-            String sqlBase = "select max(" + primaryKeyName + ") from " + className;
+            sqlBase = "select max(" + primaryKeyName + ") from " + className;
+
             if (!whereCondition.isEmpty())
-            {
                 sqlBase += " where " + whereCondition;
-            }
+
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);
             if (resultSet.next())
@@ -1186,6 +1478,13 @@ public class SessionImpl implements Session
         }
         catch (Exception ex)
         {
+            logger.newNofication(
+                    new PersistenceLog(
+                            this.getClass().getName(),
+                            "void lastID(Object entity, String whereCondition)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sqlBase));
             throw new Exception(ex.getMessage());
         }
         finally
@@ -1195,184 +1494,4 @@ public class SessionImpl implements Session
         }
     }
 
-    @Override
-    public <T> T first(Class cls, String whereCondition)
-    {
-        Statement statement = null;
-        ResultSet resultSet = null;
-        String sqlBase = "";
-        try
-        {
-            java.lang.reflect.Constructor constructor = cls.getConstructor();
-            Object entity = constructor.newInstance();
-            if (context.getFromContext(entity) != null)
-                return (T) context.getFromContext(entity);
-            SQLHelper sql_helper = new SQLHelper();
-            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T First(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return null;
-            }
-
-            String className = cls.getSimpleName().toLowerCase();
-            sqlBase = "select min(" + primaryKeyName + ") from " + className;
-
-            if (!whereCondition.isEmpty())
-            {
-                sqlBase += " where " + whereCondition;
-            }
-
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(sqlBase);
-            if (resultSet.next())
-            {
-                enabledContext = false;
-                int obtainedId = resultSet.getInt(1);
-
-                Util.closeResultSet(resultSet);
-                Util.closeStatement(statement);
-
-                return onID(cls, obtainedId);
-            }
-            context.addToContext(entity);
-            return (T) entity;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), " <T> T First(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase));
-        }
-        finally
-        {
-            Util.closeResultSet(resultSet);
-            Util.closeStatement(statement);
-        }
-        return null;
-    }
-
-    @Override
-    public <T> T last(Class cls, String whereCondition)
-    {
-        String sqlBase = "";
-        Statement statement = null;
-        ResultSet resultSet = null;
-        try
-        {
-            java.lang.reflect.Constructor constructor = cls.getConstructor();
-            Object entity = constructor.newInstance();
-            if (context.getFromContext(entity) != null)
-                return (T) context.getFromContext(entity);
-            SQLHelper sql_helper = new SQLHelper();
-            String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
-
-            if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return null;
-            }
-
-            String className = cls.getSimpleName().toLowerCase();
-            sqlBase = "select max(" + primaryKeyName + ") from " + className;
-
-            if (!whereCondition.isEmpty())
-            {
-                sqlBase += " where " + whereCondition;
-            }
-
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(sqlBase);
-            if (resultSet.next())
-            {
-                enabledContext = false;
-                int obtainedId = resultSet.getInt(1);
-
-                Util.closeResultSet(resultSet);
-                Util.closeStatement(statement);
-
-                return onID(cls, obtainedId);
-            }
-
-            context.addToContext(entity);
-            return (T) entity;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sqlBase));
-        }
-        finally
-        {
-            Util.closeStatement(statement);
-            Util.closeResultSet(resultSet);
-        }
-        return null;
-    }
-
-    @Override
-    public Criteria createCriteria(Object entity, RESULT_TYPE result_type)
-    {
-        Criteria criteria = null;
-        try
-        {
-            criteria = new Criteria(this, entity, result_type);
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "Criteria createCriteria(Object entity, RESULT_TYPE result_type)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-        }
-        return criteria;
-    }
-
-    @Override
-    public int count(Class entityClass, String whereCondition)
-    {
-        String sql = "";
-        int result = 0;
-
-        if (whereCondition == null)
-            whereCondition = "";
-
-        Statement statement = null;
-        ResultSet resultSet = null;
-        try
-        {
-            java.lang.reflect.Constructor constructor = entityClass.getConstructor();
-            Object entity = constructor.newInstance();
-
-            String tableName = (entity.getClass().getSimpleName().toLowerCase());
-            sql = "select count(*) from " + tableName;
-            if (!whereCondition.isEmpty())
-                sql += " where " + whereCondition;
-
-            if (!extendsEntity(entityClass))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + entityClass.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
-                rollback();
-                return 0;
-            }
-
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(sql);
-            if (resultSet.next())
-                result = resultSet.getInt(1);
-
-            System.out.println(sql);
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
-        }
-        finally
-        {
-            Util.closeResultSet(resultSet);
-            Util.closeStatement(statement);
-        }
-
-        return result;
-    }
 }
