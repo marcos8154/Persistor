@@ -5,7 +5,7 @@
             <url>src/br/com/persistor/sessionManager/SessionImpl.java</url>
             <bookmark id="2">
                 <name/>
-                <line>979</line>
+                <line>1402</line>
                 <key/>
             </bookmark>
         </file>
@@ -19,10 +19,6 @@
         </file>
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group>
-            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/sessionManager/SessionImpl.java</file>
-            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/sessionManager/Join.java</file>
-            <file>file:/C:/Users/Marcos%20Vinícius/Documents/GitHub/Persistor/src/br/com/persistor/generalClasses/Util.java</file>
-        </group>
+        <group/>
     </open-files>
 </project-private>

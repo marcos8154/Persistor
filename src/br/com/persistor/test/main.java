@@ -25,6 +25,11 @@ public class main
 
         try
         {
+            //Session session = getSession();
+            
+          //  Cotacoes cotacao = session.onID(Cotacoes.class, 2);
+            System.out.println("");
+            
         }
         catch (Exception ex)
         {

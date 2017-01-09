@@ -1316,7 +1316,13 @@ public class SessionImpl implements Session
 
                     if (oneToOne.load() == LOAD.MANUAL)
                         continue;
-
+                    
+                    if(oneToOne.ignore_onID().length > 0)
+                    {
+                        for(String fieldToIgnore : oneToOne.ignore_onID())
+                            join.addIgnorableField(fieldToIgnore);
+                    }
+                    
                     String sourceName = cls.getSimpleName() + "." + oneToOne.source();
                     String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
                     join.addJoin(oneToOne.join_type(), entityObj, sourceName + " = " + targetName);

@@ -29,6 +29,7 @@ public class Join implements IJoin
     private Object primaryObj;
     private List<Object> objects = new ArrayList<>();
     private List<Object> resultList = new ArrayList<>();
+    private List<String> ignorableFields = new ArrayList<>();
     private Session mainSession = null;
 
     public boolean isRestartEntityInstance()
@@ -46,6 +47,11 @@ public class Join implements IJoin
         objects.add(baseObject);
         primaryObj = baseObject;
         restartEntityInstance = true;
+    }
+
+    public void addIgnorableField(String fieldName)
+    {
+        ignorableFields.add(fieldName);
     }
 
     @Override
@@ -72,6 +78,17 @@ public class Join implements IJoin
     public void addFinalCondition(String final_and_or_where_condition)
     {
         final_condition = " " + final_and_or_where_condition;
+    }
+
+    private boolean isIgnorableField(String fieldOrMethodName)
+    {
+        for (String field : ignorableFields)
+        {
+            if (fieldOrMethodName.contains(field))
+                return true;
+        }
+
+        return false;
     }
 
     List<FieldIndex> fields_index = new ArrayList<>();
@@ -112,8 +129,12 @@ public class Join implements IJoin
                 for (int i = 0; i < fields.length; i++)
                 {
                     String tableName = cls.getSimpleName().toLowerCase();
+
                     //tableName.field field_tableName -->  field_tableName = query alias
                     String fieldName = tableName + "." + fields[i] + " " + fields[i] + "_" + tableName + ", ";
+                    if (isIgnorableField(fieldName))
+                        continue;
+
                     fieldsSelect += fieldName;
 
                     field_index = new FieldIndex();
@@ -212,6 +233,9 @@ public class Join implements IJoin
                                 columnName = (method.getName().substring(3, method.getName().length())).toLowerCase() + "_" + tableName;
                                 methodSetName = "set" + method.getName().substring(3, method.getName().length());
                             }
+
+                            if (isIgnorableField(columnName))
+                                continue;
 
                             if (method.getReturnType() == char.class)
                             {
@@ -319,10 +343,10 @@ public class Join implements IJoin
         catch (Exception ex)
         {
             iSession.getPersistenceLogger().newNofication(
-                    new PersistenceLog(this.getClass().getName(), 
-                            "void execute(Session iSession)", 
-                            Util.getDateTime(), 
-                            Util.getFullStackTrace(ex), 
+                    new PersistenceLog(this.getClass().getName(),
+                            "void execute(Session iSession)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
                             this.mountedQuery));
         }
         finally
@@ -387,10 +411,10 @@ public class Join implements IJoin
         catch (Exception ex)
         {
             mainSession.getPersistenceLogger().newNofication(
-                    new PersistenceLog(this.getClass().getName(), 
-                            "<T> T getEntity(Class entityClass)", 
-                            Util.getDateTime(), 
-                            Util.getFullStackTrace(ex), 
+                    new PersistenceLog(this.getClass().getName(),
+                            "<T> T getEntity(Class entityClass)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
                             ""));
         }
         return entity;

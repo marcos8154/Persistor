@@ -20,4 +20,6 @@ public @interface OneToOne
     JOIN_TYPE join_type();
 
     LOAD load();
+    
+    String[] ignore_onID() default {};
 }

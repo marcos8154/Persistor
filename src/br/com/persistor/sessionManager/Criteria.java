@@ -81,7 +81,7 @@ public class Criteria<T> implements ICriteria<T>
                     this.query = ("SELECT TOP " + limit.getPageSize() + " * FROM " + this.tableName + " " + q);
                     hasFbLimit = true;
                 }
-                
+
                 break;
 
             case PostgreSQL:
@@ -117,20 +117,21 @@ public class Criteria<T> implements ICriteria<T>
     }
 
     private boolean isPrecedencePending = false;
+
     @Override
     public Criteria beginPrecedence()
     {
         isPrecedencePending = true;
         return this;
     }
-    
+
     @Override
     public Criteria endPrecedence()
     {
         query += ") ";
         return this;
     }
-    
+
     @Override
     public Criteria add(JOIN_TYPE join_type, Object entity, String joinCondition)
     {
@@ -146,23 +147,37 @@ public class Criteria<T> implements ICriteria<T>
     @Override
     public Criteria add(Expressions expression)
     {
-        if(isPrecedencePending)
+        if (isPrecedencePending)
         {
             String value = expression.getCurrentValue();
-            
-            if(value.toLowerCase().startsWith(" where"))
+
+            if (value.toLowerCase().startsWith(" where"))
                 value = value.replace("WHERE", "WHERE (");
-            
-            if(value.toLowerCase().startsWith(" or"))
+
+            if (value.toLowerCase().startsWith(" or"))
                 value = value.replace("OR", "OR (");
-            
-            if(value.toLowerCase().startsWith(" and"))
+
+            if (value.toLowerCase().startsWith(" and"))
                 value = value.replace("AND", "AND (");
-            
+
             isPrecedencePending = false;
             expression.setCurrentValue(value);
-            
+
         }
+        String expr = expression.getCurrentValue();
+
+        switch (iSession.getConfig().getDb_type())
+        {
+            case SQLServer:
+
+                if (expr.contains("true"))
+                    expr = expr.replace("true", "1");
+                if (expr.contains("false"))
+                    expr = expr.replace("false", "0");
+                break;
+        }
+        
+        expression.setCurrentValue(expr);
         query += expression.getCurrentValue();
         return this;
     }
@@ -189,6 +204,15 @@ public class Criteria<T> implements ICriteria<T>
         }
 
         return new ArrayList<>();
+    }
+    
+    @Override
+    public ICriteria addJoinIgnoreField(String fieldName)
+    {
+        if(join != null)
+            join.addIgnorableField(fieldName);
+        
+        return this;
     }
 
     @Override
