@@ -11,7 +11,9 @@ import java.util.List;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
+import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.generalClasses.FieldIndex;
+import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.IJoin;
@@ -31,6 +33,7 @@ public class Join implements IJoin
     private List<Object> resultList = new ArrayList<>();
     private List<String> ignorableFields = new ArrayList<>();
     private Session mainSession = null;
+    private Limit limit = null;
 
     public boolean isRestartEntityInstance()
     {
@@ -78,6 +81,12 @@ public class Join implements IJoin
     public void addFinalCondition(String final_and_or_where_condition)
     {
         final_condition = " " + final_and_or_where_condition;
+    }
+
+    @Override
+    public void addLimit(Limit limit)
+    {
+        this.limit = limit;
     }
 
     private boolean isIgnorableField(String fieldOrMethodName)
@@ -145,13 +154,121 @@ public class Join implements IJoin
                     index++;
                 }
             }
+            String baseQ = "";
+            if (this.limit != null)
+            {
+                switch (mainSession.getConfig().getDb_type())
+                {
+                    case FirebirdSQL:
 
-            String baseQ = "select \n " + fieldsSelect;
-            baseQ = baseQ.substring(0, baseQ.length() - 2);
-            baseQ += "\nfrom \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+                        if (limit.limit_type == LIMIT_TYPE.paginate)
+                        {
+                            baseQ = "SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+                        }
 
-            mountedQuery = (baseQ + "\n").toLowerCase();
-            mountedQuery += final_condition;
+                        if (limit.limit_type == LIMIT_TYPE.simple)
+                        {
+                            baseQ = "SELECT FIRST \n " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+                        }
+
+                        mountedQuery = (baseQ + "\n").toLowerCase();
+                        mountedQuery += final_condition;
+
+                        break;
+
+                    case SQLServer:
+
+                        if (limit.limit_type == LIMIT_TYPE.paginate)
+                        {
+                            baseQ = "select \n " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\nfrom \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                            mountedQuery = (baseQ + "\n").toLowerCase();
+                            mountedQuery += final_condition;
+
+                            mountedQuery += " ORDER BY " + limit.getFieldToOrder() + " OFFSET " + limit.getPagePosition()
+                                    + " ROWS FETCH NEXT " + limit.getPageSize() + " ROWS ONLY";
+                        }
+
+                        if (limit.limit_type == LIMIT_TYPE.simple)
+                        {
+                            baseQ = "SELECT TOP \n " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                            mountedQuery = (baseQ + "\n").toLowerCase();
+                            mountedQuery += final_condition;
+                        }
+
+                        break;
+
+                    case PostgreSQL:
+
+                        if (limit.limit_type == LIMIT_TYPE.paginate)
+                        {
+                            baseQ = "SELECT \n " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\n FROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                            mountedQuery = (baseQ + "\n").toLowerCase();
+                            mountedQuery += final_condition;
+                            mountedQuery += " LIMIT " + limit.getPageSize() + " OFFSET " + limit.getPagePosition();
+                        }
+
+                        if (limit.limit_type == LIMIT_TYPE.simple)
+                        {
+                            baseQ = "SELECT \n " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                            mountedQuery = (baseQ + "\n").toLowerCase();
+                            mountedQuery += final_condition;
+                            mountedQuery += " LIMIT " + limit.getPageSize();
+                        }
+
+                        break;
+
+                    case MySQL:
+
+                        if (limit.limit_type == LIMIT_TYPE.paginate)
+                        {
+                            baseQ = "SELECT \n " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                            mountedQuery = (baseQ + "\n").toLowerCase();
+                            mountedQuery += final_condition;
+                            mountedQuery += " LIMIT " + limit.getPagePosition() + ", " + limit.getPageSize();
+                        }
+
+                        if (limit.limit_type == LIMIT_TYPE.simple)
+                        {
+                            baseQ = "SELECT \n " + fieldsSelect;
+                            baseQ = baseQ.substring(0, baseQ.length() - 2);
+                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                            mountedQuery = (baseQ + "\n").toLowerCase();
+                            mountedQuery += final_condition;
+                            mountedQuery += " LIMIT " + limit.getPageSize();
+                        }
+
+                        break;
+                }
+            }
+            else
+            {
+                baseQ = "select \n " + fieldsSelect;
+                baseQ = baseQ.substring(0, baseQ.length() - 2);
+                baseQ += "\nfrom \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                mountedQuery = (baseQ + "\n").toLowerCase();
+                mountedQuery += final_condition;
+            }
 
             primaryObj.getClass().getField("mountedQuery").set(primaryObj, mountedQuery);
             if (iSession.getPersistenceContext().getFromContext(primaryObj) != null)

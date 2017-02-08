@@ -3,7 +3,7 @@ package br.com.persistor.interfaces;
 import java.util.List;
 
 import br.com.persistor.enums.JOIN_TYPE;
-import br.com.persistor.sessionManager.SessionImpl;
+import br.com.persistor.generalClasses.Limit;
 
 public interface IJoin
 {
@@ -18,5 +18,6 @@ public interface IJoin
     <T> List<T>  getResultList(Object obj);
 
     void execute(Session iSession) throws Exception;
-
+   
+    void addLimit(Limit limit);
 }

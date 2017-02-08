@@ -1479,7 +1479,9 @@ public class SessionImpl implements Session
             {
                 enabledContext = false;
                 int obtainedId = resultSet.getInt(1);
-                onID(entity, obtainedId);
+                Field f = entity.getClass().getDeclaredField(primaryKeyName);
+                f.setAccessible(true);
+                f.set(entity, obtainedId);
             }
         }
         catch (Exception ex)

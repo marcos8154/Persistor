@@ -45,73 +45,77 @@ public class Criteria<T> implements ICriteria<T>
         this.tableName = name;
     }
 
+    @Override
     public ICriteria addLimit(Limit limit)
     {
-        switch (iSession.getConfig().getDb_type())
-        {
-            case FirebirdSQL:
+        if (join != null)
+            join.addLimit(limit);
+        else
+            switch (iSession.getConfig().getDb_type())
+            {
+                case FirebirdSQL:
 
-                if (limit.limit_type == LIMIT_TYPE.paginate)
-                {
-                    String q = query;
-                    this.query = ("SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " * FROM " + this.tableName) + " " + q;
-                }
+                    if (limit.limit_type == LIMIT_TYPE.paginate)
+                    {
+                        String q = query;
+                        this.query = ("SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " * FROM " + this.tableName) + " " + q;
+                    }
 
-                if (limit.limit_type == LIMIT_TYPE.simple)
-                {
-                    String q = query;
-                    this.query = ("SELECT FIRST " + limit.getPageSize() + " * FROM " + this.tableName) + " " + q;
-                }
+                    if (limit.limit_type == LIMIT_TYPE.simple)
+                    {
+                        String q = query;
+                        this.query = ("SELECT FIRST " + limit.getPageSize() + " * FROM " + this.tableName) + " " + q;
+                    }
 
-                hasFbLimit = true;
-
-                break;
-
-            case SQLServer:
-
-                if (limit.limit_type == LIMIT_TYPE.paginate)
-                {
-                    this.query += " ORDER BY " + limit.getFieldToOrder() + " OFFSET " + limit.getPagePosition()
-                            + " ROWS FETCH NEXT " + limit.getPageSize() + " ROWS ONLY";
-                }
-
-                if (limit.limit_type == LIMIT_TYPE.simple)
-                {
-                    String q = query;
-                    this.query = ("SELECT TOP " + limit.getPageSize() + " * FROM " + this.tableName + " " + q);
                     hasFbLimit = true;
-                }
 
-                break;
+                    break;
 
-            case PostgreSQL:
+                case SQLServer:
 
-                if (limit.limit_type == LIMIT_TYPE.paginate)
-                {
-                    this.query += " LIMIT " + limit.getPageSize() + " OFFSET " + limit.getPagePosition();
-                }
+                    if (limit.limit_type == LIMIT_TYPE.paginate)
+                    {
+                        this.query += " ORDER BY " + limit.getFieldToOrder() + " OFFSET " + limit.getPagePosition()
+                                + " ROWS FETCH NEXT " + limit.getPageSize() + " ROWS ONLY";
+                    }
 
-                if (limit.limit_type == LIMIT_TYPE.simple)
-                {
-                    this.query += " LIMIT " + limit.getPageSize();
-                }
+                    if (limit.limit_type == LIMIT_TYPE.simple)
+                    {
+                        String q = query;
+                        this.query = ("SELECT TOP " + limit.getPageSize() + " * FROM " + this.tableName + " " + q);
+                        hasFbLimit = true;
+                    }
 
-                break;
+                    break;
 
-            case MySQL:
+                case PostgreSQL:
 
-                if (limit.limit_type == LIMIT_TYPE.paginate)
-                {
-                    this.query += " LIMIT " + limit.getPagePosition() + ", " + limit.getPageSize();
-                }
+                    if (limit.limit_type == LIMIT_TYPE.paginate)
+                    {
+                        this.query += " LIMIT " + limit.getPageSize() + " OFFSET " + limit.getPagePosition();
+                    }
 
-                if (limit.limit_type == LIMIT_TYPE.simple)
-                {
-                    this.query += " LIMIT " + limit.getPageSize();
-                }
+                    if (limit.limit_type == LIMIT_TYPE.simple)
+                    {
+                        this.query += " LIMIT " + limit.getPageSize();
+                    }
 
-                break;
-        }
+                    break;
+
+                case MySQL:
+
+                    if (limit.limit_type == LIMIT_TYPE.paginate)
+                    {
+                        this.query += " LIMIT " + limit.getPagePosition() + ", " + limit.getPageSize();
+                    }
+
+                    if (limit.limit_type == LIMIT_TYPE.simple)
+                    {
+                        this.query += " LIMIT " + limit.getPageSize();
+                    }
+
+                    break;
+            }
 
         return this;
     }
@@ -176,7 +180,7 @@ public class Criteria<T> implements ICriteria<T>
                     expr = expr.replace("false", "0");
                 break;
         }
-        
+
         expression.setCurrentValue(expr);
         query += expression.getCurrentValue();
         return this;
@@ -205,13 +209,13 @@ public class Criteria<T> implements ICriteria<T>
 
         return new ArrayList<>();
     }
-    
+
     @Override
     public ICriteria addJoinIgnoreField(String fieldName)
     {
-        if(join != null)
+        if (join != null)
             join.addIgnorableField(fieldName);
-        
+
         return this;
     }
 

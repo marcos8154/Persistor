@@ -153,7 +153,7 @@ public class Query
                 preparedStatement.setObject(parameter_index, null);
                 return;
             }
-            
+
             if (value instanceof String)
                 preparedStatement.setString(parameter_index, String.valueOf(value));
 
@@ -222,7 +222,7 @@ public class Query
                 executeSelect(cls, this.getResult_type());
             }
 
-            if (tmpQuery.startsWith("update") || tmpQuery.startsWith("insert") || tmpQuery.startsWith("truncate"))
+            if (tmpQuery.startsWith("update") || tmpQuery.startsWith("delete") || tmpQuery.startsWith("insert") || tmpQuery.startsWith("truncate"))
             {
                 executeInsertOrUpdate(cls);
             }

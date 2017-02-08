@@ -21,14 +21,18 @@ public class main
 
     public static void main(String[] args)
     {
-        Util.runPresentation();
+      //  Util.runPresentation();
 
         try
         {
-            //Session session = getSession();
+            Session session = getSession();
             
-          //  Cotacoes cotacao = session.onID(Cotacoes.class, 2);
-            System.out.println("");
+            Marcas m = new Marcas();
+            m.setNome("Teste");
+            
+            session.save(m);
+            
+            System.out.println(m.getId());
             
         }
         catch (Exception ex)
@@ -44,12 +48,12 @@ public class main
             DBConfig config = new DBConfig();
             config.setPersistenceLogger(LogTest.class);
             // config.setPersistenceContext(Contexto.class);
-            config.setDb_type(DB_TYPE.PostgreSQL);
+            config.setDb_type(DB_TYPE.SQLServer);
             config.setHost("localhost");
-            config.setPort(5432);
-            config.setUser("postgres");
+            config.setPort(1433);
+            config.setUser("sa");
             config.setPassword("81547686");
-            config.setDatabase("mmn_teste");
+            config.setDatabase("EM3");
             config.setMaxPoolSize(1);
 
             SessionFactory sf = new SessionFactory();
