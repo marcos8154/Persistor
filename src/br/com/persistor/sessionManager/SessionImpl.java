@@ -48,7 +48,7 @@ public class SessionImpl implements Session
 
     private boolean isVersionViolation = false;
     private String whereConditionGetLastID = "";
-    
+
     public boolean isVersionViolation()
     {
         return isVersionViolation;
@@ -206,17 +206,6 @@ public class SessionImpl implements Session
             sql_helper.prepareUpdate(entity, connection);
             String sqlBase = sql_helper.getSqlBase();
 
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
-
             sqlBase += " AND " + andCondition;
             preparedStatement = connection.prepareStatement(sqlBase);
             saveOrUpdateForeignObjects(entity, true);
@@ -263,17 +252,6 @@ public class SessionImpl implements Session
 
             sql_helper.prepareUpdate(entity, connection);
             String sqlBase = sql_helper.getSqlBase();
-
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
 
             preparedStatement = connection.prepareStatement(sqlBase);
             saveOrUpdateForeignObjects(entity, true);
@@ -331,17 +309,6 @@ public class SessionImpl implements Session
                 sqlBase += and_or_where_condition;
             }
 
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
-
             preparedStatement = connection.prepareStatement(sqlBase);
             preparedStatement.execute();
             Field fieldDel = cls.getField("deleted");
@@ -384,17 +351,6 @@ public class SessionImpl implements Session
 
             sql_helper.prepareDelete(entity);
             String sqlBase = sql_helper.getSqlBase();
-
-            if (this.context.initialized)
-            {
-                if (context.getFromContext(entity) == null)
-                {
-                    Exception ex = new Exception("The entity type '" + entity.getClass().getName() + "' is not part of the model for the current context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
 
             System.out.println("Persistor: \n " + sqlBase);
             preparedStatement = connection.prepareStatement(sqlBase);
@@ -614,11 +570,14 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T first(Class cls, String whereCondition)
+    public <T> T first(Class cls, String... whereCondition)
     {
         Statement statement = null;
         ResultSet resultSet = null;
         String sqlBase = "";
+        String whereClause = (whereCondition.length > 0
+                ? whereCondition[0]
+                : "");
         try
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
@@ -639,10 +598,8 @@ public class SessionImpl implements Session
             String className = cls.getSimpleName().toLowerCase();
             sqlBase = "select min(" + primaryKeyName + ") from " + className;
 
-            if (!whereCondition.isEmpty())
-            {
-                sqlBase += " where " + whereCondition;
-            }
+            if (!whereClause.isEmpty())
+                sqlBase += " where " + whereClause;
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);
@@ -678,11 +635,14 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T last(Class cls, String whereCondition)
+    public <T> T last(Class cls, String... whereCondition)
     {
         String sqlBase = "";
         Statement statement = null;
         ResultSet resultSet = null;
+        String whereClause = (whereCondition.length > 0
+                ? whereCondition[0]
+                : "");
         try
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
@@ -703,10 +663,8 @@ public class SessionImpl implements Session
             String className = cls.getSimpleName().toLowerCase();
             sqlBase = "select max(" + primaryKeyName + ") from " + className;
 
-            if (!whereCondition.isEmpty())
-            {
-                sqlBase += " where " + whereCondition;
-            }
+            if (!whereClause.isEmpty())
+                sqlBase += " where " + whereClause;
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);
@@ -752,16 +710,18 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public int count(Class entityClass, String whereCondition)
+    public int count(Class entityClass, String... whereCondition)
     {
         String sql = "";
         int result = 0;
 
-        if (whereCondition == null)
-            whereCondition = "";
-
         Statement statement = null;
         ResultSet resultSet = null;
+
+        String whereClause = (whereCondition.length > 0
+                ? whereCondition[0]
+                : "");
+
         try
         {
             java.lang.reflect.Constructor constructor = entityClass.getConstructor();
@@ -770,8 +730,8 @@ public class SessionImpl implements Session
             String tableName = (entity.getClass().getSimpleName().toLowerCase());
             sql = "select count(*) from " + tableName;
 
-            if (!whereCondition.isEmpty())
-                sql += " where " + whereCondition;
+            if (!whereClause.isEmpty())
+                sql += " where " + whereClause;
 
             if (!extendsEntity(entityClass))
             {
@@ -785,6 +745,58 @@ public class SessionImpl implements Session
             resultSet = statement.executeQuery(sql);
             if (resultSet.next())
                 result = resultSet.getInt(1);
+
+            System.out.println("Persistor: \n" + sql);
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
+        }
+        finally
+        {
+            Util.closeResultSet(resultSet);
+            Util.closeStatement(statement);
+        }
+
+        return result;
+    }
+
+    @Override
+    public double sum(Class entityClass, String columnName, String... whereCondition)
+    {
+        String sql = "";
+        double result = 0;
+
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        String whereClause = (whereCondition.length > 0
+                ? whereCondition[0]
+                : "");
+
+        try
+        {
+            java.lang.reflect.Constructor constructor = entityClass.getConstructor();
+            Object entity = constructor.newInstance();
+
+            String tableName = (entity.getClass().getSimpleName().toLowerCase());
+            sql = "select sum(" + columnName + ") " + columnName + " from " + tableName;
+
+            if (!whereClause.isEmpty())
+                sql += " where " + whereClause;
+
+            if (!extendsEntity(entityClass))
+            {
+                Exception ex = new Exception("\nPersistor warning: the class '" + entityClass.getName() + "' not extends Entity. Operation is stoped.\"");
+                logger.newNofication(new PersistenceLog(this.getClass().getName(), "<T> T Last(Class cls, String whereCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql));
+                rollback();
+                return 0;
+            }
+
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(sql);
+            if (resultSet.next())
+                result = resultSet.getDouble(1);
 
             System.out.println("Persistor: \n" + sql);
         }
@@ -1316,13 +1328,15 @@ public class SessionImpl implements Session
 
                     if (oneToOne.load() == LOAD.MANUAL)
                         continue;
-                    
-                    if(oneToOne.ignore_onID().length > 0)
+
+                    if (oneToOne.ignore_onID().length > 0)
                     {
-                        for(String fieldToIgnore : oneToOne.ignore_onID())
+                        for (String fieldToIgnore : oneToOne.ignore_onID())
+                        {
                             join.addIgnorableField(fieldToIgnore);
+                        }
                     }
-                    
+
                     String sourceName = cls.getSimpleName() + "." + oneToOne.source();
                     String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
                     join.addJoin(oneToOne.join_type(), entityObj, sourceName + " = " + targetName);

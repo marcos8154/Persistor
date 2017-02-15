@@ -39,7 +39,7 @@ public class PersistenceContext
                 {
                     context = ctor.newInstance();
                     initialized = true;
-                 //   System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
+                    //   System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
                     return;
                 }
             }
@@ -55,7 +55,7 @@ public class PersistenceContext
 
     public void clear()
     {
-        if(!initialized)
+        if (!initialized)
             return;
         System.out.println("Persistor: cleaning up Persistence Context...");
         entitySets.clear();
@@ -76,9 +76,9 @@ public class PersistenceContext
 
                 if (esEntity.equals(entity) || qEntity.equals(qEsEntity))
                     return esEntity;
-                
-             //   if(esEntity.getClass().getName().equals(entity.getClass().getName()) && qEntity.equals(qEsEntity))
-              //      return entity;
+
+                //   if(esEntity.getClass().getName().equals(entity.getClass().getName()) && qEntity.equals(qEsEntity))
+                //      return entity;
             }
         }
         catch (Exception ex)
@@ -93,37 +93,42 @@ public class PersistenceContext
         try
         {
             SQLHelper helper = new SQLHelper();
-            
-            for(EntitySet entitySet : entitySets)
+
+            for (EntitySet entitySet : entitySets)
             {
                 Object esObject = entitySet.getEntity();
-                helper.prepareBasicSelect(esObject, (int)id);
-                
-                if(helper.getPrimaryKeyValue().equals(id.toString()))
-                    return esObject;               
+                helper.prepareBasicSelect(esObject, (int) id);
+
+                if (helper.getPrimaryKeyValue().equals(id.toString()))
+                    return esObject;
             }
-            
+
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            
+
         }
         return null;
     }
-    
+
     public void removeFromContext(Object entity)
     {
         try
         {
+            boolean removed = false;
             for (EntitySet es : entitySets)
             {
                 Object obj = es.getEntity();
                 if (obj == entity)
                 {
                     entitySets.remove(es);
+                    removed = true;
                     break;
                 }
             }
+
+            if (removed)
+                System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully removed to context!");
         }
         catch (Exception ex)
         {
@@ -135,21 +140,25 @@ public class PersistenceContext
     {
         try
         {
+            boolean hasMerged = false;
             for (EntitySet es : entitySets)
             {
                 Object oldEs = es.getEntity();
                 if (oldEs == entity)
                 {
                     EntitySet newEs = new EntitySet(entity);
-                   
-                    for(Field f : newEs.getClass().getFields())
+
+                    for (Field f : newEs.getClass().getFields())
                     {
                         oldEs.getClass().getField(f.getName()).set(oldEs, f.get(newEs));
                     }
-                    
+
+                    hasMerged = true;
                     break;
                 }
             }
+            if (hasMerged)
+                System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully merged to context!");
         }
         catch (Exception ex)
         {
@@ -189,12 +198,8 @@ public class PersistenceContext
                 }
             }
         }
-
-        if (!hasAdded)
-        {
-            Exception ex = new Exception("Attach entity type '" + entity.getClass().getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
-            throw new Exception(ex.getMessage());
-        }
+        if (hasAdded)
+            System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully added to context!");
     }
 
     public boolean isEntitySet(Object entity)

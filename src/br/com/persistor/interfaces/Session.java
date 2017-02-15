@@ -82,9 +82,9 @@ public interface Session
      * @param whereCondition where conditions
      * @return 
      */
-    <T> T last(Class entityClass, String whereCondition);
+    <T> T last(Class entityClass, String... whereCondition);
 
-    <T> T first(Class entityClass, String whereCondition);
+    <T> T first(Class entityClass, String... whereCondition);
 
     <T> List<T> getList(T t);
 
@@ -98,6 +98,7 @@ public interface Session
 
     DBConfig getConfig();
     
-    int count(Class entityClass, String whereCondition);
+    int count(Class entityClass, String... whereCondition);
 
+    double sum(Class entityClass, String columnName, String... whereCondition);
 }

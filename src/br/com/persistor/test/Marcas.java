@@ -8,6 +8,7 @@ package br.com.persistor.test;
 import br.com.persistor.abstractClasses.Entity;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.INCREMENT;
+import javax.validation.constraints.NotNull;
 
 /**
  *
@@ -21,6 +22,7 @@ public class Marcas extends Entity
     private String nome;
     private int foto_id;
 
+    @NotNull(message = "nao pode")
     @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId()
     {

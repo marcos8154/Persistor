@@ -9,6 +9,7 @@ import br.com.persistor.abstractClasses.Entity;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.INCREMENT;
+import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -17,15 +18,27 @@ import java.util.Date;
  * @author Marcos VinÃ­cius
  */
 @Deprecated
-public class Pessoa extends Entity
+public class Produtos extends Entity
 {
 
     private int id;
+    private int loja_id;
     private String nome;
     private int version;
     private Calendar data_nasc;
 
-    @PrimaryKey(increment = INCREMENT.AUTO)
+    @PrimaryKey(increment = INCREMENT.MANUAL, primarykey_type = PRIMARYKEY_TYPE.AUXILIAR)
+    public int getLoja_id()
+    {
+        return loja_id;
+    }
+
+    public void setLoja_id(int loja_id)
+    {
+        this.loja_id = loja_id;
+    }
+
+    @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId()
     {
         return id;

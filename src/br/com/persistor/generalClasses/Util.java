@@ -41,7 +41,7 @@ public class Util
 
     public static String getVersion()
     {
-        return "2.2.2 - Build 170109";
+        return "2.2.5 - Build 170215";
     }
 
     public static Calendar getCalendar(int day, int month, int year)
