@@ -8,6 +8,7 @@ package br.com.persistor.sessionManager;
 import br.com.persistor.annotations.Column;
 import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.NamedQueryes;
+import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.enums.COMMIT_MODE;
 import br.com.persistor.enums.DB_TYPE;
@@ -284,8 +285,20 @@ public class Query
                             fieldName = "set" + method.getName().substring(3, method.getName().length());
                         }
 
-                        if (method.isAnnotationPresent(OneToOne.class));
-
+                        if (method.isAnnotationPresent(OneToOne.class) || method.isAnnotationPresent(OneToMany.class))
+                            continue;
+                        
+                        try
+                        {
+                            //checking if column exists in resultset
+                            resultSet.findColumn(columnName);
+                        }
+                        catch(Exception ex)
+                        {
+                            //not exists. ignore
+                            continue;
+                        }
+                        
                         if (method.getReturnType() == boolean.class)
                         {
                             Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);

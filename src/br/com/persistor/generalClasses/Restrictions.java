@@ -158,6 +158,46 @@ public class Restrictions
         return new Expressions(baseCondition + column + " IN (" + in + ")");
     }
 
+        /**
+     * (...) column not in (1, 3, 5) (...)
+     *
+     * @param filter_type Enum WHERE / OR / AND
+     * @param column column in table
+     * @param value espected value
+     * @return
+     */
+    public static Expressions notIn(FILTER_TYPE filter_type, String column, String[] values)
+    {
+        String baseCondition = "";
+
+        switch (filter_type)
+        {
+            case WHERE:
+
+                baseCondition = " WHERE ";
+                break;
+
+            case AND:
+
+                baseCondition = " AND ";
+                break;
+
+            case OR:
+
+                baseCondition = " OR ";
+                break;
+        }
+
+        String in = "";
+        for (int i = 0; i < values.length; i++)
+        {
+            in += values[i] + ", ";
+        }
+
+        in = in.substring(0, in.length() - 2);
+        return new Expressions(baseCondition + column + " NOT IN (" + in + ")");
+    }
+    
     /**
      * (...) column is not null (...)
      *
