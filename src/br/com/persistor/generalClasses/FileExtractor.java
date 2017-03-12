@@ -45,6 +45,7 @@ public class FileExtractor
            
            byte[] buffer = new byte[bufferSize];
            
+           inputStream.reset();
            while(inputStream.read(buffer) > 0)
            {
                outputStream.write(buffer);
@@ -52,7 +53,7 @@ public class FileExtractor
            
         } catch (Exception ex)
         {
-            
+            System.err.println("ERRO " + ex.getMessage());
         } finally
         {
              closeOutputStream(outputStream);

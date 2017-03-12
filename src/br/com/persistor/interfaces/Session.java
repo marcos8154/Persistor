@@ -43,19 +43,6 @@ public interface Session
     void rollback();
 
     /**
-     * Load entity by informed id and valid instance of same
-     * DON'T USE THIS METHOD IF PersistenceContext IS ENABLED
-     * 
-     * Example:
-     *     People people = new People();
-     *     session.onID(people, 5);
-     * 
-     * @param entity valid not null instance of entity to load
-     * @param id     id of database reccord to load entity
-     */
-    void onID(Object entity, int id);
-
-    /**
      * Return loaded loaded entity by informed id and entity class
      * If PersistenceContext is enabled, is right recommended use
      * this method to load entity by id
