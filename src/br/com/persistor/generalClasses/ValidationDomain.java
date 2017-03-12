@@ -43,7 +43,7 @@ public class ValidationDomain
 
     public ValidationDomain notEmpty(String field, String message)
     {
-        rules.add(new ValidationRule(ValidationRuleType.NOT_NULL, field, message));
+        rules.add(new ValidationRule(ValidationRuleType.NOT_EMPTY, field, message));
         return this;
     }
 

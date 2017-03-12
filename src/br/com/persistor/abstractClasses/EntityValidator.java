@@ -58,6 +58,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    return;
                                 }
                                 break;
                                 
@@ -66,6 +67,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    return;
                                 }
                                 break;
                                 
@@ -74,6 +76,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    return;
                                 }
                                 break;
                                 
@@ -82,6 +85,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    return;
                                 }
                                 break;
                                 
@@ -90,6 +94,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    return;
                                 }
                                 break;
                         }
@@ -99,7 +104,8 @@ public abstract class EntityValidator
         }
         catch (Exception ex)
         {
-            throw new RuntimeException(ex.getMessage());
+            System.err.println(ex.getMessage());
+            System.exit(0);
         }
     }
 }
