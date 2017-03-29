@@ -6,6 +6,7 @@
 package br.com.persistor.test;
 
 import br.com.persistor.abstractClasses.Entity;
+import br.com.persistor.annotations.NamedQuery;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.INCREMENT;
@@ -18,25 +19,15 @@ import java.util.Date;
  * @author Marcos VinÃ­cius
  */
 @Deprecated
+@NamedQuery(queryName = "busca", queryValue = "select * from produtos where descricao like '%%'")
 public class Produtos extends Entity
 {
 
     private int id;
-    private int loja_id;
-    private String nome;
-    private int version;
-    private Calendar data_nasc;
-
-    @PrimaryKey(increment = INCREMENT.MANUAL, primarykey_type = PRIMARYKEY_TYPE.AUXILIAR)
-    public int getLoja_id()
-    {
-        return loja_id;
-    }
-
-    public void setLoja_id(int loja_id)
-    {
-        this.loja_id = loja_id;
-    }
+    private String descricao;
+    private double valor;
+    private String unidade;
+    private boolean inativo;
 
     @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId()
@@ -44,40 +35,49 @@ public class Produtos extends Entity
         return id;
     }
 
-    public Calendar getData_nasc()
-    {
-        return data_nasc;
-    }
-
-    public void setData_nasc(Calendar data_nasc)
-    {
-        this.data_nasc = data_nasc;
-    }
-
     public void setId(int id)
     {
         this.id = id;
     }
 
-    public String getNome()
+    public String getDescricao()
     {
-        return nome;
+        return descricao;
     }
 
-    public void setNome(String nome)
+    public void setDescricao(String descricao)
     {
-        this.nome = nome;
+        this.descricao = descricao;
     }
 
-    @Version
-    public int getVersion()
+    public double getValor()
     {
-        return version;
+        return valor;
     }
 
-    public void setVersion(int version)
+    public void setValor(double valor)
     {
-        this.version = version;
+        this.valor = valor;
+    }
+
+    public String getUnidade()
+    {
+        return unidade;
+    }
+
+    public void setUnidade(String unidade)
+    {
+        this.unidade = unidade;
+    }
+
+    public boolean isInativo()
+    {
+        return inativo;
+    }
+
+    public void setInativo(boolean inativo)
+    {
+        this.inativo = inativo;
     }
 
 }

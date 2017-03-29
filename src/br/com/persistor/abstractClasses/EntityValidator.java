@@ -22,6 +22,12 @@ public abstract class EntityValidator
     private final List<ValidationDomain> domains = new ArrayList<>();
     private boolean hasErrors = false;
     private String validationMessage = "";
+    private String fieldError = "";
+    
+    public String getFieldError()
+    {
+        return fieldError;
+    }
     
     public boolean hasErrors()
     {
@@ -58,6 +64,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    fieldError = rule.getField();
                                     return;
                                 }
                                 break;
@@ -67,6 +74,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    fieldError = rule.getField();
                                     return;
                                 }
                                 break;
@@ -76,6 +84,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    fieldError = rule.getField();
                                     return;
                                 }
                                 break;
@@ -85,6 +94,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    fieldError = rule.getField();
                                     return;
                                 }
                                 break;
@@ -94,6 +104,7 @@ public abstract class EntityValidator
                                 {
                                     hasErrors = true;
                                     validationMessage = rule.getMessage();
+                                    fieldError = rule.getField();
                                     return;
                                 }
                                 break;

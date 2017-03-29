@@ -18,11 +18,13 @@ public class SessionFactory
 
     private DataSource mainDataSource = null;
     private DBConfig mainConfig = null;
+    private PersistenceContext persistenceContext;
 
     public SessionFactory buildSession(DBConfig config)
     {
         try
         {
+            this.persistenceContext = new PersistenceContext();
             this.mainConfig = config;
             mainDataSource = DataSource.getInstance(config);
             return this;
@@ -33,6 +35,11 @@ public class SessionFactory
             ex.printStackTrace();
         }
         return null;
+    }
+
+    public PersistenceContext getPersistenceContext()
+    {
+        return persistenceContext;
     }
 
     public void reset()
@@ -55,6 +62,8 @@ public class SessionFactory
             returnSessonImpl = new SessionImpl(mainDataSource.getConnection());
             returnSessonImpl.setConfig(mainConfig);
 
+            if (persistenceContext.initialized)
+                returnSessonImpl.setSLContext(persistenceContext);
         }
         catch (Exception ex)
         {
@@ -72,12 +81,23 @@ public class SessionFactory
         try
         {
             if (mainDataSource == null)
-            {
                 buildSession(config);
-            }
 
             returnSessonImpl = new SessionImpl(mainDataSource.getConnection());
             returnSessonImpl.setConfig(config);
+
+            if (mainConfig.getSlPersistenceContext() != null)
+            {
+                if (!persistenceContext.initialized)
+                {
+                    System.err.println("Persistor: Initializing SL Persistence context...");
+                    persistenceContext.Initialize(mainConfig.getSlPersistenceContext());
+                    if (persistenceContext.initialized)
+                        returnSessonImpl.setSLContext(persistenceContext);
+                }
+                else
+                    returnSessonImpl.setSLContext(persistenceContext);
+            }
 
         }
         catch (Exception ex)

@@ -26,7 +26,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -64,7 +64,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -101,7 +101,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -134,7 +134,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -174,7 +174,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -213,7 +213,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -249,7 +249,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -292,7 +292,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -346,7 +346,7 @@ public class Restrictions
         {
             case WHERE:
 
-                baseCondition = " WHERE ";
+                baseCondition = " where ";
                 break;
 
             case AND:
@@ -386,7 +386,7 @@ public class Restrictions
             {
                 case WHERE:
 
-                    baseCondition = " WHERE ";
+                    baseCondition = " where ";
                     break;
 
                 case AND:
@@ -430,7 +430,7 @@ public class Restrictions
             {
                 case WHERE:
 
-                    baseCondition = " WHERE ";
+                    baseCondition = " where ";
                     break;
 
                 case AND:
@@ -473,7 +473,7 @@ public class Restrictions
             {
                 case WHERE:
 
-                    baseCondition = " WHERE ";
+                    baseCondition = " where ";
                     break;
 
                 case AND:
@@ -516,7 +516,7 @@ public class Restrictions
             {
                 case WHERE:
 
-                    baseCondition = " WHERE ";
+                    baseCondition = " where ";
                     break;
 
                 case AND:

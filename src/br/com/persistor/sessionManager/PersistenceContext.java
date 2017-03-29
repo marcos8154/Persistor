@@ -20,9 +20,33 @@ import java.util.List;
 public class PersistenceContext
 {
 
+    public boolean initialized;
+
     private Object context = null;
     private List<EntitySet> entitySets = new ArrayList<>();
-    public boolean initialized;
+    private final List<CachedQuery> cachedQuerys = new ArrayList<>();
+
+    public CachedQuery findCachedQuery(String query)
+    {
+        for (CachedQuery cq : cachedQuerys)
+            if (cq.getQuery().equals(query))
+                return cq;
+
+        return null;
+    }
+
+    public void addCachedQuery(String query, int[] resultKeys)
+    {
+        CachedQuery cq = findCachedQuery(query);
+        if (cq != null)
+        {
+            cq.setResultKeys(resultKeys);
+            return;
+        }
+
+        CachedQuery cachedQuery = new CachedQuery(query, resultKeys);
+        cachedQuerys.add(cachedQuery);
+    }
 
     public void Initialize(String className)
     {
@@ -39,7 +63,7 @@ public class PersistenceContext
                 {
                     context = ctor.newInstance();
                     initialized = true;
-                    //   System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
+                    System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
                     return;
                 }
             }
@@ -76,9 +100,29 @@ public class PersistenceContext
 
                 if (esEntity.equals(entity) || qEntity.equals(qEsEntity))
                     return esEntity;
+            }
+        }
+        catch (Exception ex)
+        {
 
-                //   if(esEntity.getClass().getName().equals(entity.getClass().getName()) && qEntity.equals(qEsEntity))
-                //      return entity;
+        }
+        return null;
+    }
+
+    private EntitySet findEntitySetByEntityId(Class entityClass, Object id)
+    {
+        try
+        {
+            SQLHelper helper = new SQLHelper();
+
+            for (EntitySet entitySet : entitySets)
+            {
+                Object esObject = entitySet.getEntity();
+                helper.prepareDelete(esObject);
+
+                if (esObject.getClass().getName().equals(entityClass.getName()))
+                    if (helper.getPrimaryKeyValue().equals(id.toString()))
+                        return entitySet;
             }
         }
         catch (Exception ex)
@@ -100,7 +144,12 @@ public class PersistenceContext
                 helper.prepareBasicSelect(esObject, (int) id);
 
                 if (helper.getPrimaryKeyValue().equals(id.toString()))
+                {
+                    if (esObject != null)
+                        System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' retrieved from context successfully!");
+
                     return esObject;
+                }
             }
 
         }
@@ -109,6 +158,27 @@ public class PersistenceContext
 
         }
         return null;
+    }
+
+    public List<Object> listByClassType(Class entityClass)
+    {
+        List<Object> result = new ArrayList<>();
+        try
+        {
+            Object entity = entityClass.newInstance();
+            for (EntitySet es : entitySets)
+            {
+                Object esEntity = es.getEntity();
+
+                if (esEntity.getClass() == entity.getClass())
+                    result.add(esEntity);
+            }
+        }
+        catch (Exception ex)
+        {
+
+        }
+        return result;
     }
 
     public void removeFromContext(Object entity)
@@ -136,33 +206,32 @@ public class PersistenceContext
         }
     }
 
-    public void mergeEntity(Object entity)
+    public void mergeEntity(Object newEntity)
     {
         try
         {
-            boolean hasMerged = false;
-            for (EntitySet es : entitySets)
+            SQLHelper helper = new SQLHelper();
+            helper.prepareDelete(newEntity);
+
+            EntitySet oldEntitySet = findEntitySetByEntityId(newEntity.getClass(), helper.getPrimaryKeyValue());
+            if (oldEntitySet == null)
+                return;
+
+            for (Field field : newEntity.getClass().getDeclaredFields())
             {
-                Object oldEs = es.getEntity();
-                if (oldEs == entity)
-                {
-                    EntitySet newEs = new EntitySet(entity);
+                field.setAccessible(true);
 
-                    for (Field f : newEs.getClass().getFields())
-                    {
-                        oldEs.getClass().getField(f.getName()).set(oldEs, f.get(newEs));
-                    }
+                Field targetField = oldEntitySet.getEntity().getClass().getDeclaredField(field.getName());
+                targetField.setAccessible(true);
 
-                    hasMerged = true;
-                    break;
-                }
+                targetField.set(oldEntitySet.getEntity(), field.get(newEntity));
             }
-            if (hasMerged)
-                System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully merged to context!");
+
+            System.err.println("Persistor: Entity '" + newEntity.getClass().getName() + "' successfully merged to context!");
         }
         catch (Exception ex)
         {
-
+            System.out.println(ex.getMessage());
         }
     }
 

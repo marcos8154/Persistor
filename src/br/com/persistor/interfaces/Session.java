@@ -1,5 +1,6 @@
 package br.com.persistor.interfaces;
 
+import br.com.persistor.enums.ISOLATION_LEVEL;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.sessionManager.Criteria;
@@ -15,15 +16,21 @@ public interface Session
 {
 
     PersistenceContext getPersistenceContext();
+    
+    PersistenceContext getSLPersistenceContext();
 
     IPersistenceLogger getPersistenceLogger();
 
+    boolean isEnabledSLContext();
+    
     void save(Object entity);
 
     void update(Object entity);
 
     void update(Object entity, String and_or_condition);
 
+    void setIsolationLevel(ISOLATION_LEVEL isolation_level);
+    
     /**
      * Delete entity from database and context(if initialized)
      * @param entity 

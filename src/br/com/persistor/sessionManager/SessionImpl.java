@@ -18,6 +18,7 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.INCREMENT;
+import br.com.persistor.enums.ISOLATION_LEVEL;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;
@@ -30,6 +31,7 @@ import br.com.persistor.interfaces.IPersistenceLogger;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import br.com.persistor.interfaces.Session;
+import static java.sql.Connection.*;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -40,6 +42,7 @@ public class SessionImpl implements Session
     private Connection connection = null;
     private DBConfig config = null;
     private PersistenceContext context = null;
+    private PersistenceContext slContext = null;
     private IPersistenceLogger logger = null;
 
     private boolean enabledContext = true;
@@ -58,6 +61,41 @@ public class SessionImpl implements Session
     {
         this.connection = connection;
         this.context = new PersistenceContext();
+        this.setIsolationLevel(ISOLATION_LEVEL.TRANSACTION_READ_COMMITTED);
+    }
+
+    @Override
+    public void setIsolationLevel(ISOLATION_LEVEL isolation_level)
+    {
+        try
+        {
+            switch (isolation_level)
+            {
+                case TRANSACTION_NONE:
+                    this.connection.setTransactionIsolation(TRANSACTION_NONE);
+                    break;
+
+                case TRANSACTION_READ_COMMITTED:
+                    this.connection.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+                    break;
+
+                case TRANSACTION_READ_UNCOMMITTED:
+                    this.connection.setTransactionIsolation(TRANSACTION_READ_UNCOMMITTED);
+                    break;
+
+                case TRANSACTION_REPEATABLE_READ:
+                    this.connection.setTransactionIsolation(TRANSACTION_REPEATABLE_READ);
+                    break;
+
+                case TRANSACTION_SERIALIZABLE:
+                    this.connection.setTransactionIsolation(TRANSACTION_SERIALIZABLE);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(new PersistenceLog("SessionImpl", "void setIsolationLevel(ISOLATION_LEVEL isolation_level)", null, ex, "Error on set IsolationLevel for Active Database Connection in current Session"));
+        }
     }
 
     @Override
@@ -85,7 +123,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> List<T> getList(T t)
+    public <T> List<T> getList(T t
+    )
     {
         try
         {
@@ -111,7 +150,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public Query createQuery(Object entity, String queryCommand)
+    public Query createQuery(Object entity, String queryCommand
+    )
     {
         try
         {
@@ -131,7 +171,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void save(Object entity)
+    public void save(Object entity
+    )
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
@@ -148,17 +189,6 @@ public class SessionImpl implements Session
             }
 
             sql_helper.prepareInsert(entity);
-
-            if (context.initialized)
-            {
-                if (!context.isEntitySet(entity))
-                {
-                    Exception ex = new Exception("Attach entity type '" + cls.getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                    rollback();
-                    return;
-                }
-            }
 
             String sqlBase = sql_helper.getSqlBase();
             preparedStatement = connection.prepareStatement(sqlBase);
@@ -187,7 +217,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void update(Object entity, String andCondition)
+    public void update(Object entity, String andCondition
+    )
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
@@ -215,7 +246,11 @@ public class SessionImpl implements Session
             fieldSaved.set(entity, true);
 
             System.out.println("Persistor: \n " + sqlBase);
-            this.context.mergeEntity(entity);
+
+            if (context.initialized)
+                this.context.mergeEntity(entity);
+            if (isEnabledSLContext())
+                this.slContext.mergeEntity(entity);
         }
         catch (Exception ex)
         {
@@ -234,7 +269,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void update(Object entity)
+    public void update(Object entity
+    )
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
@@ -261,7 +297,11 @@ public class SessionImpl implements Session
             fieldSaved.set(entity, true);
 
             System.out.println("Persistor: \n " + sqlBase);
-            this.context.mergeEntity(entity);
+
+            if (context.initialized)
+                this.context.mergeEntity(entity);
+            if (isEnabledSLContext())
+                this.slContext.mergeEntity(entity);
 
         }
         catch (Exception ex)
@@ -281,7 +321,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void delete(Object entity, String and_or_where_condition)
+    public void delete(Object entity, String and_or_where_condition
+    )
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
@@ -313,7 +354,11 @@ public class SessionImpl implements Session
             preparedStatement.execute();
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
+
             this.context.removeFromContext(entity);
+            if (isEnabledSLContext())
+                this.slContext.removeFromContext(entity);
+
             System.out.println("Persistor: \n " + sqlBase);
         }
         catch (Exception ex)
@@ -333,7 +378,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void delete(Object entity)
+    public void delete(Object entity
+    )
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
@@ -357,7 +403,11 @@ public class SessionImpl implements Session
             preparedStatement.execute();
             Field fieldDel = cls.getField("deleted");
             fieldDel.set(entity, true);
+
             this.context.removeFromContext(entity);
+
+            if (isEnabledSLContext())
+                this.slContext.removeFromContext(entity);
         }
         catch (Exception ex)
         {
@@ -377,7 +427,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T onID(Class entityCls, int id)
+    public <T> T onID(Class entityCls, int id
+    )
     {
         SQLHelper sql_helper = new SQLHelper();
         PreparedStatement ps = null;
@@ -397,6 +448,13 @@ public class SessionImpl implements Session
                 return null;
             }
 
+            if (context.findByID(entity, id) != null)
+                return (T) context.findByID(entity, id);
+
+            if (isEnabledSLContext())
+                if (slContext.findByID(entity, id) != null)
+                    return (T) slContext.findByID(entity, id);
+
             if (hasJoinableObjects(entity))
             {
                 entity = executeJoin(entity, id);
@@ -410,15 +468,15 @@ public class SessionImpl implements Session
             Field field = entityCls.getField("mountedQuery");
             field.set(entity, sqlBase);
 
-            if (context.findByID(entity, id) != null)
-                return (T) context.findByID(entity, id);
-
             ps = connection.prepareStatement(sqlBase);
             resultSet = ps.executeQuery();
             if (loadEntity(entity, resultSet))
             {
                 System.out.println("Persistor: \n " + sqlBase);
+
                 context.addToContext(entity);
+                if (isEnabledSLContext())
+                    this.slContext.addToContext(entity);
             }
             enabledContext = true;
         }
@@ -505,7 +563,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T first(Class cls, String... whereCondition)
+    public <T> T first(Class cls, String... whereCondition
+    )
     {
         Statement statement = null;
         ResultSet resultSet = null;
@@ -517,8 +576,7 @@ public class SessionImpl implements Session
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
             Object entity = constructor.newInstance();
-            if (context.getFromContext(entity) != null)
-                return (T) context.getFromContext(entity);
+
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
@@ -549,6 +607,8 @@ public class SessionImpl implements Session
                 return onID(cls, obtainedId);
             }
             context.addToContext(entity);
+            if (isEnabledSLContext())
+                this.slContext.addToContext(entity);
             return (T) entity;
         }
         catch (Exception ex)
@@ -570,7 +630,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> T last(Class cls, String... whereCondition)
+    public <T> T last(Class cls, String... whereCondition
+    )
     {
         String sqlBase = "";
         Statement statement = null;
@@ -582,8 +643,7 @@ public class SessionImpl implements Session
         {
             java.lang.reflect.Constructor constructor = cls.getConstructor();
             Object entity = constructor.newInstance();
-            if (context.getFromContext(entity) != null)
-                return (T) context.getFromContext(entity);
+
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
@@ -615,6 +675,9 @@ public class SessionImpl implements Session
             }
 
             context.addToContext(entity);
+            if (isEnabledSLContext())
+                this.slContext.addToContext(entity);
+
             return (T) entity;
         }
         catch (Exception ex)
@@ -630,7 +693,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public Criteria createCriteria(Object entity, RESULT_TYPE result_type)
+    public Criteria createCriteria(Object entity, RESULT_TYPE result_type
+    )
     {
         Criteria criteria = null;
         try
@@ -645,7 +709,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public int count(Class entityClass, String... whereCondition)
+    public int count(Class entityClass, String... whereCondition
+    )
     {
         String sql = "";
         int result = 0;
@@ -697,7 +762,8 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public double sum(Class entityClass, String columnName, String... whereCondition)
+    public double sum(Class entityClass, String columnName, String... whereCondition
+    )
     {
         String sql = "";
         double result = 0;
@@ -748,6 +814,18 @@ public class SessionImpl implements Session
         return result;
     }
 
+    @Override
+    public PersistenceContext getSLPersistenceContext()
+    {
+        return this.slContext;
+    }
+
+    @Override
+    public boolean isEnabledSLContext()
+    {
+        return (this.slContext != null);
+    }
+
     public void setConfig(DBConfig config)
     {
         this.config = config;
@@ -770,6 +848,11 @@ public class SessionImpl implements Session
             System.err.println("Persistor: *** PERSISTENCE LOGGER CLASS NOT FOUND. CREATE OR INQUIRE THE PERSISTENCE LOGGER CLASS TO AVOID PROBLEMS ****");
             System.exit(0);
         }
+    }
+
+    public void setSLContext(PersistenceContext pc)
+    {
+        this.slContext = pc;
     }
 
     private boolean extendsEntity(Class entityCls)
@@ -1312,7 +1395,12 @@ public class SessionImpl implements Session
                 if (join.hasAllLoaded)
                 {
                     if (entity != null)
+                    {
                         context.addToContext(entity);
+
+                        if (isEnabledSLContext())
+                            this.slContext.addToContext(entity);
+                    }
                     return entity;
                 }
 
@@ -1340,6 +1428,9 @@ public class SessionImpl implements Session
                 }
             }
             this.context.addToContext(entity);
+
+            if (isEnabledSLContext())
+                this.slContext.addToContext(entity);
         }
         catch (Exception ex)
         {

@@ -25,4 +25,8 @@ public interface ICriteria<T>
     ICriteria endPrecedence();
 
     ICriteria addJoinIgnoreField(String fieldName);
+    
+    ICriteria setSpecificFields(String... fields);
+    
+    ICriteria enableCloseSessionAfterExecute();
 }

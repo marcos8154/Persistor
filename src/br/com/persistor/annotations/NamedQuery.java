@@ -24,5 +24,5 @@ public @interface NamedQuery
     String queryName();
     String queryValue();
     RESULT_TYPE result_type() default RESULT_TYPE.MULTIPLE;
-    boolean closeAfterExecute() default true;
+    boolean closeAfterExecute() default false;
 }

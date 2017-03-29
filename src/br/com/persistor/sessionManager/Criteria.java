@@ -30,10 +30,13 @@ public class Criteria<T> implements ICriteria<T>
     RESULT_TYPE resultType;
     Object baseEntity;
     String query = "";
+    String originalQuery = "";
     String tableName = "";
     Session iSession;
+    String[] specificFields = null;
 
     private boolean hasFbLimit = false;
+    private boolean autoCloseSession = false;
 
     public Criteria(Session iSession, Object entity, RESULT_TYPE result_type)
     {
@@ -43,6 +46,20 @@ public class Criteria<T> implements ICriteria<T>
 
         String name = (entity.getClass().getSimpleName().toLowerCase());
         this.tableName = name;
+    }
+
+    @Override
+    public ICriteria enableCloseSessionAfterExecute()
+    {
+        this.autoCloseSession = true;
+        return this;
+    }
+
+    @Override
+    public ICriteria setSpecificFields(String... fields)
+    {
+        specificFields = fields;
+        return this;
     }
 
     @Override
@@ -144,19 +161,53 @@ public class Criteria<T> implements ICriteria<T>
             join = new Join(baseEntity);
             join.setRestartEntityInstance(resultType == RESULT_TYPE.MULTIPLE);
         }
+
         join.addJoin(join_type, entity, joinCondition);
         return this;
+    }
+
+    private String getNotInForExistingKeysInSLContext()
+    {
+        try
+        {
+            SQLHelper helper = new SQLHelper();
+            helper.prepareDelete(baseEntity);
+
+            List<Object> list = iSession.getSLPersistenceContext().listByClassType(baseEntity.getClass());
+            if (list.isEmpty())
+                return "";
+            String result = "where (" + baseEntity.getClass().getSimpleName().toLowerCase() + "."
+                    + helper.getPrimaryKeyName().toLowerCase() + " not in(";
+
+            for (Object obj : list)
+            {
+                helper = new SQLHelper();
+                helper.prepareDelete(obj);
+
+                result += helper.getPrimaryKeyValue() + ", ";
+            }
+
+            result = result.substring(0, result.length() - 2) + ")) and";
+            return result;
+        }
+        catch (Exception ex)
+        {
+        }
+
+        return "";
     }
 
     @Override
     public Criteria add(Expressions expression)
     {
+        String value = expression.getCurrentValue();
+
         if (isPrecedencePending)
         {
-            String value = expression.getCurrentValue();
+            value = expression.getCurrentValue();
 
             if (value.toLowerCase().startsWith(" where"))
-                value = value.replace("WHERE", "WHERE (");
+                value = value.replace("where", "where (");
 
             if (value.toLowerCase().startsWith(" or"))
                 value = value.replace("OR", "OR (");
@@ -166,8 +217,8 @@ public class Criteria<T> implements ICriteria<T>
 
             isPrecedencePending = false;
             expression.setCurrentValue(value);
-
         }
+
         String expr = expression.getCurrentValue();
 
         switch (iSession.getConfig().getDb_type())
@@ -234,19 +285,28 @@ public class Criteria<T> implements ICriteria<T>
 
         if (!hasFbLimit)
         {
-            query = "select * from " + tableName + " " + query;
+            if (specificFields != null)
+            {
+                String fields = "";
+                for (int i = 0; i < specificFields.length; i++)
+                    fields += specificFields[i] + ", ";
+
+                fields = fields.substring(0, fields.length() - 2);
+                query = "select " + fields + " from " + tableName + " " + query;
+            }
+            else
+                query = "select * from " + tableName + " " + query;
         }
+        
+        this.originalQuery = query;
 
         try
         {
             Class clss = baseEntity.getClass();
-
             Field fieldMQ = clss.getField("mountedQuery");
             fieldMQ.set(baseEntity, query);
-
             List<Object> rList = new ArrayList<>();
             Object ob = baseEntity;
-
             Class cls = ob.getClass();
 
             if (!Util.extendsEntity(cls))
@@ -259,6 +319,39 @@ public class Criteria<T> implements ICriteria<T>
             {
                 baseEntity = this.iSession.getPersistenceContext().getFromContext(baseEntity);
                 return this;
+            }
+
+            if (iSession.isEnabledSLContext())
+            {
+                CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
+                if (cq != null)
+                {
+                    for (int pkey : cq.getResultKeys())
+                    {
+                        Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
+                        if (cachedEntity != null)
+                            rList.add(cachedEntity);
+                    }
+                }
+            }
+
+            if (iSession.isEnabledSLContext())
+            {
+                CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
+                if (cq != null)
+                {
+                    if (this.query.toLowerCase().contains("where"))
+                    {
+                        String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
+                        String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
+
+                        String inClause = getNotInForExistingKeysInSLContext();
+                        if (!inClause.isEmpty())
+                            this.query = beforeWhere + inClause + afterWhere;
+                    }
+                    else
+                        this.query += getNotInForExistingKeysInSLContext().replace("and", "");
+                }
             }
 
             statement = iSession.getActiveConnection().createStatement();
@@ -297,7 +390,16 @@ public class Criteria<T> implements ICriteria<T>
                             fieldName = "set" + method.getName().substring(3, method.getName().length());
                         }
 
-                        if (method.isAnnotationPresent(OneToOne.class));
+                        try
+                        {
+                            //checking if column exists in resultset
+                            resultSet.findColumn(columnName);
+                        }
+                        catch (Exception ex)
+                        {
+                            //not exists. ignore
+                            continue;
+                        }
 
                         if (method.getReturnType() == boolean.class)
                         {
@@ -378,7 +480,7 @@ public class Criteria<T> implements ICriteria<T>
                                 is = resultSet.getBinaryStream(columnName);
 
                             Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(baseEntity, is);
+                            invokeMethod.invoke(ob, is);
                             continue;
                         }
                     }
@@ -393,7 +495,26 @@ public class Criteria<T> implements ICriteria<T>
 
             Field f = clss.getField("ResultList");
             f.set(baseEntity, rList);
+
             this.iSession.getPersistenceContext().addToContext(ob);
+
+            if (iSession.isEnabledSLContext())
+            {
+                int[] resultKeys = new int[rList.size()];
+
+                for (int i = 0; i < rList.size(); i++)
+                {
+                    Object objResult = rList.get(i);
+
+                    SQLHelper helper = new SQLHelper();
+                    helper.prepareDelete(objResult);
+
+                    resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
+                    iSession.getSLPersistenceContext().addToContext(objResult);
+                }
+
+                iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
+            }
         }
         catch (Exception ex)
         {
@@ -401,6 +522,8 @@ public class Criteria<T> implements ICriteria<T>
         }
         finally
         {
+            if (this.autoCloseSession)
+                this.iSession.close();
             Util.closeResultSet(resultSet);
             Util.closeStatement(statement);
         }

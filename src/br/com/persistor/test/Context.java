@@ -16,27 +16,16 @@ import br.com.persistor.interfaces.IPersistenceContext;
 public class Context implements IPersistenceContext
 {
 
-    private EntitySet<Produtos> pessoa;
-    private EntitySet<Marcas> marca;
+    private EntitySet<Produtos> produtos;
 
-    public EntitySet<Produtos> getPessoas()
+    public EntitySet<Produtos> getProdutos()
     {
-        return pessoa;
+        return produtos;
     }
 
-    public void setPessoas(EntitySet<Produtos> pessoas)
+    public void setProdutos(EntitySet<Produtos> produtos)
     {
-        this.pessoa = pessoas;
-    }
-
-    public EntitySet<Marcas> getMarcas()
-    {
-        return marca;
-    }
-
-    public void setMarcas(EntitySet<Marcas> marcas)
-    {
-        this.marca = marcas;
+        this.produtos = produtos;
     }
 
 }

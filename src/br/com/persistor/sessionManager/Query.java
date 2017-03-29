@@ -40,7 +40,8 @@ public class Query
 
     private PreparedStatement preparedStatement;
     private Session iSession;
-    String query;
+    private String query;
+    private String originalQuery;
 
     private RESULT_TYPE result_type;
     private COMMIT_MODE commit_mode = COMMIT_MODE.AUTO;
@@ -77,14 +78,14 @@ public class Query
     }
 
     private Class cls;
-    Object obj;
+    Object baseEntity;
 
     public void createQuery(Session isession, Object obj, String query)
     {
         //if "query" starts with "@", is an NamedQuery.
         //Find in Class "cls" the NamedQuery
         this.cls = obj.getClass();
-        this.obj = obj;
+        this.baseEntity = obj;
         this.iSession = isession;
 
         try
@@ -100,6 +101,7 @@ public class Query
                         if (namedQuery.queryName().equals(query.replace("@", "")))
                         {
                             this.query = namedQuery.queryValue();
+                            this.originalQuery = namedQuery.queryValue();
                             this.result_type = namedQuery.result_type();
                             this.closeSessionAfterExecute = namedQuery.closeAfterExecute();
                             isNamedQuery = true;
@@ -122,6 +124,7 @@ public class Query
                             if (namedQuery.queryName().equals(query.replace("@", "")))
                             {
                                 this.query = namedQuery.queryValue();
+                                this.originalQuery = namedQuery.queryValue();
                                 isNamedQuery = true;
                                 break;
                             }
@@ -131,7 +134,27 @@ public class Query
             }
 
             if (!isNamedQuery)
+            {
                 this.query = query;
+                this.originalQuery = query;
+            }
+
+            if (iSession.isEnabledSLContext())
+            {
+                CachedQuery cq = isession.getSLPersistenceContext().findCachedQuery(this.originalQuery);
+                if (cq != null)
+                {
+                    if (this.query.toLowerCase().contains("where"))
+                    {
+                        String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
+                        String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
+
+                        String inClause = getNotInForExistingKeysInSLContext();
+                        if (!inClause.isEmpty())
+                            this.query = beforeWhere + inClause + afterWhere;
+                    }
+                }
+            }
 
             this.preparedStatement = isession.getActiveConnection().prepareStatement(this.query);
         }
@@ -143,6 +166,38 @@ public class Query
                             "void createQuery(Session isession, Object obj, String query)",
                             Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
+    }
+
+    private String getNotInForExistingKeysInSLContext()
+    {
+        try
+        {
+            SQLHelper helper = new SQLHelper();
+            helper.prepareDelete(baseEntity);
+
+            List<Object> list = iSession.getSLPersistenceContext().listByClassType(baseEntity.getClass());
+            if (list.isEmpty())
+                return "";
+            
+            String result = "where (" + baseEntity.getClass().getSimpleName().toLowerCase() + "."
+                    + helper.getPrimaryKeyName().toLowerCase() + " not in(";
+
+            for (Object obj : list)
+            {
+                helper = new SQLHelper();
+                helper.prepareDelete(obj);
+
+                result += helper.getPrimaryKeyValue() + ", ";
+            }
+
+            result = result.substring(0, result.length() - 2) + ")) and";
+            return result;
+        }
+        catch (Exception ex)
+        {
+        }
+
+        return "";
     }
 
     public void setParameter(int parameter_index, Object value)
@@ -247,13 +302,27 @@ public class Query
                 throw new Exception("Persistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.");
 
             Field fieldMQ = clss.getField("mountedQuery");
-            fieldMQ.set(obj, query);
+            fieldMQ.set(baseEntity, query);
 
             List<Object> resList = new ArrayList<>();
-            Object ob = obj;
+            Object ob = baseEntity;
             Class cls = ob.getClass();
 
             resultSet = preparedStatement.executeQuery();
+
+            if (iSession.isEnabledSLContext())
+            {
+                CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.originalQuery);
+                if (cq != null)
+                {
+                    for (int pkey : cq.getResultKeys())
+                    {
+                        Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
+                        if (cachedEntity != null)
+                            resList.add(cachedEntity);
+                    }
+                }
+            }
 
             while (resultSet.next())
             {
@@ -287,84 +356,84 @@ public class Query
 
                         if (method.isAnnotationPresent(OneToOne.class) || method.isAnnotationPresent(OneToMany.class))
                             continue;
-                        
+
                         try
                         {
                             //checking if column exists in resultset
                             resultSet.findColumn(columnName);
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             //not exists. ignore
                             continue;
                         }
-                        
+
                         if (method.getReturnType() == boolean.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, boolean.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, boolean.class);
                             invokeMethod.invoke(ob, resultSet.getBoolean(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == int.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, int.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, int.class);
                             invokeMethod.invoke(ob, resultSet.getInt(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == double.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, double.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, double.class);
                             invokeMethod.invoke(ob, resultSet.getDouble(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == float.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, float.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, float.class);
                             invokeMethod.invoke(ob, resultSet.getFloat(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == short.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, short.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, short.class);
                             invokeMethod.invoke(ob, resultSet.getShort(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == long.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, long.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, long.class);
                             invokeMethod.invoke(ob, resultSet.getLong(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == String.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, String.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, String.class);
                             invokeMethod.invoke(ob, resultSet.getString(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == java.util.Date.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, java.util.Date.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, java.util.Date.class);
                             invokeMethod.invoke(ob, resultSet.getDate(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == byte.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, byte.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, byte.class);
                             invokeMethod.invoke(ob, resultSet.getByte(columnName));
                             continue;
                         }
 
                         if (method.getReturnType() == BigDecimal.class)
                         {
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, BigDecimal.class);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, BigDecimal.class);
                             invokeMethod.invoke(ob, resultSet.getBigDecimal(columnName));
                             continue;
                         }
@@ -377,8 +446,8 @@ public class Query
                             else
                                 is = resultSet.getBinaryStream(columnName);
 
-                            Method invokeMethod = obj.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(obj, is);
+                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
+                            invokeMethod.invoke(baseEntity, is);
                             continue;
                         }
                     }
@@ -394,7 +463,25 @@ public class Query
             if (resList.size() > 0)
             {
                 Field f = clss.getField("ResultList");
-                f.set(obj, resList);
+                f.set(baseEntity, resList);
+
+                if (iSession.isEnabledSLContext())
+                {
+                    int[] resultKeys = new int[resList.size()];
+
+                    for (int i = 0; i < resList.size(); i++)
+                    {
+                        Object objResult = resList.get(i);
+
+                        SQLHelper helper = new SQLHelper();
+                        helper.prepareDelete(objResult);
+
+                        resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
+                        iSession.getSLPersistenceContext().addToContext(objResult);
+                    }
+
+                    iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
+                }
             }
         }
         catch (Exception ex)

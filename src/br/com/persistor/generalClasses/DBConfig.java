@@ -7,6 +7,7 @@ public class DBConfig
 
     private String persistenceContext;
     private String persistenceLogger;
+    private String slPersistenceContext = null;
 
     private DB_TYPE db_type;
     private String host;
@@ -19,6 +20,16 @@ public class DBConfig
     private int acquireIncrement = 1;
     private int maxPoolSize = 20;
     private int maxStatements = 180;
+
+    public String getSlPersistenceContext()
+    {
+        return slPersistenceContext;
+    }
+
+    public void setSlPersistenceContext(Class slPersistenceContextClass)
+    {
+        this.slPersistenceContext = slPersistenceContextClass.getName();
+    }
 
     public String getPersistenceLogger()
     {
