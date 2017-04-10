@@ -166,7 +166,7 @@ public class Criteria<T> implements ICriteria<T>
         return this;
     }
 
-    private String getNotInForExistingKeysInSLContext()
+    private String getNotInForExistingKeysInCachedQuery(CachedQuery cachedQuery)
     {
         try
         {
@@ -179,13 +179,8 @@ public class Criteria<T> implements ICriteria<T>
             String result = "where (" + baseEntity.getClass().getSimpleName().toLowerCase() + "."
                     + helper.getPrimaryKeyName().toLowerCase() + " not in(";
 
-            for (Object obj : list)
-            {
-                helper = new SQLHelper();
-                helper.prepareDelete(obj);
-
-                result += helper.getPrimaryKeyValue() + ", ";
-            }
+            for (int key : cachedQuery.getResultKeys())
+                result += key + ", ";
 
             result = result.substring(0, result.length() - 2) + ")) and";
             return result;
@@ -297,7 +292,7 @@ public class Criteria<T> implements ICriteria<T>
             else
                 query = "select * from " + tableName + " " + query;
         }
-        
+
         this.originalQuery = query;
 
         try
@@ -345,12 +340,12 @@ public class Criteria<T> implements ICriteria<T>
                         String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
                         String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
 
-                        String inClause = getNotInForExistingKeysInSLContext();
+                        String inClause = getNotInForExistingKeysInCachedQuery(cq);
                         if (!inClause.isEmpty())
                             this.query = beforeWhere + inClause + afterWhere;
                     }
                     else
-                        this.query += getNotInForExistingKeysInSLContext().replace("and", "");
+                        this.query += getNotInForExistingKeysInCachedQuery(cq).replace("and", "");
                 }
             }
 

@@ -29,7 +29,7 @@ public class Produtos extends Entity
     private String unidade;
     private boolean inativo;
 
-    @PrimaryKey(increment = INCREMENT.MANUAL)
+  //  @PrimaryKey(increment = INCREMENT.MANUAL)
     public int getId()
     {
         return id;

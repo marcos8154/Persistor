@@ -20,35 +20,9 @@ public class main
             Session session = getSession();
 
             Produtos produto = new Produtos();
-
-            session.createCriteria(produto, RESULT_TYPE.MULTIPLE)
-                    .add(Restrictions.like(FILTER_TYPE.WHERE, "descricao", "", MATCH_MODE.ANYWHERE))
-                    .execute();
+            produto.setDescricao("Teste");
+            session.save(produto);
             
-            List<Produtos> list = produto.toList();
-
-            session.createCriteria(produto, RESULT_TYPE.MULTIPLE)
-                    .add(Restrictions.like(FILTER_TYPE.WHERE, "descricao", "", MATCH_MODE.ANYWHERE))
-                    .execute();
-
-            list = produto.toList();
-            
-            session.createCriteria(produto, RESULT_TYPE.MULTIPLE)
-                    .add(Restrictions.like(FILTER_TYPE.WHERE, "descricao", "", MATCH_MODE.ANYWHERE))
-                    .execute();
-
-            list = produto.toList();
-
-            for (Produtos prod : list)
-                System.err.println(prod.getDescricao());
-
-            session.createCriteria(produto, RESULT_TYPE.MULTIPLE)
-                    .add(Restrictions.like(FILTER_TYPE.WHERE, "descricao", "", MATCH_MODE.ANYWHERE))
-                    .execute();
-
-            for (Produtos prod : list)
-                System.err.println(prod.getDescricao());
-
         }
         catch (Exception ex)
         {

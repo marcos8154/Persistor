@@ -181,6 +181,32 @@ public class PersistenceContext
         return result;
     }
 
+    public void removeAllFromClass(Class entityClass)
+    {
+        try
+        {
+            int oldSize = entitySets.size();
+            List<EntitySet> toRemove = new ArrayList<>();
+
+            for (EntitySet entitySet : entitySets)
+            {
+                Object entityInContext = entitySet.getEntity();
+                if (entityInContext.getClass().getName().equals(entityClass.getName()))
+                    toRemove.add(entitySet);
+            }
+
+            for (EntitySet entitySet : toRemove)
+                this.entitySets.remove(entitySet);
+
+            int newSize = oldSize - entitySets.size();
+            System.err.println("Persistor: " + newSize + " entity's removed from context!");
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
     public void removeFromContext(Object entity)
     {
         try
@@ -196,7 +222,7 @@ public class PersistenceContext
                     break;
                 }
             }
-
+            cachedQuerys.clear();
             if (removed)
                 System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully removed to context!");
         }

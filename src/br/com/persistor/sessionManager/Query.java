@@ -62,9 +62,10 @@ public class Query
         return commit_mode;
     }
 
-    public void setCommit_mode(COMMIT_MODE commit_mode)
+    public Query setCommit_mode(COMMIT_MODE commit_mode)
     {
         this.commit_mode = commit_mode;
+        return this;
     }
 
     public RESULT_TYPE getResult_type()
@@ -72,9 +73,10 @@ public class Query
         return result_type;
     }
 
-    public void setResult_type(RESULT_TYPE result_type)
+    public Query setResult_type(RESULT_TYPE result_type)
     {
         this.result_type = result_type;
+        return this;
     }
 
     private Class cls;
@@ -149,7 +151,7 @@ public class Query
                         String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
                         String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
 
-                        String inClause = getNotInForExistingKeysInSLContext();
+                        String inClause = getNotInForExistingKeysInCachedQuery(cq);
                         if (!inClause.isEmpty())
                             this.query = beforeWhere + inClause + afterWhere;
                     }
@@ -168,27 +170,18 @@ public class Query
         }
     }
 
-    private String getNotInForExistingKeysInSLContext()
+    private String getNotInForExistingKeysInCachedQuery(CachedQuery cachedQuery)
     {
         try
         {
             SQLHelper helper = new SQLHelper();
             helper.prepareDelete(baseEntity);
 
-            List<Object> list = iSession.getSLPersistenceContext().listByClassType(baseEntity.getClass());
-            if (list.isEmpty())
-                return "";
-            
             String result = "where (" + baseEntity.getClass().getSimpleName().toLowerCase() + "."
                     + helper.getPrimaryKeyName().toLowerCase() + " not in(";
 
-            for (Object obj : list)
-            {
-                helper = new SQLHelper();
-                helper.prepareDelete(obj);
-
-                result += helper.getPrimaryKeyValue() + ", ";
-            }
+            for (int key : cachedQuery.getResultKeys())
+                result += key + ", ";
 
             result = result.substring(0, result.length() - 2) + ")) and";
             return result;
@@ -200,14 +193,14 @@ public class Query
         return "";
     }
 
-    public void setParameter(int parameter_index, Object value)
+    public Query setParameter(int parameter_index, Object value)
     {
         try
         {
             if (value == null)
             {
                 preparedStatement.setObject(parameter_index, null);
-                return;
+                return this;
             }
 
             if (value instanceof String)
@@ -258,6 +251,8 @@ public class Query
                             "void setParameter(int parameter_index, Object value)",
                             Util.getDateTime(), Util.getFullStackTrace(ex), ""));
         }
+
+        return this;
     }
 
     /**
