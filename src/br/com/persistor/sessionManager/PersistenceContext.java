@@ -6,7 +6,6 @@
 package br.com.persistor.sessionManager;
 
 import br.com.persistor.generalClasses.EntitySet;
-import br.com.persistor.generalClasses.PersistenceLog;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -24,10 +23,13 @@ public class PersistenceContext
 
     private Object context = null;
     private List<EntitySet> entitySets = new ArrayList<>();
-    private final List<CachedQuery> cachedQuerys = new ArrayList<>();
+    private List<CachedQuery> cachedQuerys = new ArrayList<>();
 
     public CachedQuery findCachedQuery(String query)
     {
+        if (cachedQuerys == null)
+            cachedQuerys = new ArrayList<>();
+
         for (CachedQuery cq : cachedQuerys)
             if (cq.getQuery().equals(query))
                 return cq;
@@ -37,6 +39,9 @@ public class PersistenceContext
 
     public void addCachedQuery(String query, int[] resultKeys)
     {
+        if (cachedQuerys == null)
+            cachedQuerys = new ArrayList<>();
+
         CachedQuery cq = findCachedQuery(query);
         if (cq != null)
         {
@@ -82,9 +87,11 @@ public class PersistenceContext
         if (!initialized)
             return;
         System.out.println("Persistor: cleaning up Persistence Context...");
-        entitySets.clear();
-        entitySets = null;
-        context = null;
+        if (entitySets != null)
+            entitySets.clear();
+
+        if (cachedQuerys != null)
+            cachedQuerys.clear();
     }
 
     public Object getFromContext(Object entity)
@@ -142,6 +149,9 @@ public class PersistenceContext
             {
                 Object esObject = entitySet.getEntity();
                 helper.prepareBasicSelect(esObject, (int) id);
+
+                if (!esObject.getClass().getName().equals(entity.getClass().getName()))
+                    continue;
 
                 if (helper.getPrimaryKeyValue().equals(id.toString()))
                 {
@@ -301,9 +311,9 @@ public class PersistenceContext
     {
         try
         {
-            for (Field f : context.getClass().getDeclaredFields())
+            for (Field field : context.getClass().getDeclaredFields())
             {
-                String base = f.getGenericType().getTypeName();
+                String base = field.getGenericType().getTypeName();
                 base = base.substring(base.indexOf("<"), base.indexOf(">"));
                 base = base.replace("<", "");
 
@@ -315,9 +325,7 @@ public class PersistenceContext
                         if (m.getName().startsWith("set"))
                         {
                             if (m.getName().contains(cls.getSimpleName()))
-                            {
                                 return true;
-                            }
                         }
                     }
                 }
@@ -325,6 +333,7 @@ public class PersistenceContext
         }
         catch (Exception ex)
         {
+            return false;
         }
         return false;
     }

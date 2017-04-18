@@ -23,6 +23,8 @@ public interface Session
 
     boolean isEnabledSLContext();
     
+    void disableSLContext();
+    
     void save(Object entity);
 
     void update(Object entity);
@@ -30,6 +32,8 @@ public interface Session
     void update(Object entity, String and_or_condition);
 
     void setIsolationLevel(ISOLATION_LEVEL isolation_level);
+    
+    void evict(boolean includeSLCache);
     
     /**
      * Delete entity from database and context(if initialized)

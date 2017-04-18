@@ -20,6 +20,61 @@ public class DBConfig
     private int acquireIncrement = 1;
     private int maxPoolSize = 20;
     private int maxStatements = 180;
+    private int maxIdleTime = 0;
+    private int maxIdleTimeExcessConnections = 0;
+    private int maxConnectionAge = 0;
+    private int checkoutTimeout = 0;
+    private int unreturnedConnectionTimeout = 0;
+
+    public int getUnreturnedConnectionTimeout()
+    {
+        return unreturnedConnectionTimeout;
+    }
+
+    public void setUnreturnedConnectionTimeout(int unreturnedConnectionTimeout)
+    {
+        this.unreturnedConnectionTimeout = unreturnedConnectionTimeout;
+    }
+
+    public int getCheckoutTimeout()
+    {
+        return checkoutTimeout;
+    }
+
+    public void setCheckoutTimeout(int checkoutTimeout)
+    {
+        this.checkoutTimeout = checkoutTimeout;
+    }
+
+    public int getMaxConnectionAge()
+    {
+        return maxConnectionAge;
+    }
+
+    public void setMaxConnectionAge(int maxConnectionAge)
+    {
+        this.maxConnectionAge = maxConnectionAge;
+    }
+
+    public int getMaxIdleTimeExcessConnections()
+    {
+        return maxIdleTimeExcessConnections;
+    }
+
+    public void setMaxIdleTimeExcessConnections(int maxIdleTimeExcessConnections)
+    {
+        this.maxIdleTimeExcessConnections = maxIdleTimeExcessConnections;
+    }
+
+    public int getMaxIdleTime()
+    {
+        return maxIdleTime;
+    }
+
+    public void setMaxIdleTime(int maxIdleTime)
+    {
+        this.maxIdleTime = maxIdleTime;
+    }
 
     public String getSlPersistenceContext()
     {

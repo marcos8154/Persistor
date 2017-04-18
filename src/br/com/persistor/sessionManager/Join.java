@@ -26,7 +26,8 @@ public class Join implements IJoin
     public String mountedQuery = "";
     public int joinCount = 0;
     public boolean hasAllLoaded = false;
-
+    
+    private boolean autoCloseAfterExecute = false;
     private boolean restartEntityInstance;
     private Object primaryObj;
     private List<Object> objects = new ArrayList<>();
@@ -35,6 +36,11 @@ public class Join implements IJoin
     private Session mainSession = null;
     private Limit limit = null;
 
+    public void setAutoCloseAfterExecute(boolean value)
+    {
+        autoCloseAfterExecute = value;
+    }
+    
     public boolean isRestartEntityInstance()
     {
         return restartEntityInstance;
@@ -470,6 +476,9 @@ public class Join implements IJoin
         {
             Util.closeResultSet(resultSet);
             Util.closeStatement(statement);
+            
+            if(autoCloseAfterExecute)
+                iSession.close();
         }
     }
 

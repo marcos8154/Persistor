@@ -63,6 +63,21 @@ public class SessionImpl implements Session
         this.context = new PersistenceContext();
         this.setIsolationLevel(ISOLATION_LEVEL.TRANSACTION_READ_COMMITTED);
     }
+    
+    @Override
+    public void disableSLContext(){
+        slContext = null;
+    }
+    
+    @Override
+    public void evict(boolean includeSLCache)
+    {
+        if (enabledContext)
+            context.clear();
+        if (includeSLCache)
+            if (isEnabledSLContext())
+                slContext.clear();
+    }
 
     @Override
     public void setIsolationLevel(ISOLATION_LEVEL isolation_level)
@@ -519,6 +534,14 @@ public class SessionImpl implements Session
     {
         try
         {
+            try
+            {
+                connection.commit();
+            }
+            catch (Exception e)
+            {
+            }
+
             connection.close();
             context.clear();
         }

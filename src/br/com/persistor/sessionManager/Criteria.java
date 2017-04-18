@@ -273,8 +273,10 @@ public class Criteria<T> implements ICriteria<T>
 
         if (join != null)
         {
+            join.setAutoCloseAfterExecute(autoCloseSession);
             join.addFinalCondition(query);
             join.execute(iSession);
+
             return this;
         }
 
@@ -318,34 +320,43 @@ public class Criteria<T> implements ICriteria<T>
 
             if (iSession.isEnabledSLContext())
             {
-                CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
-                if (cq != null)
+                if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
                 {
-                    for (int pkey : cq.getResultKeys())
+                    CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
+                    if (cq != null)
                     {
-                        Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
-                        if (cachedEntity != null)
-                            rList.add(cachedEntity);
+                        for (int pkey : cq.getResultKeys())
+                        {
+                            Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
+                            if (cachedEntity != null)
+                                rList.add(cachedEntity);
+                        }
                     }
                 }
             }
 
             if (iSession.isEnabledSLContext())
             {
-                CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
-                if (cq != null)
+                if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
                 {
-                    if (this.query.toLowerCase().contains("where"))
+                    CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
+                    if (cq != null)
                     {
-                        String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
-                        String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
+                        if (cq.getResultKeys().length > 0)
+                        {
+                            if (this.query.toLowerCase().contains("where"))
+                            {
+                                String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
+                                String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
 
-                        String inClause = getNotInForExistingKeysInCachedQuery(cq);
-                        if (!inClause.isEmpty())
-                            this.query = beforeWhere + inClause + afterWhere;
+                                String inClause = getNotInForExistingKeysInCachedQuery(cq);
+                                if (!inClause.isEmpty())
+                                    this.query = beforeWhere + inClause + afterWhere;
+                            }
+                            else
+                                this.query += getNotInForExistingKeysInCachedQuery(cq).replace("and", "");
+                        }
                     }
-                    else
-                        this.query += getNotInForExistingKeysInCachedQuery(cq).replace("and", "");
                 }
             }
 
@@ -392,7 +403,7 @@ public class Criteria<T> implements ICriteria<T>
                         }
                         catch (Exception ex)
                         {
-                            //not exists. ignore
+                            System.err.println("Persistor WARNING: The column " + columnName + " does not exists. Verify entity mapping.");
                             continue;
                         }
 
@@ -495,20 +506,23 @@ public class Criteria<T> implements ICriteria<T>
 
             if (iSession.isEnabledSLContext())
             {
-                int[] resultKeys = new int[rList.size()];
-
-                for (int i = 0; i < rList.size(); i++)
+                if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
                 {
-                    Object objResult = rList.get(i);
+                    int[] resultKeys = new int[rList.size()];
 
-                    SQLHelper helper = new SQLHelper();
-                    helper.prepareDelete(objResult);
+                    for (int i = 0; i < rList.size(); i++)
+                    {
+                        Object objResult = rList.get(i);
 
-                    resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
-                    iSession.getSLPersistenceContext().addToContext(objResult);
+                        SQLHelper helper = new SQLHelper();
+                        helper.prepareDelete(objResult);
+
+                        resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
+                        iSession.getSLPersistenceContext().addToContext(objResult);
+                    }
+
+                    iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
                 }
-
-                iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
             }
         }
         catch (Exception ex)

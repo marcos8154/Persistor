@@ -34,6 +34,12 @@ public class DataSource
         cpds.setAcquireIncrement(config.getAcquireIncrement());
         cpds.setMaxPoolSize(config.getMaxPoolSize());
         cpds.setMaxStatements(config.getMaxStatements());
+        cpds.setMaxIdleTime(config.getMaxIdleTime());
+        cpds.setMaxIdleTimeExcessConnections(config.getMaxIdleTimeExcessConnections());
+        cpds.setMaxConnectionAge(config.getMaxConnectionAge());
+        cpds.setCheckoutTimeout(config.getCheckoutTimeout());
+        cpds.setDebugUnreturnedConnectionStackTraces(true);
+        cpds.setUnreturnedConnectionTimeout(config.getUnreturnedConnectionTimeout());
     }
 
     public static DataSource getInstance(DBConfig config) throws IOException, SQLException, PropertyVetoException
