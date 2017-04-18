@@ -534,14 +534,6 @@ public class SessionImpl implements Session
     {
         try
         {
-            try
-            {
-                connection.commit();
-            }
-            catch (Exception e)
-            {
-            }
-
             connection.close();
             context.clear();
         }
