@@ -12,6 +12,10 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;
+import br.com.persistor.generalClasses.ColumnKey;
+import br.com.persistor.generalClasses.Relashionship;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SQLHelper
 {
@@ -538,4 +542,33 @@ public class SQLHelper
         }
     }
 
+    public List<Relashionship> ListForeignKeys(Class clazz)
+    {
+        List<Relashionship> result = new ArrayList<>();
+        try
+        {
+            for (Method method : clazz.getMethods())
+                if (method.isAnnotationPresent(OneToOne.class))
+                    result.add(new Relashionship(method.getName().replace("get", "").toLowerCase(), (OneToOne) method.getAnnotation(OneToOne.class)));
+        }
+        catch (Exception ex)
+        {
+        }
+        return result;
+    }
+
+    public ColumnKey getKey(Class clazz)
+    {
+        ColumnKey result = null;
+        try
+        {
+            for (Method method : clazz.getMethods())
+                if (method.isAnnotationPresent(PrimaryKey.class))
+                    result = new ColumnKey(method.getName().replace("get", "").toLowerCase(), (PrimaryKey) method.getAnnotation(PrimaryKey.class));
+        }
+        catch (Exception ex)
+        {
+        }
+        return result;
+    }
 }

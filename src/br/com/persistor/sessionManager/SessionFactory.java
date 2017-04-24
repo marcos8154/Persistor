@@ -44,8 +44,8 @@ public class SessionFactory
 
     public void reset()
     {
-        mainDataSource.reset();
-        mainDataSource = null;
+            mainDataSource.reset();
+            mainDataSource = null;
     }
 
     public DBConfig getConfig()
