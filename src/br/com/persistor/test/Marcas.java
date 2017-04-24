@@ -24,43 +24,8 @@ public class Marcas extends Entity
 
     private int id;
     private String nome;
-    private int foto_id;
-    private double valorDouble;
-    private InputStream valorIM;
-    private Produtos produtos;
+    private boolean inativa;
 
-    public InputStream getValorIM()
-    {
-        return valorIM;
-    }
-
-    public void setValorIM(InputStream valorIM)
-    {
-        this.valorIM = valorIM;
-    }
-
-    @OneToOne(source = "produto_id", target = "id", join_type = JOIN_TYPE.LEFT, load = LOAD.AUTO)
-    public Produtos getProdutos()
-    {
-        return produtos;
-    }
-
-    public void setProdutos(Produtos produtos)
-    {
-        this.produtos = produtos;
-    }
-
-    public double getValorDouble()
-    {
-        return valorDouble;
-    }
-
-    public void setValorDouble(double valorDouble)
-    {
-        this.valorDouble = valorDouble;
-    }
-
-    @NotNull(message = "nao pode")
     @PrimaryKey(increment = INCREMENT.AUTO)
     public int getId()
     {
@@ -82,14 +47,14 @@ public class Marcas extends Entity
         this.nome = nome;
     }
 
-    public int getFoto_id()
+    public boolean isInativa()
     {
-        return foto_id;
+        return inativa;
     }
 
-    public void setFoto_id(int foto_id)
+    public void setInativa(boolean inativa)
     {
-        this.foto_id = foto_id;
+        this.inativa = inativa;
     }
 
 }

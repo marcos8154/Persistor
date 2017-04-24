@@ -8,7 +8,6 @@ package br.com.persistor.generalClasses;
 import br.com.persistor.annotations.Column;
 import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
-import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.interfaces.Session;
@@ -17,7 +16,6 @@ import br.com.persistor.sessionManager.SessionFactory;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -170,7 +168,7 @@ public class CodeFirstDatabase
                 {
                     result = " double";
                     if (properties != null)
-                        result += "(" + properties.getLength() + ", " + properties.getDecimalDigits() + ")" + (properties.isNullable() ? "" : " not null " + properties.getDefaultValue() == null ? "" : " default " + properties.getDefaultValue());
+                        result += "(" + properties.getLength() + ", " + properties.getDecimalDigits() + ")" + (properties.isNullable() ? "" : " not null ") + (properties.getDefaultValue() == null ? "" : "default " + properties.getDefaultValue());
                 }
 
                 if (classType == String.class)
@@ -184,7 +182,7 @@ public class CodeFirstDatabase
                 {
                     result = " smallint ";
                     if (properties != null)
-                        result += (properties.isNullable() ? "" : " not null " + properties.getDefaultValue() == null ? "" : " default " + properties.getDefaultValue());
+                        result += (properties.isNullable() ? "" : " not null ") + (properties.getDefaultValue() == null ? "" : " default " + properties.getDefaultValue());
                 }
                 if (classType == InputStream.class)
                 {
@@ -194,7 +192,7 @@ public class CodeFirstDatabase
                 {
                     result = " decimal";
                     if (properties != null)
-                        result += "(" + properties.getLength() + ", " + properties.getDecimalDigits() + ")" + (properties.isNullable() ? "" : " not null " + properties.getDefaultValue() == null ? "" : " default " + properties.getDefaultValue());
+                        result += "(" + properties.getLength() + ", " + properties.getDecimalDigits() + ")" + (properties.isNullable() ? "" : " not null ") + (properties.getDefaultValue() == null ? "" : " default " + properties.getDefaultValue());
                 }
                 if (classType == boolean.class)
                 {

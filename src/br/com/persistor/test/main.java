@@ -11,14 +11,9 @@ public class main
 
     public static void main(String[] args)
     {
-        try
-        {
-            Util.runPresentation();
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-        }
+       // Banco banco = new Banco();
+       // banco.Criar(getConfig());
+        Util.runPresentation();
     }
 
     private static SessionFactory sf = null;
@@ -27,7 +22,7 @@ public class main
     {
         try
         {
-            if(sf == null)
+            if (sf == null)
             {
                 sf = new SessionFactory();
                 return sf.getSession(getConfig());
