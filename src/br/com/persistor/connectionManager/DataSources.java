@@ -22,6 +22,11 @@ public class DataSources
         dataSources.add(dataSource);
     }
     
+    public static int count()
+    {
+        return dataSources.size();
+    }
+    
     public static void clear()
     {
         dataSources.clear();

@@ -240,20 +240,18 @@ public class Criteria<T> implements ICriteria<T>
     }
 
     @Override
-    public List<T> loadList(Object entity)
+    public void loadList(Object entity)
     {
         try
         {
             List<T> list = join.getList(entity);
             entity.getClass().getField("ResultList").set(entity, list);
-            return list;
         }
         catch (Exception ex)
         {
             ex.printStackTrace();
         }
 
-        return new ArrayList<>();
     }
 
     @Override

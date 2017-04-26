@@ -7,11 +7,13 @@ package br.com.persistor.test;
 
 import br.com.persistor.abstractClasses.Entity;
 import br.com.persistor.annotations.NamedQuery;
+import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
 import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
+import br.com.persistor.sessionManager.FieldHandled;
 
 /**
  *
@@ -31,7 +33,35 @@ public class Produtos extends Entity
     private double preco_venda;
     private int marca_id;
 
+    private Estoque estoque;
     private Marcas marcas;
+
+    @OneToMany(source = "id", target = "produto_id", join_type = JOIN_TYPE.INNER, load = LOAD.MANUAL)
+    public Estoque getEstoque()
+    {
+        if (estoque == null)
+            estoque = (Estoque) FieldHandled.readObject(this, "estoque");
+        return estoque;
+    }
+
+    public void setEstoque(Estoque estoque)
+    {
+        this.estoque = estoque;
+    }
+
+    @OneToOne(source = "marca_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.MANUAL)
+    public Marcas getMarcas()
+    {
+        if (marcas == null)
+            marcas = (Marcas) FieldHandled.readObject(this, "marcas");
+
+        return marcas;
+    }
+
+    public void setMarcas(Marcas marcas)
+    {
+        this.marcas = marcas;
+    }
 
     @PrimaryKey(increment = INCREMENT.AUTO)
     public int getId()
@@ -112,17 +142,6 @@ public class Produtos extends Entity
     public void setPreco_venda(double preco_venda)
     {
         this.preco_venda = preco_venda;
-    }
-
-    @OneToOne(source = "marca_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
-    public Marcas getMarcas()
-    {
-        return marcas;
-    }
-
-    public void setMarcas(Marcas marcas)
-    {
-        this.marcas = marcas;
     }
 
 }

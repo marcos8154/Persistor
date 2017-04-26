@@ -34,7 +34,13 @@ public class CodeFirstDatabase
     private boolean enabledDatabaseVerification = false;
     private Session session = null;
     private SessionFactory sf = null;
-
+    private String sqlToRunAfterCreation = null;
+    
+    public void setSqlToRun(String sql)
+    {
+        this.sqlToRunAfterCreation = sql;
+    }
+    
     private void buildConnection() throws Exception
     {
         if (sf == null)
@@ -88,6 +94,8 @@ public class CodeFirstDatabase
     public void createTables(DBConfig config) throws Exception
     {
         this.config = config;
+        String currentTable = null;
+        String currentScript = null;
         try
         {
             if (this.enabledDatabaseVerification)
@@ -127,15 +135,24 @@ public class CodeFirstDatabase
                     sqlScript = sqlScript.substring(0, sqlScript.length() - 1);
 
                 sqlScript += "\n);";
+
+                currentTable = tableName;
+                currentScript = sqlScript;
                 runSql(sqlScript);
             }
 
+            if(sqlToRunAfterCreation != null)
+                runSql(sqlToRunAfterCreation);
+            
             session.commit();
             session.close();
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.getMessage());
+            String message = "Exception on create table '" + currentTable + "'\n\n"
+                    + "Generation script: " + currentScript + "\n\n"
+                    + "Exception details: " + ex.getMessage();
+            throw new Exception(message);
         }
     }
 
@@ -159,9 +176,16 @@ public class CodeFirstDatabase
                 {
                     result = " int ";
                     if (properties != null)
+                    {
+                        if(!properties.isNullable())
+                            result += " not null";
+                        if(properties.getDefaultValue() != null)
+                            result += " default " + properties.getDefaultValue();
+                        
                         if (key != null)
                             if (key.getColumnName().equals(properties.getColumnName()))
-                                result += "not null" + ((key.getKey().increment() == INCREMENT.AUTO ? " auto_increment" : ""));
+                                result += ((key.getKey().increment() == INCREMENT.AUTO ? " auto_increment" : ""));
+                    }
                 }
 
                 if (classType == double.class)
@@ -176,6 +200,8 @@ public class CodeFirstDatabase
                     result = " varchar";
                     if (properties != null)
                         result += "(" + properties.getLength() + ")" + (properties.isNullable() ? "" : " not null " + (properties.getDefaultValue() == null ? "" : " default " + properties.getDefaultValue()));
+                    else
+                        result += "(250)";
                 }
 
                 if (classType == short.class)

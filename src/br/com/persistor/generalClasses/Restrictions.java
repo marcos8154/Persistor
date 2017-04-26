@@ -123,7 +123,7 @@ public class Restrictions
      *
      * @param filter_type Enum WHERE / OR / AND
      * @param column column in table
-     * @param value espected value
+     * @param values in values
      * @return
      */
     public static Expressions in(FILTER_TYPE filter_type, String column, String[] values)
@@ -163,7 +163,7 @@ public class Restrictions
      *
      * @param filter_type Enum WHERE / OR / AND
      * @param column column in table
-     * @param value espected value
+     * @param values not in values
      * @return
      */
     public static Expressions notIn(FILTER_TYPE filter_type, String column, String[] values)
@@ -277,9 +277,13 @@ public class Restrictions
      *
      * Avainable Match Modes:
      *
-     * --> ANYWHERE: Any part in String. Ex.: '%search term%' --> END: End of
-     * String. Ex.: '%search term' --> EXACT: Exact match. Ex.: 'search term'
-     * --> START: String start. Ex.: 'search term%'
+     * ANYWHERE: Any part in String. Ex.: '%search term%'
+     *   Ex.: '%search term' 
+     * EXACT: Exact match. 
+     *   Ex.: 'search term'
+     * START: 
+     *  start. 
+     *   Ex.: 'search term%'
      *
      * @return
      */
@@ -369,8 +373,6 @@ public class Restrictions
     }
 
     /**
-     * (...) column > value (...)
-     *
      * @param filter_type Enum WHERE / OR / AND
      * @param column column in table
      * @param value espected value
@@ -412,9 +414,6 @@ public class Restrictions
     }
 
     /**
-     * (...) column < value (...) @para
-     *
-     *
      * @param filter_type Enum WHERE / OR / AND
      * @param column column in table
      * @param value espected value
@@ -456,7 +455,6 @@ public class Restrictions
     }
 
     /**
-     * (...) column >= value (...)
      *
      * @param filter_type Enum WHERE / OR / AND
      * @param column column in table
@@ -498,13 +496,9 @@ public class Restrictions
     }
 
     /**
-     * (...) column <= value (...) @param
      *
      * filter_type Enum WHERE / OR / AND @param column column in table @param
-     * value espected va
-     *
-     * l
-     * ue @return
+     * value espected value
      */
     public static Expressions le(FILTER_TYPE filter_type, String column, Object value)
     {

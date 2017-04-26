@@ -46,12 +46,13 @@ public class SessionImpl implements Session
     private IPersistenceLogger logger = null;
 
     private boolean enabledContext = true;
-    private boolean showSql = true;
+  //  private boolean showSql = true;
     private boolean isRollbacked = false;
 
     private boolean isVersionViolation = false;
     private String whereConditionGetLastID = "";
 
+    @Override
     public boolean isVersionViolation()
     {
         return isVersionViolation;
@@ -63,12 +64,13 @@ public class SessionImpl implements Session
         this.context = new PersistenceContext();
         this.setIsolationLevel(ISOLATION_LEVEL.TRANSACTION_READ_COMMITTED);
     }
-    
+
     @Override
-    public void disableSLContext(){
+    public void disableSLContext()
+    {
         slContext = null;
     }
-    
+
     @Override
     public void evict(boolean includeSLCache)
     {
@@ -138,32 +140,6 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public <T> List<T> getList(T t)
-    {
-        try
-        {
-            Field f = t.getClass().getField("ResultList");
-            List<Object> list = (List<Object>) f.get(t);
-            List<T> resultList = new ArrayList<>();
-            for (Object obj : list)
-            {
-                resultList.add((T) obj);
-            }
-            return resultList;
-        }
-        catch (Exception ex)
-        {
-            logger.newNofication(
-                    new PersistenceLog(this.getClass().getName(),
-                            "<T> List<T> getList(T t)",
-                            Util.getDateTime(),
-                            Util.getFullStackTrace(ex),
-                            ""));
-        }
-        return new ArrayList<>();
-    }
-
-    @Override
     public Query createQuery(Object entity, String queryCommand)
     {
         try
@@ -229,7 +205,7 @@ public class SessionImpl implements Session
     }
 
     @Override
-    public void update(Object entity, String andCondition)
+    public void update(Object entity, String and_or_condition)
     {
         PreparedStatement preparedStatement = null;
         SQLHelper sql_helper = new SQLHelper();
@@ -248,7 +224,7 @@ public class SessionImpl implements Session
             sql_helper.prepareUpdate(entity, connection);
             String sqlBase = sql_helper.getSqlBase();
 
-            sqlBase += " AND " + andCondition;
+            sqlBase += and_or_condition;
             preparedStatement = connection.prepareStatement(sqlBase);
             saveOrUpdateForeignObjects(entity, true);
             loadPreparedStatement(preparedStatement, entity, true);
@@ -1495,7 +1471,6 @@ public class SessionImpl implements Session
     private void lastID(Object entity, String whereCondition) throws Exception
     {
         enabledContext = false;
-        showSql = false;
         Statement statement = null;
         ResultSet resultSet = null;
         String sqlBase = "";

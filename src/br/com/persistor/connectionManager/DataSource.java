@@ -13,6 +13,7 @@ public class DataSource
 {
 
     public static DataSource datasource;
+    public static DBConfig defaultDbConfig;
     private ComboPooledDataSource cpds;
 
     public DBConfig config;
@@ -44,17 +45,22 @@ public class DataSource
 
     public static DataSource getInstance(DBConfig config) throws IOException, SQLException, PropertyVetoException
     {
+        if (DataSources.count() == 0)
+            DataSource.defaultDbConfig = config;
+        
         if (DataSources.getDataSource(config) == null)
         {
             datasource = new DataSource(config);
             DataSources.add(datasource);
             return datasource;
-
         }
         else
-        {
             return DataSources.getDataSource(config);
-        }
+    }
+    
+    public static DataSource getInstanceByDefaultDbConfig() throws IOException, SQLException, PropertyVetoException
+    {
+        return DataSources.getDataSource(DataSource.defaultDbConfig);
     }
 
     public Connection getConnection() throws SQLException

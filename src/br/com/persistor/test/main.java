@@ -11,9 +11,15 @@ public class main
 
     public static void main(String[] args)
     {
-       // Banco banco = new Banco();
-       // banco.Criar(getConfig());
+       
         Util.runPresentation();
+        /*Session session = getSession();
+        Produtos produto = session.onID(Produtos.class, 1);
+        session.close();
+
+        produto.getMarcas();
+        produto.getEstoque();
+*/
     }
 
     private static SessionFactory sf = null;
@@ -36,12 +42,20 @@ public class main
         return null;
     }
 
+    static String toCamelCase(String string)
+    {
+        StringBuffer sb = new StringBuffer(string);
+        sb.replace(0, 1, string.substring(0, 1).toUpperCase());
+        return sb.toString();
+
+    }
+
     private static DBConfig getConfig()
     {
         DBConfig config = new DBConfig();
         config.setPersistenceLogger(LogTest.class);
         //  config.setPersistenceContext(Context.class);
-        config.setSlPersistenceContext(Context.class);
+        //  config.setSlPersistenceContext(Context.class);
         config.setDb_type(DB_TYPE.MySQL);
         config.setHost("localhost");
         config.setPort(3306);

@@ -23,6 +23,7 @@ public class Banco
         {
             CodeFirstDatabase db = new CodeFirstDatabase(true);
             db.addTableDomain(getMarcas());
+            db.addTableDomain(getEstoque());
             db.addTableDomain(getProdutos());
             db.createTables(config);
         }
@@ -31,11 +32,17 @@ public class Banco
             System.err.println(ex.getMessage());
         }
     }
+    
+    private CodeFirstTableDomain getEstoque()
+    {
+        return new CodeFirstTableDomain(Estoque.class)
+                .setColumnProperty("id", false, 0, 0, null);
+    }
 
     private CodeFirstTableDomain getMarcas()
     {
         return new CodeFirstTableDomain(Marcas.class)
-                .setColumnProperty("id", false, 0, 0, 0)
+                .setColumnProperty("id", false, 0, 0, null)
                 .setColumnProperty("nome", false, 80, 0, null)
                 .setColumnProperty("inativo", false, 0, 0, false);
     }
