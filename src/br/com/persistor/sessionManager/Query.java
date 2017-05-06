@@ -485,8 +485,9 @@ public class Query
                             resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
                             iSession.getSLPersistenceContext().addToContext(objResult);
                         }
-
-                        iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
+                        
+                        if (resList.size() > iSession.getSLPersistenceContext().listByClassType(baseEntity.getClass()).size())
+                            iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
                     }
                 }
             }

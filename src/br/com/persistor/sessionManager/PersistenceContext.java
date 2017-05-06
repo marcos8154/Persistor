@@ -5,12 +5,17 @@
  */
 package br.com.persistor.sessionManager;
 
-import br.com.persistor.generalClasses.EntitySet;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
+import net.sf.ehcache.search.Attribute;
+import net.sf.ehcache.search.Result;
+import net.sf.ehcache.search.Results;
 
 /**
  *
@@ -22,8 +27,8 @@ public class PersistenceContext
     public boolean initialized;
 
     private Object context = null;
-    private List<EntitySet> entitySets = new ArrayList<>();
     private List<CachedQuery> cachedQuerys = new ArrayList<>();
+    private CacheManager cacheManager = null;
 
     public CachedQuery findCachedQuery(String query)
     {
@@ -66,6 +71,7 @@ public class PersistenceContext
             {
                 if (clazz == br.com.persistor.interfaces.IPersistenceContext.class)
                 {
+                    cacheManager = CacheManager.newInstance();
                     context = ctor.newInstance();
                     initialized = true;
                     System.err.println("Persistor: Persistence Context initialized successfully! The Context Class is: " + className);
@@ -86,81 +92,23 @@ public class PersistenceContext
     {
         if (!initialized)
             return;
-        System.out.println("Persistor: cleaning up Persistence Context...");
-        if (entitySets != null)
-            entitySets.clear();
 
-        if (cachedQuerys != null)
-            cachedQuerys.clear();
-    }
-
-    public Object getFromContext(Object entity)
-    {
-        try
-        {
-            for (EntitySet es : entitySets)
-            {
-                Object esEntity = es.getEntity();
-
-                String qEntity = entity.getClass().getField("mountedQuery").get(entity).toString();
-                String qEsEntity = esEntity.getClass().getField("mountedQuery").get(esEntity).toString();
-
-                if (esEntity.equals(entity) || qEntity.equals(qEsEntity))
-                    return esEntity;
-            }
-        }
-        catch (Exception ex)
-        {
-
-        }
-        return null;
-    }
-
-    private EntitySet findEntitySetByEntityId(Class entityClass, Object id)
-    {
-        try
-        {
-            SQLHelper helper = new SQLHelper();
-
-            for (EntitySet entitySet : entitySets)
-            {
-                Object esObject = entitySet.getEntity();
-                helper.prepareDelete(esObject);
-
-                if (esObject.getClass().getName().equals(entityClass.getName()))
-                    if (helper.getPrimaryKeyValue().equals(id.toString()))
-                        return entitySet;
-            }
-        }
-        catch (Exception ex)
-        {
-
-        }
-        return null;
+        if (cacheManager != null)
+            cacheManager.getCache("cache1").removeAll();
     }
 
     public Object findByID(Object entity, Object id)
     {
         try
         {
-            SQLHelper helper = new SQLHelper();
-
-            for (EntitySet entitySet : entitySets)
-            {
-                Object esObject = entitySet.getEntity();
-                helper.prepareBasicSelect(esObject, (int) id);
-
-                if (!esObject.getClass().getName().equals(entity.getClass().getName()))
-                    continue;
-
-                if (helper.getPrimaryKeyValue().equals(id.toString()))
-                {
-                    if (esObject != null)
-                        System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' retrieved from context successfully!");
-
-                    return esObject;
-                }
-            }
+            if (!initialized)
+                return null;
+            
+            Cache cache = cacheManager.getCache("cache1");
+            Element element = cache.get(entity.getClass().getName() + "-" + id);
+            if (element != null)
+                System.err.println("Persistor: entity '" + entity.getClass().getName() + "' successfully retrieved from context!");
+            return element.getObjectValue();
 
         }
         catch (Exception ex)
@@ -172,21 +120,26 @@ public class PersistenceContext
 
     public List<Object> listByClassType(Class entityClass)
     {
+        if (!initialized)
+            return new ArrayList<>();
+
         List<Object> result = new ArrayList<>();
         try
         {
-            Object entity = entityClass.newInstance();
-            for (EntitySet es : entitySets)
-            {
-                Object esEntity = es.getEntity();
+            Cache cache = cacheManager.getCache("cache1");
 
-                if (esEntity.getClass() == entity.getClass())
-                    result.add(esEntity);
-            }
+            Attribute<String> keys = cache.getSearchAttribute("entityClass");
+            Results results = cache.createQuery()
+                    .includeKeys()
+                    .includeValues()
+                    .addCriteria(keys.ilike(entityClass.getName())).execute();
+
+            for (Result r : results.all())
+                result.add(r.getValue());
         }
         catch (Exception ex)
         {
-
+            ex.printStackTrace();
         }
         return result;
     }
@@ -195,116 +148,77 @@ public class PersistenceContext
     {
         try
         {
-            int oldSize = entitySets.size();
-            List<EntitySet> toRemove = new ArrayList<>();
-
-            for (EntitySet entitySet : entitySets)
+            int removed = 0;
+            Cache cache = cacheManager.getCache("cache1");
+            for (Object key : cache.getKeys())
             {
-                Object entityInContext = entitySet.getEntity();
-                if (entityInContext.getClass().getName().equals(entityClass.getName()))
-                    toRemove.add(entitySet);
+                Element element = cache.get(key);
+                Object entity = element.getObjectValue();
+                if (entity.getClass() == entityClass)
+                {
+                    cache.remove(key);
+                    removed++;
+                }
             }
 
-            for (EntitySet entitySet : toRemove)
-                this.entitySets.remove(entitySet);
-
-            int newSize = oldSize - entitySets.size();
-            System.err.println("Persistor: " + newSize + " entity's removed from context!");
+            System.err.println("Persistor: " + removed + " entity's removed from context!");
         }
         catch (Exception ex)
         {
-
+            ex.printStackTrace();
         }
+    }
+
+    public void shutDownCacheManager()
+    {
+        if (!initialized)
+            return;
+
+        if (cacheManager != null)
+            cacheManager.shutdown();
     }
 
     public void removeFromContext(Object entity)
     {
         try
         {
-            boolean removed = false;
-            for (EntitySet es : entitySets)
-            {
-                Object obj = es.getEntity();
-                if (obj == entity)
-                {
-                    entitySets.remove(es);
-                    removed = true;
-                    break;
-                }
-            }
-            cachedQuerys.clear();
-            if (removed)
-                System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully removed to context!");
-        }
-        catch (Exception ex)
-        {
-
-        }
-    }
-
-    public void mergeEntity(Object newEntity)
-    {
-        try
-        {
-            SQLHelper helper = new SQLHelper();
-            helper.prepareDelete(newEntity);
-
-            EntitySet oldEntitySet = findEntitySetByEntityId(newEntity.getClass(), helper.getPrimaryKeyValue());
-            if (oldEntitySet == null)
+            if (!initialized)
                 return;
 
-            for (Field field : newEntity.getClass().getDeclaredFields())
-            {
-                field.setAccessible(true);
+            SQLHelper helper = new SQLHelper();
+            helper.prepareDelete(entity);
+            String key = entity.getClass().getName() + "-" + helper.getPrimaryKeyValue();
 
-                Field targetField = oldEntitySet.getEntity().getClass().getDeclaredField(field.getName());
-                targetField.setAccessible(true);
+            Cache cache = cacheManager.getCache("cache1");
+            cache.remove(key);
 
-                targetField.set(oldEntitySet.getEntity(), field.get(newEntity));
-            }
-
-            System.err.println("Persistor: Entity '" + newEntity.getClass().getName() + "' successfully merged to context!");
+            cachedQuerys.clear();
+            System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully removed to context!");
         }
         catch (Exception ex)
         {
-            System.out.println(ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
     public void addToContext(Object entity) throws Exception
     {
-        boolean hasAdded = false;
         if (!initialized)
             return;
-        if (getFromContext(entity) != null)
+        if (!isEntitySet(entity))
             return;
-        for (Field f : context.getClass().getDeclaredFields())
-        {
-            String base = f.getGenericType().getTypeName();
-            base = base.substring(base.indexOf("<"), base.indexOf(">"));
-            base = base.replace("<", "");
 
-            Class cls = Class.forName(base);
-            if (cls == entity.getClass())
-            {
-                for (Method m : context.getClass().getMethods())
-                {
-                    if (m.getName().startsWith("set"))
-                    {
-                        if (m.getName().contains(cls.getSimpleName()))
-                        {
-                            EntitySet set = new EntitySet<>(entity);
-                            m.invoke(context, set);
-                            entitySets.add(set);
-                            hasAdded = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        if (hasAdded)
-            System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully added to context!");
+        SQLHelper helper = new SQLHelper();
+        helper.prepareDelete(entity);
+        int id = Integer.parseInt(helper.getPrimaryKeyValue());
+        String key = entity.getClass().getName() + "-" + id;
+
+        Cache cache = cacheManager.getCache("cache1");
+        if (cache.isKeyInCache(key))
+            return;
+
+        cache.put(new Element(key, entity));
+        System.err.println("Persistor: Entity '" + entity.getClass().getName() + "' successfully added to context!");
     }
 
     public boolean isEntitySet(Object entity)
@@ -337,4 +251,5 @@ public class PersistenceContext
         }
         return false;
     }
+
 }

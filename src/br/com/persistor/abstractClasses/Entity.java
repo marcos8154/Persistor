@@ -17,19 +17,6 @@ public abstract class Entity
 
     public <T> List<T> toList()
     {
-        try
-        {
-            List<Object> list = ResultList;
-            List<T> resultList = new ArrayList<>();
-            for (Object obj : list)
-            {
-                resultList.add((T) obj);
-            }
-            return resultList;
-        }
-        catch (Exception ex)
-        {
-        }
-        return new ArrayList<>();
+        return (List<T>) ResultList;
     }
 }

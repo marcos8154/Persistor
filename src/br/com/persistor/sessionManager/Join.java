@@ -1,5 +1,7 @@
 package br.com.persistor.sessionManager;
 
+import br.com.persistor.annotations.OneToMany;
+import br.com.persistor.annotations.OneToOne;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -276,14 +278,6 @@ public class Join implements IJoin
                 mountedQuery += final_condition;
             }
 
-            primaryObj.getClass().getField("mountedQuery").set(primaryObj, mountedQuery);
-            if (iSession.getPersistenceContext().getFromContext(primaryObj) != null)
-            {
-                resultList.add(iSession.getPersistenceContext().getFromContext(primaryObj));
-                hasAllLoaded = true;
-                return;
-            }
-
             connection = iSession.getActiveConnection();
             statement = connection.createStatement();
             resultSet = statement.executeQuery(mountedQuery);
@@ -307,6 +301,8 @@ public class Join implements IJoin
                         if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                         {
                             if (method.getReturnType().getName().equals("java.lang.Class"))
+                                continue;
+                            if(method.isAnnotationPresent(OneToMany.class) || method.isAnnotationPresent(OneToOne.class))
                                 continue;
 
                             if (method.isAnnotationPresent(PrimaryKey.class))

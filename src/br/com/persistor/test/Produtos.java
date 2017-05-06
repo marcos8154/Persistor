@@ -14,6 +14,7 @@ import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.sessionManager.FieldHandled;
+import java.io.Serializable;
 
 /**
  *
@@ -21,7 +22,7 @@ import br.com.persistor.sessionManager.FieldHandled;
  */
 @Deprecated
 @NamedQuery(queryName = "busca", queryValue = "select * from produtos where descricao like '%%'")
-public class Produtos extends Entity
+public class Produtos extends Entity implements Serializable
 {
 
     private int id;

@@ -1,0 +1,19 @@
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="true"
+         monitoring="autodetect" dynamicConfig="true">
+  
+    <cache name="cache1" 
+               maxEntriesLocalHeap="10000"
+               maxEntriesLocalDisk="0" 
+               eternal="false" 
+               diskSpoolBufferSizeMB="20"
+               timeToIdleSeconds="300" timeToLiveSeconds="600"
+               memoryStoreEvictionPolicy="LRU" 
+               transactionalMode="off">
+          <searchable keys="true" values="false">
+              <searchAttribute name="entityClass" expression="value.getClass().getName()"/>
+          </searchable>
+        <persistence strategy="none" />
+    </cache>
+
+</ehcache>

@@ -117,7 +117,7 @@ public class CodeFirstDatabase
                     String columnName = convertMethodToColumnName(method);
                     ColumnProperties properties = domain.getPropertiesForColumn(columnName);
 
-                    sqlScript += columnName + getColumnProperties(config, domain.getDomainClass(), properties, method.getReturnType()) + ", \n";
+                    sqlScript += "\n" + columnName + getColumnProperties(config, domain.getDomainClass(), properties, method.getReturnType()) + ",";
                 }
 
                 SQLHelper helper = new SQLHelper();

@@ -46,7 +46,7 @@ public class SessionImpl implements Session
     private IPersistenceLogger logger = null;
 
     private boolean enabledContext = true;
-  //  private boolean showSql = true;
+    //  private boolean showSql = true;
     private boolean isRollbacked = false;
 
     private boolean isVersionViolation = false;
@@ -74,7 +74,7 @@ public class SessionImpl implements Session
     @Override
     public void evict(boolean includeSLCache)
     {
-        if (enabledContext)
+        if (context.initialized)
             context.clear();
         if (includeSLCache)
             if (isEnabledSLContext())
@@ -235,9 +235,9 @@ public class SessionImpl implements Session
             System.out.println("Persistor: \n " + sqlBase);
 
             if (context.initialized)
-                this.context.mergeEntity(entity);
+                this.context.addToContext(entity);
             if (isEnabledSLContext())
-                this.slContext.mergeEntity(entity);
+                this.slContext.addToContext(entity);
         }
         catch (Exception ex)
         {
@@ -285,9 +285,9 @@ public class SessionImpl implements Session
             System.out.println("Persistor: \n " + sqlBase);
 
             if (context.initialized)
-                this.context.mergeEntity(entity);
+                this.context.addToContext(entity);
             if (isEnabledSLContext())
-                this.slContext.mergeEntity(entity);
+                this.slContext.addToContext(entity);
 
         }
         catch (Exception ex)
@@ -432,11 +432,18 @@ public class SessionImpl implements Session
             sql_helper.prepareBasicSelect(entity, id);
 
             if (context.findByID(entity, id) != null)
-                return (T) context.findByID(entity, id);
+            {
+                Object cachedEntity = context.findByID(entity, id);
+                if (cachedEntity != null)
+                    return (T) cachedEntity;
+            }
 
             if (isEnabledSLContext())
-                if (slContext.findByID(entity, id) != null)
-                    return (T) slContext.findByID(entity, id);
+            {
+                Object cachedEntity = slContext.findByID(entity, id);
+                if (cachedEntity != null)
+                    return (T) cachedEntity;
+            }
 
             if (hasJoinableObjects(entity))
             {
@@ -511,7 +518,10 @@ public class SessionImpl implements Session
         try
         {
             connection.close();
-            context.clear();
+
+            if (context != null)
+                if (context.initialized)
+                    context.clear();
         }
         catch (Exception ex)
         {

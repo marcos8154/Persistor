@@ -1,6 +1,7 @@
 package br.com.persistor.sessionManager;
 
 import br.com.persistor.annotations.Column;
+import br.com.persistor.annotations.OneToMany;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -310,12 +311,6 @@ public class Criteria<T> implements ICriteria<T>
                 return null;
             }
 
-            if (this.iSession.getPersistenceContext().getFromContext(baseEntity) != null)
-            {
-                baseEntity = this.iSession.getPersistenceContext().getFromContext(baseEntity);
-                return this;
-            }
-
             if (iSession.isEnabledSLContext())
             {
                 if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
@@ -374,6 +369,8 @@ public class Criteria<T> implements ICriteria<T>
                     if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                     {
                         if (method.getReturnType().getName().equals("java.lang.Class"))
+                            continue;
+                        if (method.isAnnotationPresent(OneToMany.class) || method.isAnnotationPresent(OneToOne.class))
                             continue;
 
                         String columnName;
