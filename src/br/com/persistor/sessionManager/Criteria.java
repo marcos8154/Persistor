@@ -159,7 +159,7 @@ public class Criteria<T> implements ICriteria<T>
     {
         if (join == null)
         {
-            join = new Join(baseEntity);
+            join = new Join(baseEntity, true);
             join.setRestartEntityInstance(resultType == RESULT_TYPE.MULTIPLE);
         }
 
@@ -264,21 +264,148 @@ public class Criteria<T> implements ICriteria<T>
         return this;
     }
 
-    @Override
-    public ICriteria execute()
+    private void FillEntities(ResultSet resultSet, Class cls,
+            Object ob, List<Object> rList) throws Exception
     {
-        Statement statement = null;
-        ResultSet resultSet = null;
-
-        if (join != null)
+        while (resultSet.next())
         {
-            join.setAutoCloseAfterExecute(autoCloseSession);
-            join.addFinalCondition(query);
-            join.execute(iSession);
+            if (resultType == RESULT_TYPE.MULTIPLE)
+            {
+                Constructor ctor = cls.getConstructor();
+                ob = ctor.newInstance();
+            }
 
-            return this;
+            for (Method method : cls.getMethods())
+            {
+                if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
+                {
+                    if (method.getReturnType().getName().equals("java.lang.Class"))
+                        continue;
+                    if (method.isAnnotationPresent(OneToMany.class) || method.isAnnotationPresent(OneToOne.class))
+                        continue;
+
+                    String columnName;
+                    String fieldName;
+
+                    if (method.getName().startsWith("is"))
+                    {
+                        columnName = method.isAnnotationPresent(Column.class)
+                                ? ((Column) method.getAnnotation(Column.class)).name()
+                                : (method.getName().substring(2, method.getName().length())).toLowerCase();
+                        fieldName = "set" + method.getName().substring(2, method.getName().length());
+                    }
+                    else
+                    {
+                        columnName = method.isAnnotationPresent(Column.class)
+                                ? ((Column) method.getAnnotation(Column.class)).name()
+                                : (method.getName().substring(3, method.getName().length())).toLowerCase();
+                        fieldName = "set" + method.getName().substring(3, method.getName().length());
+                    }
+
+                    try
+                    {
+                        //checking if column exists in resultset
+                        resultSet.findColumn(columnName);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.err.println("Persistor WARNING: The column " + columnName + " does not exists. Verify entity mapping.");
+                        continue;
+                    }
+
+                    if (method.getReturnType() == boolean.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, boolean.class);
+                        invokeMethod.invoke(ob, resultSet.getBoolean(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == int.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, int.class);
+                        invokeMethod.invoke(ob, resultSet.getInt(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == double.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, double.class);
+                        invokeMethod.invoke(ob, resultSet.getDouble(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == float.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, float.class);
+                        invokeMethod.invoke(ob, resultSet.getFloat(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == short.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, short.class);
+                        invokeMethod.invoke(ob, resultSet.getShort(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == long.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, long.class);
+                        invokeMethod.invoke(ob, resultSet.getLong(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == String.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, String.class);
+                        invokeMethod.invoke(ob, resultSet.getString(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == java.util.Date.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, java.util.Date.class);
+                        invokeMethod.invoke(ob, resultSet.getDate(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == byte.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, byte.class);
+                        invokeMethod.invoke(ob, resultSet.getByte(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == BigDecimal.class)
+                    {
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, BigDecimal.class);
+                        invokeMethod.invoke(ob, resultSet.getBigDecimal(columnName));
+                        continue;
+                    }
+
+                    if (method.getReturnType() == InputStream.class)
+                    {
+                        InputStream is;
+                        if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
+                            is = resultSet.getBlob(columnName).getBinaryStream();
+                        else
+                            is = resultSet.getBinaryStream(columnName);
+
+                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
+                        invokeMethod.invoke(ob, is);
+                        continue;
+                    }
+                }
+            }
+            if (resultType == RESULT_TYPE.MULTIPLE)
+                rList.add(ob);
+            else
+                break;
         }
+    }
 
+    private void verifyFirebirdLimit()
+    {
         if (!hasFbLimit)
         {
             if (specificFields != null)
@@ -293,7 +420,68 @@ public class Criteria<T> implements ICriteria<T>
             else
                 query = "select * from " + tableName + " " + query;
         }
+    }
 
+    private ICriteria verifyJoin()
+    {
+        join.setAutoCloseAfterExecute(autoCloseSession);
+        join.addFinalCondition(query);
+        join.execute(iSession);
+
+        if(resultType == RESULT_TYPE.MULTIPLE)
+            loadList(baseEntity);
+        return this;
+    }
+
+    private void resolveSLContext(List<Object> rList)
+    {
+        if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
+        {
+            CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
+            if (cq != null)
+            {
+                for (int pkey : cq.getResultKeys())
+                {
+                    Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
+                    if (cachedEntity != null)
+                        rList.add(cachedEntity);
+                }
+            }
+        }
+
+        if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
+        {
+            CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
+            if (cq != null)
+            {
+                if (cq.getResultKeys().length > 0)
+                {
+                    if (this.query.toLowerCase().contains("where"))
+                    {
+                        String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
+                        String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
+
+                        String inClause = getNotInForExistingKeysInCachedQuery(cq);
+                        if (!inClause.isEmpty())
+                            this.query = beforeWhere + inClause + afterWhere;
+                    }
+                    else
+                        this.query += getNotInForExistingKeysInCachedQuery(cq).replace("and", "");
+                }
+            }
+        }
+    }
+
+    @Override
+    public ICriteria execute()
+    {
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        if (join != null)
+            return verifyJoin();
+
+        verifyFirebirdLimit();
         this.originalQuery = query;
 
         try
@@ -312,185 +500,12 @@ public class Criteria<T> implements ICriteria<T>
             }
 
             if (iSession.isEnabledSLContext())
-            {
-                if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
-                {
-                    CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
-                    if (cq != null)
-                    {
-                        for (int pkey : cq.getResultKeys())
-                        {
-                            Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
-                            if (cachedEntity != null)
-                                rList.add(cachedEntity);
-                        }
-                    }
-                }
-            }
-
-            if (iSession.isEnabledSLContext())
-            {
-                if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
-                {
-                    CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.query);
-                    if (cq != null)
-                    {
-                        if (cq.getResultKeys().length > 0)
-                        {
-                            if (this.query.toLowerCase().contains("where"))
-                            {
-                                String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
-                                String afterWhere = this.query.substring(this.query.toLowerCase().indexOf("where") + 5, this.query.length());
-
-                                String inClause = getNotInForExistingKeysInCachedQuery(cq);
-                                if (!inClause.isEmpty())
-                                    this.query = beforeWhere + inClause + afterWhere;
-                            }
-                            else
-                                this.query += getNotInForExistingKeysInCachedQuery(cq).replace("and", "");
-                        }
-                    }
-                }
-            }
+                resolveSLContext(rList);
 
             statement = iSession.getActiveConnection().createStatement();
             resultSet = statement.executeQuery(query);
 
-            while (resultSet.next())
-            {
-                if (resultType == RESULT_TYPE.MULTIPLE)
-                {
-                    Constructor ctor = cls.getConstructor();
-                    ob = ctor.newInstance();
-                }
-
-                for (Method method : cls.getMethods())
-                {
-                    if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
-                    {
-                        if (method.getReturnType().getName().equals("java.lang.Class"))
-                            continue;
-                        if (method.isAnnotationPresent(OneToMany.class) || method.isAnnotationPresent(OneToOne.class))
-                            continue;
-
-                        String columnName;
-                        String fieldName;
-
-                        if (method.getName().startsWith("is"))
-                        {
-                            columnName = method.isAnnotationPresent(Column.class)
-                                    ? ((Column) method.getAnnotation(Column.class)).name()
-                                    : (method.getName().substring(2, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(2, method.getName().length());
-                        }
-                        else
-                        {
-                            columnName = method.isAnnotationPresent(Column.class)
-                                    ? ((Column) method.getAnnotation(Column.class)).name()
-                                    : (method.getName().substring(3, method.getName().length())).toLowerCase();
-                            fieldName = "set" + method.getName().substring(3, method.getName().length());
-                        }
-
-                        try
-                        {
-                            //checking if column exists in resultset
-                            resultSet.findColumn(columnName);
-                        }
-                        catch (Exception ex)
-                        {
-                            System.err.println("Persistor WARNING: The column " + columnName + " does not exists. Verify entity mapping.");
-                            continue;
-                        }
-
-                        if (method.getReturnType() == boolean.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(ob, resultSet.getBoolean(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == int.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(ob, resultSet.getInt(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == double.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(ob, resultSet.getDouble(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == float.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(ob, resultSet.getFloat(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == short.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(ob, resultSet.getShort(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == long.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(ob, resultSet.getLong(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == String.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(ob, resultSet.getString(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == java.util.Date.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(ob, resultSet.getDate(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == byte.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(ob, resultSet.getByte(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == BigDecimal.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(ob, resultSet.getBigDecimal(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == InputStream.class)
-                        {
-                            InputStream is;
-                            if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
-                                is = resultSet.getBlob(columnName).getBinaryStream();
-                            else
-                                is = resultSet.getBinaryStream(columnName);
-
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(ob, is);
-                            continue;
-                        }
-                    }
-                }
-                if (resultType == RESULT_TYPE.MULTIPLE)
-                    rList.add(ob);
-                else
-                    break;
-            }
+            FillEntities(resultSet, cls, ob, rList);
 
             System.out.println("Persistor: \n " + query);
 
@@ -500,25 +515,10 @@ public class Criteria<T> implements ICriteria<T>
             this.iSession.getPersistenceContext().addToContext(ob);
 
             if (iSession.isEnabledSLContext())
-            {
-                if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
-                {
-                    int[] resultKeys = new int[rList.size()];
-
-                    for (int i = 0; i < rList.size(); i++)
-                    {
-                        Object objResult = rList.get(i);
-
-                        SQLHelper helper = new SQLHelper();
-                        helper.prepareDelete(objResult);
-
-                        resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
-                        iSession.getSLPersistenceContext().addToContext(objResult);
-                    }
-
-                    iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
-                }
-            }
+                addResultEntitiesToSLContext(rList);
+            
+            if(resultType == RESULT_TYPE.MULTIPLE)
+                loadList(this.baseEntity);
         }
         catch (Exception ex)
         {
@@ -532,5 +532,26 @@ public class Criteria<T> implements ICriteria<T>
             Util.closeStatement(statement);
         }
         return this;
+    }
+
+    private void addResultEntitiesToSLContext(List<Object> rList) throws Exception
+    {
+        if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
+        {
+            int[] resultKeys = new int[rList.size()];
+
+            for (int i = 0; i < rList.size(); i++)
+            {
+                Object objResult = rList.get(i);
+
+                SQLHelper helper = new SQLHelper();
+                helper.prepareDelete(objResult);
+
+                resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
+                iSession.getSLPersistenceContext().addToContext(objResult);
+            }
+
+            iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
+        }
     }
 }

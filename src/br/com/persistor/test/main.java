@@ -1,17 +1,13 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
-import br.com.persistor.enums.FILTER_TYPE;
+import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
-import br.com.persistor.generalClasses.Restrictions;
+import br.com.persistor.interfaces.ICriteria;
 import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.PersistenceConfiguration;
-import net.sf.ehcache.config.PersistenceConfiguration.Strategy;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
+import java.util.List;
 
 public class main
 {
@@ -21,34 +17,14 @@ public class main
         
         Session session = getSession();
 
-        Produtos produtos = session.onID(Produtos.class, 1);
-        session.createCriteria(produtos , RESULT_TYPE.MULTIPLE)
-                .add(Restrictions.eq(FILTER_TYPE.WHERE, "id", "1; select * from produtos where id =2"))
+        Produtos produto = new Produtos();
+        Marcas marcas = new Marcas();
+        Estoque estoque = new Estoque();
+       
+        ICriteria c = session.createCriteria(produto , RESULT_TYPE.UNIQUE)
                 .execute();
-        /*
-        CacheManager cm = CacheManager.newInstance();
-
-        //2. Get a cache called "cache1", declared in ehcache.xml
-        Cache cache = cm.getCache("cache1");
-
-        //3. Put few elements in cache
-        cache.put(new Element("1", "Jan"));
-        cache.put(new Element("2", "Feb"));
-        cache.put(new Element("3", "Mar"));
-
-        //4. Get element from cache
-        Element ele = cache.get("2");
-
-        //5. Print out the element
-        String output = (ele == null ? null : ele.getObjectValue().toString());
-        System.out.println(output);
-
-        //6. Is key in cache?
-        System.out.println(cache.isKeyInCache("3"));
-        System.out.println(cache.isKeyInCache("10"));
-
-        //7. shut down the cache manager
-        cm.shutdown(); */
+        
+      //  System.err.println(produto.getMarcas().getNome());
     }
 
     private static SessionFactory sf = null;

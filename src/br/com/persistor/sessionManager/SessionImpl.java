@@ -58,11 +58,12 @@ public class SessionImpl implements Session
         return isVersionViolation;
     }
 
-    public SessionImpl(Connection connection)
+    public SessionImpl(Connection connection, DBConfig config)
     {
         this.connection = connection;
         this.context = new PersistenceContext();
-        this.setIsolationLevel(ISOLATION_LEVEL.TRANSACTION_READ_COMMITTED);
+        //this.setIsolationLevel(ISOLATION_LEVEL.TRANSACTION_READ_COMMITTED);
+        this.setConfig(config);
     }
 
     @Override
@@ -812,7 +813,7 @@ public class SessionImpl implements Session
         return (this.slContext != null);
     }
 
-    public void setConfig(DBConfig config)
+    private void setConfig(DBConfig config)
     {
         this.config = config;
         this.context.Initialize(config.getPersistenceContext());
@@ -1113,7 +1114,7 @@ public class SessionImpl implements Session
                 if (methodHasValue(entity, field))
                     continue;
 
-                SessionImpl session = new SessionImpl(this.connection);
+                SessionImpl session = new SessionImpl(this.connection, this.config);
 
                 if (isUpdateMode)
                     session.update(object);
@@ -1307,7 +1308,7 @@ public class SessionImpl implements Session
         try
         {
             Class cls = entity.getClass();
-            Join join = new Join(entity);
+            Join join = new Join(entity, false);
             join.setRestartEntityInstance(true);
             List<JoinableObject> objectsToJoin = new ArrayList<>();
 

@@ -21,6 +21,7 @@ import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.IJoin;
 import java.io.InputStream;
 import br.com.persistor.interfaces.Session;
+import java.lang.reflect.Field;
 
 public class Join implements IJoin
 {
@@ -28,8 +29,9 @@ public class Join implements IJoin
     public String mountedQuery = "";
     public int joinCount = 0;
     public boolean hasAllLoaded = false;
-    
+
     private boolean autoCloseAfterExecute = false;
+    private boolean isCriteriaOwnerInstance = false;
     private boolean restartEntityInstance;
     private Object primaryObj;
     private List<Object> objects = new ArrayList<>();
@@ -42,7 +44,7 @@ public class Join implements IJoin
     {
         autoCloseAfterExecute = value;
     }
-    
+
     public boolean isRestartEntityInstance()
     {
         return restartEntityInstance;
@@ -53,11 +55,12 @@ public class Join implements IJoin
         this.restartEntityInstance = restartEntityInstance;
     }
 
-    public Join(Object baseObject)
+    public Join(Object baseObject, boolean isCriteriaOwner)
     {
         objects.add(baseObject);
         primaryObj = baseObject;
         restartEntityInstance = true;
+        isCriteriaOwnerInstance = isCriteriaOwner;
     }
 
     public void addIgnorableField(String fieldName)
@@ -302,7 +305,7 @@ public class Join implements IJoin
                         {
                             if (method.getReturnType().getName().equals("java.lang.Class"))
                                 continue;
-                            if(method.isAnnotationPresent(OneToMany.class) || method.isAnnotationPresent(OneToOne.class))
+                            if (method.isAnnotationPresent(OneToMany.class) || method.isAnnotationPresent(OneToOne.class))
                                 continue;
 
                             if (method.isAnnotationPresent(PrimaryKey.class))
@@ -457,7 +460,11 @@ public class Join implements IJoin
                 }
             }
             if (loaded)
+            {
                 System.out.println("Persistor: \n" + mountedQuery);
+                if (isCriteriaOwnerInstance)
+                    loadAllResults();
+            }
         }
         catch (Exception ex)
         {
@@ -472,9 +479,51 @@ public class Join implements IJoin
         {
             Util.closeResultSet(resultSet);
             Util.closeStatement(statement);
-            
-            if(autoCloseAfterExecute)
+
+            if (autoCloseAfterExecute)
                 iSession.close();
+        }
+    }
+
+    private void loadAllResults() throws Exception
+    {
+        List<Object> listBaseEntity = getList(primaryObj);
+        for (Object objBaseEntity : listBaseEntity)
+        {
+            for (Object joinEntity : objects)
+            {
+                if (joinEntity.getClass().getName().equals(primaryObj.getClass().getName()))
+                    continue;
+
+                for (Method method : objBaseEntity.getClass().getDeclaredMethods())
+                {
+                    if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
+                    {
+                        if (method.getName().contains(joinEntity.getClass().getSimpleName()))
+                        {
+                            Method setJoinObjMethod = null;
+                            if (method.isAnnotationPresent(OneToOne.class))
+                            {
+                                String setMethodName = ("set" + joinEntity.getClass().getSimpleName());
+                                setJoinObjMethod = objBaseEntity.getClass().getMethod(setMethodName, joinEntity.getClass());
+                                setJoinObjMethod.invoke(objBaseEntity, getEntity(joinEntity.getClass()));
+                            }
+
+                            if (method.isAnnotationPresent(OneToMany.class))
+                            {
+                                String setMethodName = ("set" + joinEntity.getClass().getSimpleName());
+                                setJoinObjMethod = objBaseEntity.getClass().getMethod(setMethodName, joinEntity.getClass());
+
+                                Class clazz = objBaseEntity.getClass().getMethod(("get" + joinEntity.getClass().getSimpleName())).getReturnType();
+                                Object objClazz = clazz.newInstance();
+                                Field field = objClazz.getClass().getField("ResultList");
+                                field.set(objClazz, getList(joinEntity));
+                                setJoinObjMethod.invoke(objBaseEntity, objClazz);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -549,9 +598,7 @@ public class Join implements IJoin
         for (Object obj : resultList)
         {
             if (obj.getClass() == object.getClass())
-            {
                 returnList.add((T) obj);
-            }
         }
 
         return returnList;

@@ -44,8 +44,8 @@ public class SessionFactory
 
     public void reset()
     {
-            mainDataSource.reset();
-            mainDataSource = null;
+        mainDataSource.reset();
+        mainDataSource = null;
     }
 
     public DBConfig getConfig()
@@ -59,8 +59,7 @@ public class SessionFactory
 
         try
         {
-            returnSessonImpl = new SessionImpl(mainDataSource.getConnection());
-            returnSessonImpl.setConfig(mainConfig);
+            returnSessonImpl = new SessionImpl(mainDataSource.getConnection(), mainConfig);
 
             if (persistenceContext.initialized)
                 returnSessonImpl.setSLContext(persistenceContext);
@@ -83,8 +82,7 @@ public class SessionFactory
             if (mainDataSource == null)
                 buildSession(config);
 
-            returnSessonImpl = new SessionImpl(mainDataSource.getConnection());
-            returnSessonImpl.setConfig(config);
+            returnSessonImpl = new SessionImpl(mainDataSource.getConnection(), mainConfig);
 
             if (mainConfig.getSlPersistenceContext() != null)
             {

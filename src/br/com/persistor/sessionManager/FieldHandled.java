@@ -34,10 +34,11 @@ public class FieldHandled
 
     public Object oneToOneLoad(Object obj, String fieldName)
     {
+        SessionImpl session = null;
         try
         {
-            SessionImpl session = new SessionImpl(DataSource.getInstanceByDefaultDbConfig().getConnection());
-            session.setConfig(DataSource.defaultDbConfig);
+            session = new SessionImpl(DataSource.getInstanceByDefaultDbConfig().getConnection(),
+            DataSource.defaultDbConfig);
 
             Method method = obj.getClass().getMethod("get" + FieldHandled.toCamelCase(fieldName));
             Class entityToLoadClass = method.getReturnType();
@@ -54,6 +55,8 @@ public class FieldHandled
         }
         catch (Exception ex)
         {
+            if(session != null)
+                session.close();
             ex.printStackTrace();
             return null;
         }
@@ -61,10 +64,11 @@ public class FieldHandled
 
     public Object oneToManyLoad(Object obj, String fieldName)
     {
+        SessionImpl session = null;
         try
         {
-            SessionImpl session = new SessionImpl(DataSource.getInstanceByDefaultDbConfig().getConnection());
-            session.setConfig(DataSource.defaultDbConfig);
+            session = new SessionImpl(DataSource.getInstanceByDefaultDbConfig().getConnection(),
+            DataSource.defaultDbConfig);
 
             Method method = obj.getClass().getMethod("get" + FieldHandled.toCamelCase(fieldName));
             Class entityToLoadClass = method.getReturnType();
@@ -88,6 +92,8 @@ public class FieldHandled
         }
         catch (Exception ex)
         {
+            if(session != null)
+                session.close();
             ex.printStackTrace();
             return null;
         }
