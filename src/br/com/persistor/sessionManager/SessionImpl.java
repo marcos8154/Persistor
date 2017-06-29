@@ -170,12 +170,7 @@ public class SessionImpl implements Session
             Class cls = entity.getClass();
 
             if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return;
-            }
+                Util.throwNotEntityException(this, cls, getClass(), logger);
 
             sql_helper.prepareInsert(entity);
 
@@ -215,12 +210,7 @@ public class SessionImpl implements Session
             Class cls = entity.getClass();
 
             if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity, String andCondition)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return;
-            }
+                Util.throwNotEntityException(this, cls, getClass(), logger);
 
             sql_helper.prepareUpdate(entity, connection);
             String sqlBase = sql_helper.getSqlBase();
@@ -266,12 +256,7 @@ public class SessionImpl implements Session
             Class cls = entity.getClass();
 
             if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void update(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return;
-            }
+                Util.throwNotEntityException(this, cls, getClass(), logger);
 
             sql_helper.prepareUpdate(entity, connection);
             String sqlBase = sql_helper.getSqlBase();
@@ -319,12 +304,7 @@ public class SessionImpl implements Session
             String tableName = cls.getSimpleName().toLowerCase();
 
             if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-                rollback();
-                return;
-            }
+                Util.throwNotEntityException(this, cls, getClass(), logger);
 
             sql_helper.prepareDelete(entity);
 
@@ -374,12 +354,7 @@ public class SessionImpl implements Session
             Class cls = entity.getClass();
 
             if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("\nPersistor warning: the class '" + cls.getName() + "' not extends Entity. Operation is stoped.\"");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-                rollback();
-                return;
-            }
+                Util.throwNotEntityException(this, cls, getClass(), logger);
 
             sql_helper.prepareDelete(entity);
             String sqlBase = sql_helper.getSqlBase();
@@ -412,25 +387,29 @@ public class SessionImpl implements Session
         }
     }
 
+    private <T> T joinExecutionResult(Class entityCls, Object entity, int id) throws Exception
+    {
+        entity = executeJoin(entity, id);
+        if (entity == null)
+            return (T) entityCls.newInstance();
+        else
+            return (T) entity;
+    }
+
     @Override
     public <T> T onID(Class entityCls, int id)
     {
-        SQLHelper sql_helper = new SQLHelper();
+        SQLHelper sqlHelper = new SQLHelper();
         PreparedStatement ps = null;
         ResultSet resultSet = null;
         Object entity = null;
         try
         {
             if (!extendsEntity(entityCls))
-            {
-                Exception ex = new Exception("Persistor ERROR: THE CLASS '" + entityCls.getName() + "' NOT EXTENDS Entity. OPERATION HAS STOPED.");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), sql_helper.getSqlBase()));
-                rollback();
-                return null;
-            }
+                Util.throwNotEntityException(this, entityCls, getClass(), logger);
 
             entity = entityCls.newInstance();
-            sql_helper.prepareBasicSelect(entity, id);
+            sqlHelper.prepareBasicSelect(entity, id);
 
             if (context.findByID(entity, id) != null)
             {
@@ -447,15 +426,9 @@ public class SessionImpl implements Session
             }
 
             if (hasJoinableObjects(entity))
-            {
-                entity = executeJoin(entity, id);
-                if (entity == null)
-                    return (T) entityCls.newInstance();
-                else
-                    return (T) entity;
-            }
+                return joinExecutionResult(entityCls, entity, id);
 
-            String sqlBase = sql_helper.getSqlBase();
+            String sqlBase = sqlHelper.getSqlBase();
             Field field = entityCls.getField("mountedQuery");
             field.set(entity, sqlBase);
 
@@ -478,7 +451,7 @@ public class SessionImpl implements Session
                             "<T> T onID(Class entityCls, int id)",
                             Util.getDateTime(),
                             Util.getFullStackTrace(ex),
-                            sql_helper.getSqlBase()));
+                            sqlHelper.getSqlBase()));
         }
         finally
         {
@@ -568,12 +541,7 @@ public class SessionImpl implements Session
         try
         {
             if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("Persistor ERROR: THE CLASS '" + cls.getName() + "' NOT EXTENDS Entity. OPERATION HAS STOPED.");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-                rollback();
-                return null;
-            }
+                Util.throwNotEntityException(this, cls, getClass(), logger);
 
             java.lang.reflect.Constructor constructor = cls.getConstructor();
             Object entity = constructor.newInstance();
@@ -582,7 +550,7 @@ public class SessionImpl implements Session
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
             String className = cls.getSimpleName().toLowerCase();
-            sqlBase = "select min(" + primaryKeyName + ") from " + className;
+            sqlBase = "SELECT MIN(" + primaryKeyName + ") FROM " + className;
 
             if (!whereClause.isEmpty())
                 sqlBase += " where " + whereClause;
@@ -634,12 +602,7 @@ public class SessionImpl implements Session
         try
         {
             if (!extendsEntity(cls))
-            {
-                Exception ex = new Exception("Persistor ERROR: THE CLASS '" + cls.getName() + "' NOT EXTENDS Entity. OPERATION HAS STOPED.");
-                logger.newNofication(new PersistenceLog(this.getClass().getName(), "void delete(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-                rollback();
-                return null;
-            }
+                Util.throwNotEntityException(this, cls, getClass(), logger);
 
             java.lang.reflect.Constructor constructor = cls.getConstructor();
             Object entity = constructor.newInstance();
@@ -648,10 +611,10 @@ public class SessionImpl implements Session
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
             String className = cls.getSimpleName().toLowerCase();
-            sqlBase = "select max(" + primaryKeyName + ") from " + className;
+            sqlBase = "SELECT MAX(" + primaryKeyName + ") FROM " + className;
 
             if (!whereClause.isEmpty())
-                sqlBase += " where " + whereClause;
+                sqlBase += " WHERE " + whereClause;
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);
@@ -725,7 +688,7 @@ public class SessionImpl implements Session
             Object entity = constructor.newInstance();
 
             String tableName = (entity.getClass().getSimpleName().toLowerCase());
-            sql = "select count(*) from " + tableName;
+            sql = "SELECT COUNT(*) FROM " + tableName;
 
             if (!whereClause.isEmpty())
                 sql += " where " + whereClause;
@@ -776,7 +739,7 @@ public class SessionImpl implements Session
             Object entity = constructor.newInstance();
 
             String tableName = (entity.getClass().getSimpleName().toLowerCase());
-            sql = "select sum(" + columnName + ") " + columnName + " from " + tableName;
+            sql = "SELECT SUM(" + columnName + ") " + columnName + " FROM " + tableName;
 
             if (!whereClause.isEmpty())
                 sql += " where " + whereClause;
@@ -1336,12 +1299,8 @@ public class SessionImpl implements Session
                         continue;
 
                     if (oneToOne.ignore_onID().length > 0)
-                    {
                         for (String fieldToIgnore : oneToOne.ignore_onID())
-                        {
                             join.addIgnorableField(fieldToIgnore);
-                        }
-                    }
 
                     String sourceName = cls.getSimpleName() + "." + oneToOne.source();
                     String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
@@ -1349,6 +1308,7 @@ public class SessionImpl implements Session
                     JoinableObject objToJoin = new JoinableObject();
                     objToJoin.result_type = RESULT_TYPE.UNIQUE;
                     objToJoin.objectToJoin = entityObj;
+                    objToJoin.joinGetMethod = method.getName().substring(3, method.getName().length());
                     objectsToJoin.add(objToJoin);
                 }
 
@@ -1368,6 +1328,7 @@ public class SessionImpl implements Session
                     JoinableObject objToJoin = new JoinableObject();
                     objToJoin.result_type = RESULT_TYPE.MULTIPLE;
                     objToJoin.objectToJoin = entityObj;
+                    objToJoin.joinGetMethod = method.getName().substring(3, method.getName().length());
                     objectsToJoin.add(objToJoin);
                 }
             }
@@ -1376,7 +1337,7 @@ public class SessionImpl implements Session
             {
                 SQLHelper helper = new SQLHelper();
                 String pkName = helper.getPrimaryKeyFieldName(entity);
-                join.addFinalCondition("where " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
+                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
                 join.execute(this);
 
                 entity = join.getEntity(entity.getClass());
@@ -1395,23 +1356,23 @@ public class SessionImpl implements Session
                 if (entity == null)
                     return entity;
 
-                for (JoinableObject object : objectsToJoin)
+                for (JoinableObject joinableObject : objectsToJoin)
                 {
-                    if (object.result_type == RESULT_TYPE.UNIQUE)
+                    if (joinableObject.result_type == RESULT_TYPE.UNIQUE)
                     {
-                        object.objectToJoin = join.getEntity(object.objectToJoin.getClass());
+                        joinableObject.objectToJoin = join.getEntity(joinableObject.objectToJoin.getClass());
 
-                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(entity, object.objectToJoin);
+                        Method method = entity.getClass().getMethod("set" + joinableObject.joinGetMethod, joinableObject.objectToJoin.getClass());
+                        method.invoke(entity, joinableObject.objectToJoin);
                     }
 
-                    if (object.result_type == RESULT_TYPE.MULTIPLE)
+                    if (joinableObject.result_type == RESULT_TYPE.MULTIPLE)
                     {
-                        Class clss = object.objectToJoin.getClass();
+                        Class clss = joinableObject.objectToJoin.getClass();
                         Field f = clss.getField("ResultList");
-                        f.set(object.objectToJoin, join.getList(object.objectToJoin));
-                        Method method = entity.getClass().getMethod("set" + object.objectToJoin.getClass().getSimpleName(), object.objectToJoin.getClass());
-                        method.invoke(entity, object.objectToJoin);
+                        f.set(joinableObject.objectToJoin, join.getList(joinableObject.objectToJoin));
+                        Method method = entity.getClass().getMethod("set" + joinableObject.joinGetMethod, joinableObject.objectToJoin.getClass());
+                        method.invoke(entity, joinableObject.objectToJoin);
                     }
                 }
             }
@@ -1448,7 +1409,7 @@ public class SessionImpl implements Session
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
 
             String className = cls.getSimpleName().toLowerCase();
-            sqlBase = "select max(" + primaryKeyName + ") " + primaryKeyName + " from " + className;
+            sqlBase = "SELECT MAX(" + primaryKeyName + ") " + primaryKeyName + " FROM " + className;
 
             if (!where.isEmpty())
                 sqlBase += " where " + where;
@@ -1495,10 +1456,10 @@ public class SessionImpl implements Session
                 return;
 
             String className = cls.getSimpleName().toLowerCase();
-            sqlBase = "select max(" + primaryKeyName + ") from " + className;
+            sqlBase = "SELECT MAX(" + primaryKeyName + ") FROM " + className;
 
             if (!whereCondition.isEmpty())
-                sqlBase += " where " + whereCondition;
+                sqlBase += " WHERE " + whereCondition;
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);

@@ -224,7 +224,7 @@ public class SQLHelper
         {
             Class cls = obj.getClass();
 
-            String sqlBase = "select * from " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " LIMIT " + LIMIT;
+            String sqlBase = "SELECT * FROM " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " LIMIT " + LIMIT;
 
             sqlBase = sqlBase.toLowerCase();
 
@@ -295,7 +295,7 @@ public class SQLHelper
             Class cls = obj.getClass();
             primaryKeyName = this.getPrimaryKeyFieldName(obj);
 
-            sqlBase = ("select * from " + cls.getSimpleName() + " where " + primaryKeyName + " = " + id).toLowerCase();
+            sqlBase = ("SELECT * FROM " + cls.getSimpleName() + " WHERE " + primaryKeyName + " = " + id).toLowerCase();
 
             if (getAuxiliarPK_name(cls) != null)
             {

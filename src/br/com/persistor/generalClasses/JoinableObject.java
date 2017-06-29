@@ -15,4 +15,5 @@ public class JoinableObject
 {
     public RESULT_TYPE result_type;
     public Object objectToJoin;
+    public String joinGetMethod;
 }

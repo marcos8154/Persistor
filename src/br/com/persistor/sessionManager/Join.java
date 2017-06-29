@@ -29,7 +29,7 @@ public class Join implements IJoin
     public String mountedQuery = "";
     public int joinCount = 0;
     public boolean hasAllLoaded = false;
-
+ 
     private boolean autoCloseAfterExecute = false;
     private boolean isCriteriaOwnerInstance = false;
     private boolean restartEntityInstance;
@@ -78,9 +78,7 @@ public class Join implements IJoin
         String join = detectJoin(join_type);
         mountedQuery += ("\n" + " " + join + " " + table) + "\n";
         if (condition != null)
-        {
             mountedQuery += " on " + condition;
-        }
         objects.add(obj);
 
         joinCount++;
@@ -137,7 +135,7 @@ public class Join implements IJoin
                 String[] fields = helper.getFields(obj).split(",");
 
                 String primaryKeyName = cls.getSimpleName().toLowerCase() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName().toLowerCase();
-                fieldsSelect += primaryKeyName + ", ";
+                fieldsSelect += primaryKeyName + ", \n";
 
                 field_index = new FieldIndex();
                 field_index.field = primaryKeyName;
@@ -152,6 +150,8 @@ public class Join implements IJoin
 
                     //tableName.field field_tableName -->  field_tableName = query alias
                     String fieldName = tableName + "." + fields[i] + " " + fields[i] + "_" + tableName + ", ";
+                    if(i < (fields.length - 1))
+                        fieldName += "\n";
                     if (isIgnorableField(fieldName))
                         continue;
 
@@ -195,9 +195,9 @@ public class Join implements IJoin
 
                         if (limit.limit_type == LIMIT_TYPE.paginate)
                         {
-                            baseQ = "select \n " + fieldsSelect;
+                            baseQ = "SELECT \n " + fieldsSelect;
                             baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nfrom \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
 
                             mountedQuery = (baseQ + "\n").toLowerCase();
                             mountedQuery += final_condition;
@@ -273,9 +273,9 @@ public class Join implements IJoin
             }
             else
             {
-                baseQ = "select \n " + fieldsSelect;
+                baseQ = "SELECT \n " + fieldsSelect;
                 baseQ = baseQ.substring(0, baseQ.length() - 2);
-                baseQ += "\nfrom \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+                baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
 
                 mountedQuery = (baseQ + "\n").toLowerCase();
                 mountedQuery += final_condition;

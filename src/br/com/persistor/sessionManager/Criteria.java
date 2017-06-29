@@ -19,6 +19,7 @@ import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.PersistenceLog;
+import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
 import java.io.InputStream;
@@ -415,10 +416,10 @@ public class Criteria<T> implements ICriteria<T>
                     fields += specificFields[i] + ", ";
 
                 fields = fields.substring(0, fields.length() - 2);
-                query = "select " + fields + " from " + tableName + " " + query;
+                query = "SELECT " + fields + " FROM " + tableName + " " + query;
             }
             else
-                query = "select * from " + tableName + " " + query;
+                query = "SELECT * FROM " + tableName + " " + query;
         }
     }
 
@@ -428,7 +429,7 @@ public class Criteria<T> implements ICriteria<T>
         join.addFinalCondition(query);
         join.execute(iSession);
 
-        if(resultType == RESULT_TYPE.MULTIPLE)
+        if (resultType == RESULT_TYPE.MULTIPLE)
             loadList(baseEntity);
         return this;
     }
@@ -502,6 +503,9 @@ public class Criteria<T> implements ICriteria<T>
             if (iSession.isEnabledSLContext())
                 resolveSLContext(rList);
 
+            if (resultType == RESULT_TYPE.UNIQUE)
+                addLimit(Limit.simpleLimit(1));
+
             statement = iSession.getActiveConnection().createStatement();
             resultSet = statement.executeQuery(query);
 
@@ -516,8 +520,8 @@ public class Criteria<T> implements ICriteria<T>
 
             if (iSession.isEnabledSLContext())
                 addResultEntitiesToSLContext(rList);
-            
-            if(resultType == RESULT_TYPE.MULTIPLE)
+
+            if (resultType == RESULT_TYPE.MULTIPLE)
                 loadList(this.baseEntity);
         }
         catch (Exception ex)

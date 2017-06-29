@@ -80,7 +80,7 @@ public class FieldHandled
             
             Object valueSource = fieldSource.get(obj);
             
-            String queryCommand = "select * from " + entityToLoadClass.getSimpleName().toLowerCase() + " where " + oneToMany.target() + " = " + valueSource;
+            String queryCommand = "SELECT * FROM " + entityToLoadClass.getSimpleName().toLowerCase() + " where " + oneToMany.target() + " = " + valueSource;
             
             Object entityToLoad = entityToLoadClass.newInstance();
             Query query = session.createQuery(entityToLoad, queryCommand);

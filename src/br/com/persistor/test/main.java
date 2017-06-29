@@ -1,9 +1,12 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.enums.FILTER_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
+import br.com.persistor.enums.ORDER_MODE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.ICriteria;
 import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
@@ -14,17 +17,15 @@ public class main
 
     public static void main(String[] args)
     {
-        
         Session session = getSession();
-
         Produtos produto = new Produtos();
-        Marcas marcas = new Marcas();
-        Estoque estoque = new Estoque();
-       
-        ICriteria c = session.createCriteria(produto , RESULT_TYPE.UNIQUE)
-                .execute();
-        
-      //  System.err.println(produto.getMarcas().getNome());
+        session.createQuery(produto, "select * from produtos").setResult_type(RESULT_TYPE.MULTIPLE).execute();
+        session.createQuery(produto, "select * from produtos").setResult_type(RESULT_TYPE.MULTIPLE).execute();
+        session.createQuery(produto, "select * from produtos").setResult_type(RESULT_TYPE.MULTIPLE).execute();
+        session.createQuery(produto, "select * from produtos").setResult_type(RESULT_TYPE.MULTIPLE).execute();
+        session.createQuery(produto, "select * from produtos").setResult_type(RESULT_TYPE.MULTIPLE).execute();
+        session.createQuery(produto, "select * from produtos").setResult_type(RESULT_TYPE.MULTIPLE).execute();
+
     }
 
     private static SessionFactory sf = null;
@@ -60,7 +61,7 @@ public class main
         DBConfig config = new DBConfig();
         config.setPersistenceLogger(LogTest.class);
         //  config.setPersistenceContext(Context.class);
-       // config.setSlPersistenceContext(Context.class);
+        config.setSlPersistenceContext(Context.class);
         config.setDb_type(DB_TYPE.MySQL);
         config.setHost("localhost");
         config.setPort(3306);

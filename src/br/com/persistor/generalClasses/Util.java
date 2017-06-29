@@ -1,5 +1,7 @@
 package br.com.persistor.generalClasses;
 
+import br.com.persistor.interfaces.IPersistenceLogger;
+import br.com.persistor.interfaces.Session;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
@@ -41,7 +43,17 @@ public class Util
 
     public static String getVersion()
     {
-        return "2.4.2 - Build 260417";
+        return "2.4.5 - Build 270617";
+    }
+
+    public static void throwNotEntityException(Session session,
+            Class entityClass, Class invokerClass, IPersistenceLogger logger) throws Exception
+    {
+        Exception ex = new Exception("Persistor ERROR: THE CLASS '" + entityClass.getName() + "' NOT EXTENDS Entity. OPERATION HAS STOPED.");
+        logger.newNofication(new PersistenceLog(invokerClass.getName(), 
+                "", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
+        session.rollback();
+        throw  new Exception(ex.getMessage());
     }
 
     public static Calendar getCalendar(int day, int month, int year)

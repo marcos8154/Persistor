@@ -82,7 +82,7 @@ public class Query
     private Class cls;
     Object baseEntity;
 
-    public void createQuery(Session isession, Object obj, String query)
+    public void createQuery(Session isession, Object obj, String sqlCommand)
     {
         //if "query" starts with "@", is an NamedQuery.
         //Find in Class "cls" the NamedQuery
@@ -100,7 +100,7 @@ public class Query
                     if (annotation instanceof NamedQuery)
                     {
                         NamedQuery namedQuery = (NamedQuery) annotation;
-                        if (namedQuery.queryName().equals(query.replace("@", "")))
+                        if (namedQuery.queryName().equals(sqlCommand.replace("@", "")))
                         {
                             this.query = namedQuery.queryValue();
                             this.originalQuery = namedQuery.queryValue();
@@ -123,7 +123,7 @@ public class Query
 
                         for (NamedQuery namedQuery : namedQueryes.value())
                         {
-                            if (namedQuery.queryName().equals(query.replace("@", "")))
+                            if (namedQuery.queryName().equals(sqlCommand.replace("@", "")))
                             {
                                 this.query = namedQuery.queryValue();
                                 this.originalQuery = namedQuery.queryValue();
@@ -137,8 +137,8 @@ public class Query
 
             if (!isNamedQuery)
             {
-                this.query = query;
-                this.originalQuery = query;
+                this.query = sqlCommand;
+                this.originalQuery = sqlCommand;
             }
 
             if (iSession.isEnabledSLContext())
@@ -150,6 +150,8 @@ public class Query
                     {
                         if (cq.getResultKeys().length > 0)
                         {
+                            if (!this.query.toLowerCase().contains("where"))
+                                this.query += " where ";
                             if (this.query.toLowerCase().contains("where"))
                             {
                                 String beforeWhere = this.query.substring(0, this.query.toLowerCase().indexOf("where"));
@@ -157,13 +159,19 @@ public class Query
 
                                 String inClause = getNotInForExistingKeysInCachedQuery(cq);
                                 if (!inClause.isEmpty())
-                                    this.query = beforeWhere + inClause + afterWhere;
+                                    sqlCommand = beforeWhere + inClause + afterWhere;
                             }
                         }
                     }
                 }
             }
+            
+            if (sqlCommand.endsWith("and "))
+                sqlCommand = sqlCommand.substring(0, sqlCommand.lastIndexOf("and"));
+            if (sqlCommand.endsWith("or "))
+                sqlCommand = sqlCommand.substring(0, sqlCommand.lastIndexOf("or"));
 
+            this.query = sqlCommand;
             this.preparedStatement = isession.getActiveConnection().prepareStatement(this.query);
         }
         catch (Exception ex)
@@ -273,17 +281,13 @@ public class Query
             if (tmpQuery.startsWith("select") || tmpQuery.startsWith("desc") || tmpQuery.startsWith("show"))
             {
                 if (this.getResult_type() == null)
-                {
                     throw new Exception("Persistor: error on pre-execute query at: RESULT_TYPE cannot be null !");
-                }
+
                 executeSelect(cls, this.getResult_type());
             }
 
             if (tmpQuery.startsWith("update") || tmpQuery.startsWith("delete") || tmpQuery.startsWith("insert") || tmpQuery.startsWith("truncate"))
-            {
                 executeInsertOrUpdate(cls);
-            }
-
         }
         catch (Exception ex)
         {
@@ -485,9 +489,8 @@ public class Query
                             resultKeys[i] = Integer.parseInt(helper.getPrimaryKeyValue());
                             iSession.getSLPersistenceContext().addToContext(objResult);
                         }
-                        
-                        if (resList.size() > iSession.getSLPersistenceContext().listByClassType(baseEntity.getClass()).size())
-                            iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
+
+                        iSession.getSLPersistenceContext().addCachedQuery(this.originalQuery, resultKeys);
                     }
                 }
             }
