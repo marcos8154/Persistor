@@ -21,7 +21,8 @@ import java.io.Serializable;
  * @author Marcos VinÃ­cius
  */
 @Deprecated
-@NamedQuery(queryName = "busca", queryValue = "select * from produtos where descricao like '%%'")
+@NamedQuery(queryName = "busca", 
+        queryValue = "select * from produtos where descricao like '%%'")
 public class Produtos extends Entity implements Serializable
 {
 
@@ -37,7 +38,7 @@ public class Produtos extends Entity implements Serializable
     private Estoque estoque;
     private Marcas marcas;
 
-    @OneToMany(source = "id", target = "produto_id", join_type = JOIN_TYPE.INNER, load = LOAD.MANUAL)
+    @OneToMany(source = "id", target = "produto_id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
     public Estoque getEstoque()
     {
         if (estoque == null)
@@ -50,7 +51,7 @@ public class Produtos extends Entity implements Serializable
         this.estoque = estoque;
     }
 
-    @OneToOne(source = "marca_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.MANUAL)
+    @OneToOne(source = "marca_id", target = "id", join_type = JOIN_TYPE.INNER, load = LOAD.AUTO)
     public Marcas getMarcas()
     {
         if (marcas == null)

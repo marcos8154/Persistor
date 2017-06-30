@@ -46,7 +46,6 @@ public class SessionImpl implements Session
     private IPersistenceLogger logger = null;
 
     private boolean enabledContext = true;
-    //  private boolean showSql = true;
     private boolean isRollbacked = false;
 
     private boolean isVersionViolation = false;
@@ -1212,7 +1211,6 @@ public class SessionImpl implements Session
 
                             Method invokeMethod = entity.getClass().getMethod(fieldName, InputStream.class);
                             invokeMethod.invoke(entity, is);
-                            continue;
                         }
                     }
                 }
@@ -1266,6 +1264,52 @@ public class SessionImpl implements Session
         return false;
     }
 
+    private void resolveJoinOneToOneCase(Method method,
+            List<JoinableObject> objectsToJoin, Join join, Class cls) throws Exception
+    {
+        Class clss = Class.forName(method.getReturnType().getName());
+        java.lang.reflect.Constructor ctor = clss.getConstructor();
+        Object entityObj = ctor.newInstance();
+        OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
+
+        if (oneToOne.load() == LOAD.MANUAL)
+            return;
+
+        if (oneToOne.ignore_onID().length > 0)
+            for (String fieldToIgnore : oneToOne.ignore_onID())
+                join.addIgnorableField(fieldToIgnore);
+
+        String sourceName = cls.getSimpleName() + "." + oneToOne.source();
+        String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
+        join.addJoin(oneToOne.join_type(), entityObj, sourceName + " = " + targetName);
+        JoinableObject objToJoin = new JoinableObject();
+        objToJoin.result_type = RESULT_TYPE.UNIQUE;
+        objToJoin.objectToJoin = entityObj;
+        objToJoin.joinGetMethod = method.getName().substring(3, method.getName().length());
+        objectsToJoin.add(objToJoin);
+    }
+
+    private void resolveJoinOneToManyCase(Method method,
+            List<JoinableObject> objectsToJoin, Join join, Class cls) throws Exception
+    {
+        Class clss = Class.forName(method.getReturnType().getName());
+        java.lang.reflect.Constructor ctor = clss.getConstructor();
+        Object entityObj = ctor.newInstance();
+        OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
+
+        if (oneToMany.load() == LOAD.MANUAL)
+            return;
+
+        String sourceName = cls.getSimpleName() + "." + oneToMany.source();
+        String targetName = entityObj.getClass().getSimpleName() + "." + oneToMany.target();
+        join.addJoin(oneToMany.join_type(), entityObj, sourceName + " = " + targetName);
+        JoinableObject objToJoin = new JoinableObject();
+        objToJoin.result_type = RESULT_TYPE.MULTIPLE;
+        objToJoin.objectToJoin = entityObj;
+        objToJoin.joinGetMethod = method.getName().substring(3, method.getName().length());
+        objectsToJoin.add(objToJoin);
+    }
+
     private <T> T executeJoin(T entity, int id) throws Exception
     {
         try
@@ -1275,62 +1319,13 @@ public class SessionImpl implements Session
             join.setRestartEntityInstance(true);
             List<JoinableObject> objectsToJoin = new ArrayList<>();
 
-            if (context.initialized)
-            {
-                if (!context.isEntitySet(entity))
-                {
-                    Exception ex = new Exception("Attach entity type '" + cls.getName() + "' failed bacause it was not found an EntitySet<> representation in Context");
-                    logger.newNofication(new PersistenceLog(this.getClass().getName(), "void save(Object entity)", Util.getDateTime(), Util.getFullStackTrace(ex), ""));
-                    rollback();
-                    return null;
-                }
-            }
-
             for (Method method : cls.getMethods())
             {
                 if (method.isAnnotationPresent(OneToOne.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-                    Object entityObj = ctor.newInstance();
-                    OneToOne oneToOne = (OneToOne) method.getAnnotation(OneToOne.class);
-
-                    if (oneToOne.load() == LOAD.MANUAL)
-                        continue;
-
-                    if (oneToOne.ignore_onID().length > 0)
-                        for (String fieldToIgnore : oneToOne.ignore_onID())
-                            join.addIgnorableField(fieldToIgnore);
-
-                    String sourceName = cls.getSimpleName() + "." + oneToOne.source();
-                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToOne.target();
-                    join.addJoin(oneToOne.join_type(), entityObj, sourceName + " = " + targetName);
-                    JoinableObject objToJoin = new JoinableObject();
-                    objToJoin.result_type = RESULT_TYPE.UNIQUE;
-                    objToJoin.objectToJoin = entityObj;
-                    objToJoin.joinGetMethod = method.getName().substring(3, method.getName().length());
-                    objectsToJoin.add(objToJoin);
-                }
+                    resolveJoinOneToOneCase(method, objectsToJoin, join, cls);
 
                 if (method.isAnnotationPresent(OneToMany.class))
-                {
-                    Class clss = Class.forName(method.getReturnType().getName());
-                    java.lang.reflect.Constructor ctor = clss.getConstructor();
-                    Object entityObj = ctor.newInstance();
-                    OneToMany oneToMany = (OneToMany) method.getAnnotation(OneToMany.class);
-
-                    if (oneToMany.load() == LOAD.MANUAL)
-                        continue;
-
-                    String sourceName = cls.getSimpleName() + "." + oneToMany.source();
-                    String targetName = entityObj.getClass().getSimpleName() + "." + oneToMany.target();
-                    join.addJoin(oneToMany.join_type(), entityObj, sourceName + " = " + targetName);
-                    JoinableObject objToJoin = new JoinableObject();
-                    objToJoin.result_type = RESULT_TYPE.MULTIPLE;
-                    objToJoin.objectToJoin = entityObj;
-                    objToJoin.joinGetMethod = method.getName().substring(3, method.getName().length());
-                    objectsToJoin.add(objToJoin);
-                }
+                    resolveJoinOneToManyCase(method, objectsToJoin, join, cls);
             }
 
             if (join.joinCount > 0)
@@ -1341,45 +1336,20 @@ public class SessionImpl implements Session
                 join.execute(this);
 
                 entity = join.getEntity(entity.getClass());
-                if (join.hasAllLoaded)
-                {
-                    if (entity != null)
-                    {
-                        context.addToContext(entity);
-
-                        if (isEnabledSLContext())
-                            this.slContext.addToContext(entity);
-                    }
-                    return entity;
-                }
 
                 if (entity == null)
                     return entity;
 
+                addJoinResultToContexts(join, entity);
                 for (JoinableObject joinableObject : objectsToJoin)
                 {
                     if (joinableObject.result_type == RESULT_TYPE.UNIQUE)
-                    {
-                        joinableObject.objectToJoin = join.getEntity(joinableObject.objectToJoin.getClass());
-
-                        Method method = entity.getClass().getMethod("set" + joinableObject.joinGetMethod, joinableObject.objectToJoin.getClass());
-                        method.invoke(entity, joinableObject.objectToJoin);
-                    }
+                        publishJoinResultUnique(joinableObject, entity, join);
 
                     if (joinableObject.result_type == RESULT_TYPE.MULTIPLE)
-                    {
-                        Class clss = joinableObject.objectToJoin.getClass();
-                        Field f = clss.getField("ResultList");
-                        f.set(joinableObject.objectToJoin, join.getList(joinableObject.objectToJoin));
-                        Method method = entity.getClass().getMethod("set" + joinableObject.joinGetMethod, joinableObject.objectToJoin.getClass());
-                        method.invoke(entity, joinableObject.objectToJoin);
-                    }
+                        publishJoinResultMultiple(joinableObject, entity, join);
                 }
             }
-            this.context.addToContext(entity);
-
-            if (isEnabledSLContext())
-                this.slContext.addToContext(entity);
         }
         catch (Exception ex)
         {
@@ -1394,6 +1364,33 @@ public class SessionImpl implements Session
         }
 
         return entity;
+    }
+
+    private void addJoinResultToContexts(Join join, Object entity) throws Exception
+    {
+        context.addToContext(entity);
+
+        if (isEnabledSLContext())
+            this.slContext.addToContext(entity);
+    }
+
+    private void publishJoinResultMultiple(JoinableObject joinableObject,
+            Object entity, Join join) throws Exception
+    {
+        Class clss = joinableObject.objectToJoin.getClass();
+        Field f = clss.getField("ResultList");
+        f.set(joinableObject.objectToJoin, join.getList(joinableObject.objectToJoin));
+        Method method = entity.getClass().getMethod("set" + joinableObject.joinGetMethod, joinableObject.objectToJoin.getClass());
+        method.invoke(entity, joinableObject.objectToJoin);
+    }
+
+    private void publishJoinResultUnique(JoinableObject joinableObject,
+            Object entity, Join join) throws Exception
+    {
+        joinableObject.objectToJoin = join.getEntity(joinableObject.objectToJoin.getClass());
+
+        Method method = entity.getClass().getMethod("set" + joinableObject.joinGetMethod, joinableObject.objectToJoin.getClass());
+        method.invoke(entity, joinableObject.objectToJoin);
     }
 
     private int maxId(Object entity, String where) throws Exception
@@ -1412,7 +1409,7 @@ public class SessionImpl implements Session
             sqlBase = "SELECT MAX(" + primaryKeyName + ") " + primaryKeyName + " FROM " + className;
 
             if (!where.isEmpty())
-                sqlBase += " where " + where;
+                sqlBase += " WHERE " + where;
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sqlBase);
