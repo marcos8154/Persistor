@@ -70,7 +70,7 @@ public class DataSource
         return connection;
     }
 
-    public void reset()
+    public void reset() throws Exception
     {
         DataSources.clear();
     }

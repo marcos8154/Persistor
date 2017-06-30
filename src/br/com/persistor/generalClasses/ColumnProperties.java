@@ -17,14 +17,60 @@ public class ColumnProperties
     private int length;
     private int decimalDigits;
     private Object defaultValue;
+    private String columnType;
 
-    public ColumnProperties(String columnName, boolean nullable, int length, int decimalDigits, Object defaultValue)
+    public ColumnProperties(String columnName,
+            boolean nullable, int length, int decimalDigits, Object defaultValue)
     {
         this.columnName = columnName;
         this.nullable = nullable;
         this.length = length;
         this.decimalDigits = decimalDigits;
         this.defaultValue = defaultValue;
+    }
+
+    public static ColumnProperties get(String columnName,
+            String columnType, boolean nullable, int length, int decimalDigits,
+            Object defaultValue)
+    {
+        ColumnProperties cp = new ColumnProperties(columnName, nullable,
+                length, decimalDigits, defaultValue);
+        cp.setColumnType(columnType);
+        return cp;
+    }
+
+    public String getColumnDescription()
+    {
+        String result = columnName + " " + columnType;
+
+        if (length > 0)
+        {
+            if (length > 0 && decimalDigits > 0)
+                result += " (" + length + ", " + decimalDigits + ") ";
+            else
+                result += " (" + length + ") ";
+        }
+
+        if (!nullable)
+            result += " not null ";
+
+        if (defaultValue != null)
+            if (defaultValue.toString().isEmpty())
+                result += "default ''";
+            else
+                result += "default " + defaultValue;
+
+        return result;
+    }
+
+    public String getColumnType()
+    {
+        return columnType;
+    }
+
+    public void setColumnType(String columnType)
+    {
+        this.columnType = columnType;
     }
 
     public int getDecimalDigits()

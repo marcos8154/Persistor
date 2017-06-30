@@ -15,33 +15,36 @@ import java.util.List;
  */
 public class DataSources
 {
+
     private static List<DataSource> dataSources = new ArrayList<>();
-    
+
     public static void add(DataSource dataSource)
     {
         dataSources.add(dataSource);
     }
-    
+
     public static int count()
     {
         return dataSources.size();
     }
-    
-    public static void clear()
+
+    public static void clear() throws Exception
     {
+        for (DataSource ds : dataSources)
+            ds.getConnection().close();
         dataSources.clear();
     }
-    
+
     public static DataSource getDataSource(DBConfig config)
     {
-        for(DataSource ds : dataSources)
+        for (DataSource ds : dataSources)
         {
-            if(ds.config.getDb_type() == config.getDb_type())
+            if (ds.config.getDb_type() == config.getDb_type())
             {
                 return ds;
             }
         }
-        
+
         return null;
     }
 }

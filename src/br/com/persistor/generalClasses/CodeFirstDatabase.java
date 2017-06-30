@@ -35,12 +35,17 @@ public class CodeFirstDatabase
     private Session session = null;
     private SessionFactory sf = null;
     private String sqlToRunAfterCreation = null;
-    
+
     public void setSqlToRun(String sql)
     {
         this.sqlToRunAfterCreation = sql;
     }
-    
+
+    public void setSession(Session session)
+    {
+        this.session = session;
+    }
+
     private void buildConnection() throws Exception
     {
         if (sf == null)
@@ -100,7 +105,10 @@ public class CodeFirstDatabase
         {
             if (this.enabledDatabaseVerification)
                 checkDatabase();
-            buildConnection();
+
+            if (this.session != null)
+                buildConnection();
+            
             for (CodeFirstTableDomain domain : tables)
             {
                 Class cls = domain.getDomainClass();
@@ -117,7 +125,9 @@ public class CodeFirstDatabase
                     String columnName = convertMethodToColumnName(method);
                     ColumnProperties properties = domain.getPropertiesForColumn(columnName);
 
-                    sqlScript += "\n" + columnName + getColumnProperties(config, domain.getDomainClass(), properties, method.getReturnType()) + ",";
+                    sqlScript += "\n" + columnName + getColumnProperties(config,
+                            domain.getDomainClass(), properties,
+                            method.getReturnType()) + ",";
                 }
 
                 SQLHelper helper = new SQLHelper();
@@ -141,9 +151,9 @@ public class CodeFirstDatabase
                 runSql(sqlScript);
             }
 
-            if(sqlToRunAfterCreation != null)
+            if (sqlToRunAfterCreation != null)
                 runSql(sqlToRunAfterCreation);
-            
+
             session.commit();
             session.close();
         }
@@ -162,7 +172,9 @@ public class CodeFirstDatabase
         ps.execute();
     }
 
-    private String getColumnProperties(DBConfig config, Class entityClass, ColumnProperties properties, Class classType)
+    private String getColumnProperties(DBConfig config,
+            Class entityClass, ColumnProperties properties,
+            Class classType)
     {
         SQLHelper helper = new SQLHelper();
         ColumnKey key = helper.getKey(entityClass);
@@ -177,11 +189,11 @@ public class CodeFirstDatabase
                     result = " int ";
                     if (properties != null)
                     {
-                        if(!properties.isNullable())
+                        if (!properties.isNullable())
                             result += " not null";
-                        if(properties.getDefaultValue() != null)
+                        if (properties.getDefaultValue() != null)
                             result += " default " + properties.getDefaultValue();
-                        
+
                         if (key != null)
                             if (key.getColumnName().equals(properties.getColumnName()))
                                 result += ((key.getKey().increment() == INCREMENT.AUTO ? " auto_increment" : ""));

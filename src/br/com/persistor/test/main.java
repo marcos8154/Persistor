@@ -1,7 +1,10 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.generalClasses.ColumnProperties;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.MigrationsController;
+import br.com.persistor.interfaces.DbMigration;
 import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
 
@@ -10,14 +13,18 @@ public class main
 
     public static void main(String[] args)
     {
-        Session session = getSession();
-        Produtos produto = session.onID(Produtos.class, 1);
-        produto = session.onID(Produtos.class, 1);
-        session.close();
-        session = getSession();
-        produto = session.onID(Produtos.class, 1);
-        produto = session.onID(Produtos.class, 1);
-        System.out.println(produto.getDescricao());
+        try
+        {
+            MigrationsController mc = new MigrationsController(getConfig());
+            mc.addMigration(Versao1.class);
+            mc.addMigration(Versao2.class);
+            mc.addMigration(Versao3.class);
+            mc.migrateForVersion(2);
+        }
+        catch (Exception ex)
+        {
+            System.err.println(ex.getMessage());
+        }
     }
 
     private static SessionFactory sf = null;
@@ -52,7 +59,7 @@ public class main
     {
         DBConfig config = new DBConfig();
         config.setPersistenceLogger(LogTest.class);
-       // config.setPersistenceContext(Context.class);
+        // config.setPersistenceContext(Context.class);
         // config.setSlPersistenceContext(Context.class);
         config.setDb_type(DB_TYPE.MySQL);
         config.setHost("localhost");

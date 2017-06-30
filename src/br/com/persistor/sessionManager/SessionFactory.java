@@ -42,7 +42,7 @@ public class SessionFactory
         return persistenceContext;
     }
 
-    public void reset()
+    public void reset() throws Exception
     {
         mainDataSource.reset();
         mainDataSource = null;
