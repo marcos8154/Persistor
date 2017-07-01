@@ -557,18 +557,38 @@ public class SQLHelper
         return result;
     }
 
-    public ColumnKey getKey(Class clazz)
+    public List<ColumnKey> getKeys(Class clazz)
     {
-        ColumnKey result = null;
+        List<ColumnKey> result = new ArrayList<>();
         try
         {
             for (Method method : clazz.getMethods())
                 if (method.isAnnotationPresent(PrimaryKey.class))
-                    result = new ColumnKey(method.getName().replace("get", "").toLowerCase(), (PrimaryKey) method.getAnnotation(PrimaryKey.class));
+                    result.add(new ColumnKey(method.getName().replace("get", "").toLowerCase(), (PrimaryKey) method.getAnnotation(PrimaryKey.class)));
         }
         catch (Exception ex)
         {
         }
         return result;
     }
+
+    public ColumnKey getKey(Class clazz)
+    {
+        List<ColumnKey> result = new ArrayList<>();
+        try
+        {
+            for (Method method : clazz.getMethods())
+                if (method.isAnnotationPresent(PrimaryKey.class))
+                {
+                    PrimaryKey pk = (PrimaryKey) method.getAnnotation(PrimaryKey.class);
+                    if (pk.primarykey_type() == PRIMARYKEY_TYPE.HEAD)
+                        return new ColumnKey(method.getName().replace("get", "").toLowerCase(), (PrimaryKey) method.getAnnotation(PrimaryKey.class));
+                }
+        }
+        catch (Exception ex)
+        {
+        }
+        return null;
+    }
+
 }

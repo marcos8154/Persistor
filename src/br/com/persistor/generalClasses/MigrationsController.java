@@ -115,6 +115,8 @@ public class MigrationsController
         for (int i = 0; i < migrations.size(); i++)
         {
             DbMigration migration = migrations.get(i);
+            migration.setDbConfig(config);
+
             int migVersion = migration.getVesion();
 
             if (migVersion <= dbVersion)
@@ -136,6 +138,8 @@ public class MigrationsController
         for (int i = (migrations.size() - 1); i >= 0; i--)
         {
             DbMigration migration = migrations.get(i);
+            migration.setDbConfig(config);
+
             int migVersion = migration.getVesion();
 
             if (migVersion > version && migVersion > dbVersion)
@@ -160,7 +164,7 @@ public class MigrationsController
             if (!historyTableExists())
                 createHistoryTable();
             int currentVersion = getCurrentVersion();
-            
+
             executeMigrationSql("set autocommit=0");
             if (version > currentVersion)
                 upgrade(version, currentVersion);

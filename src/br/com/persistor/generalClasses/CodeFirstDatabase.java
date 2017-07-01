@@ -106,9 +106,9 @@ public class CodeFirstDatabase
             if (this.enabledDatabaseVerification)
                 checkDatabase();
 
-            if (this.session != null)
+            if (this.session == null)
                 buildConnection();
-            
+
             for (CodeFirstTableDomain domain : tables)
             {
                 Class cls = domain.getDomainClass();
@@ -131,11 +131,20 @@ public class CodeFirstDatabase
                 }
 
                 SQLHelper helper = new SQLHelper();
-                ColumnKey key = helper.getKey(cls);
+                List<ColumnKey> keys = helper.getKeys(cls);
                 List<Relashionship> foreigKeys = helper.ListForeignKeys(cls);
 
-                if (key != null)
-                    sqlScript += "primary key(" + key.getColumnName() + "),";
+                String keysDescription = "";
+                for (ColumnKey key : keys)
+                    keysDescription += key.getColumnName() + ", ";
+
+                if (keys.size() > 0)
+                {
+                    if (keysDescription.endsWith(", "))
+                        keysDescription = keysDescription.substring(0, keysDescription.lastIndexOf(", "));
+                    
+                    sqlScript += "primary key(" + keysDescription + "),";
+                }
 
                 for (Relashionship relashionship : foreigKeys)
                     if (relashionship.getOneToOne().join_type() != JOIN_TYPE.LEFT)
