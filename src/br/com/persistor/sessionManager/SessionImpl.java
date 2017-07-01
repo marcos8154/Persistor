@@ -23,7 +23,9 @@ import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LOAD;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
+import br.com.persistor.generalClasses.ColumnKey;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.EntityKey;
 import br.com.persistor.generalClasses.JoinableObject;
 import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.generalClasses.Util;
@@ -464,6 +466,81 @@ public class SessionImpl implements Session
     }
 
     @Override
+    public <T> T onID(Class entityCls, EntityKey... keys)
+    {
+        SQLHelper sqlHelper = new SQLHelper();
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
+        Object entity = null;
+        try
+        {
+            if (!extendsEntity(entityCls))
+                Util.throwNotEntityException(this, entityCls, getClass(), logger);
+
+            entity = entityCls.newInstance();
+            ColumnKey cKey = sqlHelper.getKey(entityCls);
+            int id = 0;
+            for (EntityKey key : keys)
+            {
+                Field keyField = null;
+                try
+                {
+                    keyField = entity.getClass().getDeclaredField(key.getKeyField());
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Persistor: field '" + key.getKeyField() + "' not exists in entity '" + entityCls.getName() + "'");
+                }
+
+                keyField.setAccessible(true);
+                keyField.set(entity, key.getKeyValue());
+
+                if (keyField.getName().equals(cKey.getColumnName()))
+                    id = key.getKeyValue();
+            }
+
+            sqlHelper.prepareBasicSelect(entity, id);
+
+            if (hasJoinableObjects(entity))
+                return joinExecutionResult(entityCls, entity, id);
+
+            String sqlBase = sqlHelper.getSqlBase();
+            Field field = entityCls.getField("mountedQuery");
+            field.set(entity, sqlBase);
+
+            ps = connection.prepareStatement(sqlBase);
+            resultSet = ps.executeQuery();
+            if (loadEntity(entity, resultSet))
+            {
+                System.out.println("Persistor: \n " + sqlBase);
+
+                context.addToContext(entity);
+                if (isEnabledSLContext())
+                    this.slContext.addToContext(entity);
+            }
+            enabledContext = true;
+        }
+        catch (Exception ex)
+        {
+            logger.newNofication(
+                    new PersistenceLog(this.getClass().getName(),
+                            "<T> T onID(Class entityCls, int id)",
+                            Util.getDateTime(),
+                            Util.getFullStackTrace(ex),
+                            sqlHelper.getSqlBase()));
+        }
+        finally
+        {
+            if (resultSet != null)
+                Util.closeResultSet(resultSet);
+            if (ps != null)
+                Util.closeStatement(ps);
+        }
+
+        return (T) entity;
+    }
+
+    @Override
     public void commit()
     {
         try
@@ -547,7 +624,10 @@ public class SessionImpl implements Session
 
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
-
+            String auxiliarKeyName = sql_helper.getAuxiliarPK_name(cls);
+            if(auxiliarKeyName != null)
+              throw new Exception("Persistor: The method first(Class cls, String ... whereCondition) can not be executed on entities that have composite primary keys.");
+                
             String className = cls.getSimpleName().toLowerCase();
             sqlBase = "SELECT MIN(" + primaryKeyName + ") FROM " + className;
 
@@ -608,7 +688,11 @@ public class SessionImpl implements Session
 
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
+            String auxiliarKeyName = sql_helper.getAuxiliarPK_name(cls);
+            if(auxiliarKeyName != null)
+              throw new Exception("Persistor: The method last(Class cls, String ... whereCondition) can not be executed on entities that have composite primary keys.");
 
+            
             String className = cls.getSimpleName().toLowerCase();
             sqlBase = "SELECT MAX(" + primaryKeyName + ") FROM " + className;
 
@@ -1330,9 +1414,16 @@ public class SessionImpl implements Session
 
             if (join.joinCount > 0)
             {
+                String table = cls.getSimpleName().toLowerCase();
                 SQLHelper helper = new SQLHelper();
-                String pkName = helper.getPrimaryKeyFieldName(entity);
-                join.addFinalCondition("WHERE " + cls.getSimpleName().toLowerCase() + "." + pkName + " = " + id);
+                List<EntityKey> keys = helper.getEntityKeys(entity);
+                String where = "";
+
+                for (EntityKey key : keys)
+                    where += table + "." + key.getKeyField() + " = " + key.getKeyValue() + " and ";
+                where = "where " + where.substring(0, where.lastIndexOf("and "));
+
+                join.addFinalCondition(where);
                 join.execute(this);
 
                 entity = join.getEntity(entity.getClass());

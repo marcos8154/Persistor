@@ -14,6 +14,7 @@ import br.com.persistor.annotations.PrimaryKey;
 import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LIMIT_TYPE;
+import br.com.persistor.generalClasses.EntityKey;
 import br.com.persistor.generalClasses.FieldIndex;
 import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.PersistenceLog;
@@ -29,7 +30,7 @@ public class Join implements IJoin
     public String mountedQuery = "";
     public int joinCount = 0;
     public boolean hasAllLoaded = false;
- 
+
     private boolean autoCloseAfterExecute = false;
     private boolean isCriteriaOwnerInstance = false;
     private boolean restartEntityInstance;
@@ -109,6 +110,229 @@ public class Join implements IJoin
         return false;
     }
 
+    private String resolveLimit(String fieldsSelect)
+    {
+        String baseQ = "";
+        switch (mainSession.getConfig().getDb_type())
+        {
+            case FirebirdSQL:
+
+                if (limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    baseQ = "SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+                }
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    baseQ = "SELECT FIRST \n " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+                }
+
+                mountedQuery = (baseQ + "\n").toLowerCase();
+                mountedQuery += final_condition;
+
+                break;
+
+            case SQLServer:
+
+                if (limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    baseQ = "SELECT \n " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                    mountedQuery = (baseQ + "\n").toLowerCase();
+                    mountedQuery += final_condition;
+
+                    mountedQuery += " ORDER BY " + limit.getFieldToOrder() + " OFFSET " + limit.getPagePosition()
+                            + " ROWS FETCH NEXT " + limit.getPageSize() + " ROWS ONLY";
+                }
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    baseQ = "SELECT TOP \n " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                    mountedQuery = (baseQ + "\n").toLowerCase();
+                    mountedQuery += final_condition;
+                }
+
+                break;
+
+            case PostgreSQL:
+
+                if (limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    baseQ = "SELECT \n " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\n FROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                    mountedQuery = (baseQ + "\n").toLowerCase();
+                    mountedQuery += final_condition;
+                    mountedQuery += " LIMIT " + limit.getPageSize() + " OFFSET " + limit.getPagePosition();
+                }
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    baseQ = "SELECT \n " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                    mountedQuery = (baseQ + "\n").toLowerCase();
+                    mountedQuery += final_condition;
+                    mountedQuery += " LIMIT " + limit.getPageSize();
+                }
+
+                break;
+
+            case MySQL:
+
+                if (limit.limit_type == LIMIT_TYPE.paginate)
+                {
+                    baseQ = "SELECT \n " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                    mountedQuery = (baseQ + "\n").toLowerCase();
+                    mountedQuery += final_condition;
+                    mountedQuery += " LIMIT " + limit.getPagePosition() + ", " + limit.getPageSize();
+                }
+
+                if (limit.limit_type == LIMIT_TYPE.simple)
+                {
+                    baseQ = "SELECT \n " + fieldsSelect;
+                    baseQ = baseQ.substring(0, baseQ.length() - 2);
+                    baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+                    mountedQuery = (baseQ + "\n").toLowerCase();
+                    mountedQuery += final_condition;
+                    mountedQuery += " LIMIT " + limit.getPageSize();
+                }
+
+                break;
+        }
+
+        return baseQ;
+    }
+
+    private String finalizeQuery(String fieldsSelect)
+    {
+        String baseQ = "";
+        baseQ = "SELECT \n " + fieldsSelect;
+        baseQ = baseQ.substring(0, baseQ.length() - 2);
+        baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
+
+        mountedQuery = (baseQ + "\n").toLowerCase();
+        mountedQuery += final_condition;
+        
+        return baseQ;
+    }
+
+    private String resolveFieldsQuery() throws Exception
+    {
+        String fieldsSelect = "";
+        int index = 1;
+        FieldIndex field_index;
+
+        for (Object obj : objects)
+        {
+            Class cls = obj.getClass();
+            String tableName = cls.getSimpleName().toLowerCase();
+
+            SQLHelper helper = new SQLHelper();
+            String[] fields = helper.getFields(obj).split(",");
+
+            List<EntityKey> keys = helper.getEntityKeys(obj);
+
+            String primaryKeyName = "";
+            for (EntityKey key : keys)
+                primaryKeyName += tableName + "." + key.getKeyField().toLowerCase() + " " + key.getKeyField().toLowerCase() + "_" + tableName + ", ";
+
+            primaryKeyName = primaryKeyName.substring(0, primaryKeyName.lastIndexOf(", "));
+            fieldsSelect += primaryKeyName + ", \n";
+
+            field_index = new FieldIndex();
+            field_index.field = primaryKeyName;
+            field_index.index = index;
+            fields_index.add(field_index);
+
+            index++;
+
+            for (int i = 0; i < fields.length; i++)
+            {
+                //tableName.field field_tableName -->  field_tableName = query alias
+                String fieldName = tableName + "." + fields[i] + " " + fields[i] + "_" + tableName + ", ";
+                if (i < (fields.length - 1))
+                    fieldName += "\n";
+                if (isIgnorableField(fieldName))
+                    continue;
+
+                fieldsSelect += fieldName;
+
+                field_index = new FieldIndex();
+                field_index.field = fieldName;
+                field_index.index = index;
+                fields_index.add(field_index);
+
+                index++;
+            }
+        }
+
+        return fieldsSelect;
+    }
+
+    private void resolveResultPrimaryKeyCase(Method method, Object otherObj,
+            ResultSet resultSet, String tableName) throws Exception
+    {
+        String mtdName = method.getName().substring(3, method.getName().length());
+        String pkColumnName = (mtdName.toLowerCase() + "_" + tableName);
+
+        if (method.getReturnType() == int.class)
+        {
+            Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), int.class);
+            invokeMethod.invoke(otherObj, resultSet.getInt(pkColumnName));
+        }
+
+        if (method.getReturnType() == long.class)
+        {
+            Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), long.class);
+            invokeMethod.invoke(otherObj, resultSet.getLong(pkColumnName));
+        }
+
+        if (method.getReturnType() == short.class)
+        {
+            Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), short.class);
+            invokeMethod.invoke(otherObj, resultSet.getShort(pkColumnName));
+        }
+
+        if (method.getReturnType() == String.class)
+        {
+            Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), String.class);
+            invokeMethod.invoke(otherObj, resultSet.getString(pkColumnName));
+        }
+    }
+
+    private String[] getColumnAndMethodName(Method method, String tableName) throws Exception
+    {
+        String[] result = new String[2];
+        if (method.getName().startsWith("is"))
+        {
+            result[0] = (method.getName().substring(2, method.getName().length())).toLowerCase() + "_" + tableName;
+            result[1] = "set" + method.getName().substring(2, method.getName().length());
+        }
+        else
+        {
+            result[0] = (method.getName().substring(3, method.getName().length())).toLowerCase() + "_" + tableName;
+            result[1] = "set" + method.getName().substring(3, method.getName().length());
+        }
+
+        return result;
+    }
+
     List<FieldIndex> fields_index = new ArrayList<>();
 
     @Override
@@ -122,164 +346,13 @@ public class Join implements IJoin
         try
         {
             this.mainSession = iSession;
-            String fieldsSelect = "";
-            int index = 1;
+            String fieldsSelect = resolveFieldsQuery();
 
-            FieldIndex field_index;
-
-            for (Object obj : objects)
-            {
-                Class cls = obj.getClass();
-
-                SQLHelper helper = new SQLHelper();
-                String[] fields = helper.getFields(obj).split(",");
-
-                String primaryKeyName = cls.getSimpleName().toLowerCase() + "." + helper.getPrimaryKeyFieldName(obj) + " " + helper.getPrimaryKeyFieldName(obj) + "_" + cls.getSimpleName().toLowerCase();
-                fieldsSelect += primaryKeyName + ", \n";
-
-                field_index = new FieldIndex();
-                field_index.field = primaryKeyName;
-                field_index.index = index;
-                fields_index.add(field_index);
-
-                index++;
-
-                for (int i = 0; i < fields.length; i++)
-                {
-                    String tableName = cls.getSimpleName().toLowerCase();
-
-                    //tableName.field field_tableName -->  field_tableName = query alias
-                    String fieldName = tableName + "." + fields[i] + " " + fields[i] + "_" + tableName + ", ";
-                    if(i < (fields.length - 1))
-                        fieldName += "\n";
-                    if (isIgnorableField(fieldName))
-                        continue;
-
-                    fieldsSelect += fieldName;
-
-                    field_index = new FieldIndex();
-                    field_index.field = fieldName;
-                    field_index.index = index;
-                    fields_index.add(field_index);
-
-                    index++;
-                }
-            }
             String baseQ = "";
             if (this.limit != null)
-            {
-                switch (mainSession.getConfig().getDb_type())
-                {
-                    case FirebirdSQL:
-
-                        if (limit.limit_type == LIMIT_TYPE.paginate)
-                        {
-                            baseQ = "SELECT FIRST " + limit.getPageSize() + " SKIP " + limit.getPagePosition() + " " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-                        }
-
-                        if (limit.limit_type == LIMIT_TYPE.simple)
-                        {
-                            baseQ = "SELECT FIRST \n " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-                        }
-
-                        mountedQuery = (baseQ + "\n").toLowerCase();
-                        mountedQuery += final_condition;
-
-                        break;
-
-                    case SQLServer:
-
-                        if (limit.limit_type == LIMIT_TYPE.paginate)
-                        {
-                            baseQ = "SELECT \n " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-                            mountedQuery = (baseQ + "\n").toLowerCase();
-                            mountedQuery += final_condition;
-
-                            mountedQuery += " ORDER BY " + limit.getFieldToOrder() + " OFFSET " + limit.getPagePosition()
-                                    + " ROWS FETCH NEXT " + limit.getPageSize() + " ROWS ONLY";
-                        }
-
-                        if (limit.limit_type == LIMIT_TYPE.simple)
-                        {
-                            baseQ = "SELECT TOP \n " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-                            mountedQuery = (baseQ + "\n").toLowerCase();
-                            mountedQuery += final_condition;
-                        }
-
-                        break;
-
-                    case PostgreSQL:
-
-                        if (limit.limit_type == LIMIT_TYPE.paginate)
-                        {
-                            baseQ = "SELECT \n " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\n FROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-                            mountedQuery = (baseQ + "\n").toLowerCase();
-                            mountedQuery += final_condition;
-                            mountedQuery += " LIMIT " + limit.getPageSize() + " OFFSET " + limit.getPagePosition();
-                        }
-
-                        if (limit.limit_type == LIMIT_TYPE.simple)
-                        {
-                            baseQ = "SELECT \n " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-                            mountedQuery = (baseQ + "\n").toLowerCase();
-                            mountedQuery += final_condition;
-                            mountedQuery += " LIMIT " + limit.getPageSize();
-                        }
-
-                        break;
-
-                    case MySQL:
-
-                        if (limit.limit_type == LIMIT_TYPE.paginate)
-                        {
-                            baseQ = "SELECT \n " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-                            mountedQuery = (baseQ + "\n").toLowerCase();
-                            mountedQuery += final_condition;
-                            mountedQuery += " LIMIT " + limit.getPagePosition() + ", " + limit.getPageSize();
-                        }
-
-                        if (limit.limit_type == LIMIT_TYPE.simple)
-                        {
-                            baseQ = "SELECT \n " + fieldsSelect;
-                            baseQ = baseQ.substring(0, baseQ.length() - 2);
-                            baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-                            mountedQuery = (baseQ + "\n").toLowerCase();
-                            mountedQuery += final_condition;
-                            mountedQuery += " LIMIT " + limit.getPageSize();
-                        }
-
-                        break;
-                }
-            }
+                baseQ = resolveLimit(fieldsSelect);
             else
-            {
-                baseQ = "SELECT \n " + fieldsSelect;
-                baseQ = baseQ.substring(0, baseQ.length() - 2);
-                baseQ += "\nFROM \n " + primaryObj.getClass().getSimpleName().toLowerCase() + "\n" + mountedQuery.trim();
-
-                mountedQuery = (baseQ + "\n").toLowerCase();
-                mountedQuery += final_condition;
-            }
+                baseQ = finalizeQuery(fieldsSelect);
 
             connection = iSession.getActiveConnection();
             statement = connection.createStatement();
@@ -309,52 +382,11 @@ public class Join implements IJoin
                                 continue;
 
                             if (method.isAnnotationPresent(PrimaryKey.class))
-                            {
-                                String mtdName = method.getName().substring(3, method.getName().length());
-                                String pkColumnName = (mtdName.toLowerCase() + "_" + tableName);
+                                resolveResultPrimaryKeyCase(method, otherObj, resultSet, tableName);
 
-                                if (method.getReturnType() == int.class)
-                                {
-                                    Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), int.class);
-                                    invokeMethod.invoke(otherObj, resultSet.getInt(pkColumnName));
-                                    continue;
-                                }
-
-                                if (method.getReturnType() == long.class)
-                                {
-                                    Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), long.class);
-                                    invokeMethod.invoke(otherObj, resultSet.getLong(pkColumnName));
-                                    continue;
-                                }
-
-                                if (method.getReturnType() == short.class)
-                                {
-                                    Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), short.class);
-                                    invokeMethod.invoke(otherObj, resultSet.getShort(pkColumnName));
-                                    continue;
-                                }
-
-                                if (method.getReturnType() == String.class)
-                                {
-                                    Method invokeMethod = otherObj.getClass().getMethod(("set" + mtdName), String.class);
-                                    invokeMethod.invoke(otherObj, resultSet.getString(pkColumnName));
-                                    continue;
-                                }
-                            }
-
-                            String columnName;
-                            String methodSetName;
-
-                            if (method.getName().startsWith("is"))
-                            {
-                                columnName = (method.getName().substring(2, method.getName().length())).toLowerCase() + "_" + tableName;
-                                methodSetName = "set" + method.getName().substring(2, method.getName().length());
-                            }
-                            else
-                            {
-                                columnName = (method.getName().substring(3, method.getName().length())).toLowerCase() + "_" + tableName;
-                                methodSetName = "set" + method.getName().substring(3, method.getName().length());
-                            }
+                            String[] columnMethodName = getColumnAndMethodName(method, tableName);
+                            String columnName = columnMethodName[0];
+                            String methodSetName = columnMethodName[1];
 
                             if (isIgnorableField(columnName))
                                 continue;
@@ -451,7 +483,6 @@ public class Join implements IJoin
                                     is = resultSet.getBinaryStream(columnName);
                                 Method invokeMethod = obj.getClass().getMethod(methodSetName, InputStream.class);
                                 invokeMethod.invoke(otherObj, is);
-                                continue;
                             }
                         }
                     }

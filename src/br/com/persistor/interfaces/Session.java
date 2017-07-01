@@ -3,6 +3,7 @@ package br.com.persistor.interfaces;
 import br.com.persistor.enums.ISOLATION_LEVEL;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.DBConfig;
+import br.com.persistor.generalClasses.EntityKey;
 import br.com.persistor.sessionManager.Criteria;
 import br.com.persistor.sessionManager.PersistenceContext;
 import br.com.persistor.sessionManager.Query;
@@ -122,6 +123,8 @@ public interface Session
      */
     <T> T onID(Class entityCls, int id);
 
+    <T> T onID(Class entityCls, EntityKey... keys);
+    
     /**
      * Retorna o último registro da entidade no banco de dados. Exemplo: Cliente
      * c = session.last(Cliente.class);

@@ -13,6 +13,7 @@ import br.com.persistor.annotations.Version;
 import br.com.persistor.enums.INCREMENT;
 import br.com.persistor.enums.PRIMARYKEY_TYPE;
 import br.com.persistor.generalClasses.ColumnKey;
+import br.com.persistor.generalClasses.EntityKey;
 import br.com.persistor.generalClasses.Relashionship;
 import java.util.ArrayList;
 import java.util.List;
@@ -426,7 +427,6 @@ public class SQLHelper
         try
         {
             return cls.getMethod(name).invoke(obj);
-
         }
         catch (Exception ex)
         {
@@ -589,6 +589,23 @@ public class SQLHelper
         {
         }
         return null;
+    }
+
+    List<EntityKey> getEntityKeys(Object entity) throws Exception
+    {
+        List<EntityKey> result = new ArrayList<>();
+        for (Method method : entity.getClass().getMethods())
+        {
+            if (method.isAnnotationPresent(PrimaryKey.class))
+            {
+                String name = method.getName().substring(3, method.getName().length());
+                int value = Integer.parseInt(method.invoke(entity).toString());
+                
+                result.add(EntityKey.set(name, value));
+            }
+                
+        }
+        return result;
     }
 
 }
