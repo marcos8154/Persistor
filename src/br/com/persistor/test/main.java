@@ -20,15 +20,11 @@ public class main
     {
         try
         {
-            Marcas marca =  new Marcas();
-            Produtos produto = new Produtos();
-            Session session = getSession();
-            session.createCriteria(marca, RESULT_TYPE.UNIQUE)
-                    .add(JOIN_TYPE.INNER, produto, "marcas.id = produtos.marca_id")
-                    .add(Restrictions.eq(FILTER_TYPE.WHERE, "marcas.id", 1))
-                    .execute();
-            
-            System.out.println(marca);
+           MigrationsController mc = new MigrationsController(getConfig());
+           mc.addMigration(Versao1.class);
+           mc.addMigration(Versao2.class);
+           mc.addMigration(Versao3.class);
+           mc.migrateToVersion(3);
         }
         catch (Exception ex)
         {

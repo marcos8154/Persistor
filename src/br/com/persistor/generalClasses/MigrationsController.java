@@ -155,7 +155,7 @@ public class MigrationsController
         }
     }
 
-    public void migrateForVersion(int version) throws Exception
+    public void migrateToVersion(int version) throws Exception
     {
         sessionFactory = new SessionFactory();
         session = sessionFactory.getSession(config);
