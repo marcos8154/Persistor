@@ -245,11 +245,12 @@ public class SQLHelper
         }
     }
 
-    public void prepareDelete(Object obj) throws Exception
+    public void prepareDelete(Object entity) throws Exception
     {
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
+            String table = cls.getSimpleName().toLowerCase();
 
             for (Method method : cls.getMethods())
             {
@@ -261,26 +262,24 @@ public class SQLHelper
                             continue;
 
                         primaryKeyName = method.getName().substring(3, method.getName().length());
-                        primaryKeyValue = (method.invoke(obj)).toString();
+                        primaryKeyValue = (method.invoke(entity)).toString();
                     }
 
                     continue;
                 }
             }
 
-            sqlBase = ("delete from " + cls.getSimpleName() + " where " + primaryKeyName + " = " + primaryKeyValue).toLowerCase();
+            sqlBase = "delete from " + cls.getSimpleName();
 
-            if (getAuxiliarPK_name(cls) != null)
-            {
-                String auxPK_name = getAuxiliarPK_name(cls);
-                String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
+            List<EntityKey> keys = getEntityKeys(entity);
+            String where = "";
 
-                sqlBase += " AND " + columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
-            }
+            for (EntityKey key : keys)
+                where += table + "." + key.getKeyField() + " = " + key.getKeyValue() + " and ";
+            sqlBase += " where " + where.substring(0, where.lastIndexOf("and "));
 
             Field field = cls.getField("mountedQuery");
-            field.set(obj, sqlBase);
-
+            field.set(entity, sqlBase);
         }
         catch (Exception ex)
         {
@@ -289,23 +288,39 @@ public class SQLHelper
         }
     }
 
-    public void prepareBasicSelect(Object obj, int id) throws Exception
+    public void prepareBasicSelect(Object entity, int id) throws Exception
     {
         try
         {
-            Class cls = obj.getClass();
-            primaryKeyName = this.getPrimaryKeyFieldName(obj);
+            Class cls = entity.getClass();
+            String table = cls.getSimpleName().toLowerCase();
+            primaryKeyName = this.getPrimaryKeyFieldName(entity);
 
-            sqlBase = ("SELECT * FROM " + cls.getSimpleName() + " WHERE " + primaryKeyName + " = " + id).toLowerCase();
+            sqlBase = ("SELECT * FROM " + table + " WHERE " + primaryKeyName + " = " + id).toLowerCase();
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Persistor: internal error at:");
+            throw new Exception(ex.getMessage());
+        }
+    }
 
-            if (getAuxiliarPK_name(cls) != null)
-            {
-                String auxPK_name = getAuxiliarPK_name(cls);
-                String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
+    public void prepareMultiKeySelect(Object entity, int id) throws Exception
+    {
+        try
+        {
+            Class cls = entity.getClass();
+            String table = cls.getSimpleName().toLowerCase();
+            primaryKeyName = this.getPrimaryKeyFieldName(entity);
 
-                sqlBase += " AND " + columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
-            }
+            sqlBase = "SELECT * FROM " + table;// " WHERE " + primaryKeyName + " = " + id).toLowerCase();
 
+            List<EntityKey> keys = getEntityKeys(entity);
+            String where = "";
+
+            for (EntityKey key : keys)
+                where += table + "." + key.getKeyField() + " = " + key.getKeyValue() + " and ";
+            sqlBase += " where " + where.substring(0, where.lastIndexOf("and "));
         }
         catch (Exception ex)
         {
@@ -316,27 +331,23 @@ public class SQLHelper
 
     public int updateStatus = 1;
 
-    public void prepareUpdate(Object obj, Connection connection) throws Exception
+    public void prepareUpdate(Object entity, Connection connection) throws Exception
     {
         try
         {
-            Class cls = obj.getClass();
+            Class cls = entity.getClass();
 
             String sql = "update " + cls.getName().replace(cls.getPackage().getName() + ".", "") + " set ";
             String parameters = "";
 
-            String tableName = cls.getName().replace(cls.getPackage().getName() + ".", "");
+            String table = cls.getName().replace(cls.getPackage().getName() + ".", "");
 
             for (Method method : cls.getMethods())
             {
                 if (method.isAnnotationPresent(OneToOne.class))
-                {
                     continue;
-                }
                 if (method.isAnnotationPresent(OneToMany.class))
-                {
                     continue;
-                }
 
                 if (method.isAnnotationPresent(PrimaryKey.class))
                 {
@@ -357,18 +368,16 @@ public class SQLHelper
                         if (method.getReturnType().getName().equals("java.lang.Class"))
                             continue;
 
-                        int versionObj = Integer.parseInt(method.invoke(obj).toString());
+                        int versionObj = Integer.parseInt(method.invoke(entity).toString());
 
                         String field = ("get" + primaryKeyName);
                         Method mt = cls.getMethod(field);
-                        String pkValue = mt.invoke(obj).toString();
+                        String pkValue = mt.invoke(entity).toString();
 
-                        int currentVersion = currentVersion(tableName, primaryKeyName, pkValue, method.getName().replace("get", ""), connection);
+                        int currentVersion = currentVersion(table, primaryKeyName, pkValue, method.getName().replace("get", ""), connection);
 
                         if (versionObj < currentVersion)
-                        {
                             throw new Exception("Persistor: unable to update entity '" + cls.getName() + "'. @Version violation error.");
-                        }
 
                         String fieldName = method.getName().substring(3, method.getName().length());
                         sql += fieldName + " = ?, ";
@@ -394,26 +403,19 @@ public class SQLHelper
             }
 
             if (sql.endsWith(", "))
-            {
                 sql = sql.substring(0, sql.length() - 2);
-            }
 
-            String pkFieldName = this.getPrimaryKeyFieldName(obj);
+            List<EntityKey> keys = getEntityKeys(entity);
+            String where = "";
 
-            sql += " where " + pkFieldName + " = " + this.getPrimaryKeyValue();
-
-            if (getAuxiliarPK_name(cls) != null)
-            {
-                String auxPK_name = getAuxiliarPK_name(cls);
-                String columnAuxPK_name = auxPK_name.replace("get", "").toLowerCase();
-
-                sql += " AND " + columnAuxPK_name + " = " + getAuxiliarPK_value(obj, cls, auxPK_name);
-            }
+            for (EntityKey key : keys)
+                where += table + "." + key.getKeyField() + " = " + key.getKeyValue() + " and ";
+            sql += " where " + where.substring(0, where.lastIndexOf("and "));
 
             this.setSqlBase(sql.toLowerCase());
 
             Field fieldMQ = cls.getField("mountedQuery");
-            fieldMQ.set(obj, sqlBase);
+            fieldMQ.set(entity, sqlBase);
 
         }
         catch (Exception ex)
@@ -600,10 +602,10 @@ public class SQLHelper
             {
                 String name = method.getName().substring(3, method.getName().length());
                 int value = Integer.parseInt(method.invoke(entity).toString());
-                
+
                 result.add(EntityKey.set(name, value));
             }
-                
+
         }
         return result;
     }

@@ -499,7 +499,7 @@ public class SessionImpl implements Session
                     id = key.getKeyValue();
             }
 
-            sqlHelper.prepareBasicSelect(entity, id);
+            sqlHelper.prepareMultiKeySelect(entity, id);
 
             if (hasJoinableObjects(entity))
                 return joinExecutionResult(entityCls, entity, id);

@@ -165,7 +165,7 @@ public class Query
                     }
                 }
             }
-            
+
             if (sqlCommand.endsWith("and "))
                 sqlCommand = sqlCommand.substring(0, sqlCommand.lastIndexOf("and"));
             if (sqlCommand.endsWith("or "))
@@ -296,6 +296,26 @@ public class Query
         }
     }
 
+    private void resolveSlContext(List<Object> resList)
+    {
+        if (iSession.isEnabledSLContext())
+        {
+            if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
+            {
+                CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.originalQuery);
+                if (cq != null)
+                {
+                    for (int pkey : cq.getResultKeys())
+                    {
+                        Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
+                        if (cachedEntity != null)
+                            resList.add(cachedEntity);
+                    }
+                }
+            }
+        }
+    }
+
     private void executeSelect(Class clss, RESULT_TYPE resultType) throws Exception
     {
         ResultSet resultSet = null;
@@ -314,24 +334,8 @@ public class Query
             Class cls = ob.getClass();
 
             resultSet = preparedStatement.executeQuery();
-
-            if (iSession.isEnabledSLContext())
-            {
-                if (iSession.getSLPersistenceContext().isEntitySet(baseEntity))
-                {
-                    CachedQuery cq = iSession.getSLPersistenceContext().findCachedQuery(this.originalQuery);
-                    if (cq != null)
-                    {
-                        for (int pkey : cq.getResultKeys())
-                        {
-                            Object cachedEntity = iSession.getSLPersistenceContext().findByID(baseEntity, pkey);
-                            if (cachedEntity != null)
-                                resList.add(cachedEntity);
-                        }
-                    }
-                }
-            }
-
+            resolveSlContext(resList);
+            
             while (resultSet.next())
             {
                 if (resultType == RESULT_TYPE.MULTIPLE)
@@ -372,7 +376,6 @@ public class Query
                         }
                         catch (Exception ex)
                         {
-                            System.err.println("Persistor WARNING: The column " + columnName + " does not exists. Verify entity mapping.");
                             continue;
                         }
 
