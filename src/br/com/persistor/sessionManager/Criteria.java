@@ -5,24 +5,20 @@ import br.com.persistor.annotations.OneToMany;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 import br.com.persistor.annotations.OneToOne;
-import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.Expressions;
 import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.PersistenceLog;
-import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.ICriteria;
-import java.io.InputStream;
 import br.com.persistor.interfaces.Session;
 
 public class Criteria<T> implements ICriteria<T>
@@ -268,6 +264,8 @@ public class Criteria<T> implements ICriteria<T>
     private void FillEntities(ResultSet resultSet, Class cls,
             Object ob, List<Object> rList) throws Exception
     {
+        EntityFiller filler = new EntityFiller();
+
         while (resultSet.next())
         {
             if (resultType == RESULT_TYPE.MULTIPLE)
@@ -310,92 +308,10 @@ public class Criteria<T> implements ICriteria<T>
                     }
                     catch (Exception ex)
                     {
-                        System.err.println("Persistor WARNING: The column " + columnName + " does not exists. Verify entity mapping.");
                         continue;
                     }
 
-                    if (method.getReturnType() == boolean.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, boolean.class);
-                        invokeMethod.invoke(ob, resultSet.getBoolean(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == int.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, int.class);
-                        invokeMethod.invoke(ob, resultSet.getInt(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == double.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, double.class);
-                        invokeMethod.invoke(ob, resultSet.getDouble(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == float.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, float.class);
-                        invokeMethod.invoke(ob, resultSet.getFloat(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == short.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, short.class);
-                        invokeMethod.invoke(ob, resultSet.getShort(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == long.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, long.class);
-                        invokeMethod.invoke(ob, resultSet.getLong(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == String.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, String.class);
-                        invokeMethod.invoke(ob, resultSet.getString(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == java.util.Date.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, java.util.Date.class);
-                        invokeMethod.invoke(ob, resultSet.getDate(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == byte.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, byte.class);
-                        invokeMethod.invoke(ob, resultSet.getByte(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == BigDecimal.class)
-                    {
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, BigDecimal.class);
-                        invokeMethod.invoke(ob, resultSet.getBigDecimal(columnName));
-                        continue;
-                    }
-
-                    if (method.getReturnType() == InputStream.class)
-                    {
-                        InputStream is;
-                        if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
-                            is = resultSet.getBlob(columnName).getBinaryStream();
-                        else
-                            is = resultSet.getBinaryStream(columnName);
-
-                        Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
-                        invokeMethod.invoke(ob, is);
-                        continue;
-                    }
+                    filler.fillEntity(method, resultSet, fieldName, columnName, baseEntity, ob, iSession);
                 }
             }
             if (resultType == RESULT_TYPE.MULTIPLE)
@@ -522,7 +438,8 @@ public class Criteria<T> implements ICriteria<T>
                 addResultEntitiesToSLContext(rList);
 
             if (resultType == RESULT_TYPE.MULTIPLE)
-                loadList(this.baseEntity);
+                if (join != null)
+                    loadList(this.baseEntity);
         }
         catch (Exception ex)
         {

@@ -335,6 +335,7 @@ public class Query
 
             resultSet = preparedStatement.executeQuery();
             resolveSlContext(resList);
+            EntityFiller entityFiller = new EntityFiller();
             
             while (resultSet.next())
             {
@@ -378,89 +379,10 @@ public class Query
                         {
                             continue;
                         }
-
-                        if (method.getReturnType() == boolean.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(ob, resultSet.getBoolean(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == int.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(ob, resultSet.getInt(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == double.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(ob, resultSet.getDouble(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == float.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(ob, resultSet.getFloat(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == short.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(ob, resultSet.getShort(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == long.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(ob, resultSet.getLong(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == String.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(ob, resultSet.getString(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == java.util.Date.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(ob, resultSet.getDate(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == byte.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(ob, resultSet.getByte(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == BigDecimal.class)
-                        {
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(ob, resultSet.getBigDecimal(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == InputStream.class)
-                        {
-                            InputStream is;
-                            if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
-                                is = resultSet.getBlob(columnName).getBinaryStream();
-                            else
-                                is = resultSet.getBinaryStream(columnName);
-
-                            Method invokeMethod = baseEntity.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(baseEntity, is);
-                            continue;
-                        }
+                        
+                        
+                        
+                        entityFiller.fillEntity(method, resultSet, fieldName, columnName, baseEntity, ob, iSession);
                     }
                 }
                 if (result_type == RESULT_TYPE.MULTIPLE)

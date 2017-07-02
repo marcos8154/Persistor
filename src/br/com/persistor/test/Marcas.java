@@ -30,8 +30,6 @@ public class Marcas extends Entity
     @OneToMany(source = "id", target = "marca_id", join_type = JOIN_TYPE.LEFT, load = LOAD.AUTO)
     public Produtos getProduto()
     {
-        if(produto == null)
-            produto = (Produtos)FieldHandled.readObject(this, "produto");
         return produto;
     }
 
@@ -39,9 +37,7 @@ public class Marcas extends Entity
     {
         this.produto = produto;
     }
-    
-    
-    
+
     @PrimaryKey(increment = INCREMENT.AUTO)
     public int getId()
     {

@@ -3,7 +3,6 @@ package br.com.persistor.sessionManager;
 import br.com.persistor.annotations.OneToMany;
 import br.com.persistor.annotations.OneToOne;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -11,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.persistor.annotations.PrimaryKey;
-import br.com.persistor.enums.DB_TYPE;
 import br.com.persistor.enums.JOIN_TYPE;
 import br.com.persistor.enums.LIMIT_TYPE;
 import br.com.persistor.generalClasses.EntityKey;
@@ -20,7 +18,6 @@ import br.com.persistor.generalClasses.Limit;
 import br.com.persistor.generalClasses.PersistenceLog;
 import br.com.persistor.generalClasses.Util;
 import br.com.persistor.interfaces.IJoin;
-import java.io.InputStream;
 import br.com.persistor.interfaces.Session;
 import java.lang.reflect.Field;
 
@@ -228,7 +225,7 @@ public class Join implements IJoin
 
         mountedQuery = (baseQ + "\n").toLowerCase();
         mountedQuery += final_condition;
-        
+
         return baseQ;
     }
 
@@ -357,17 +354,18 @@ public class Join implements IJoin
             connection = iSession.getActiveConnection();
             statement = connection.createStatement();
             resultSet = statement.executeQuery(mountedQuery);
+            EntityFiller entityFiller = new EntityFiller();
 
             while (resultSet.next())
             {
                 loaded = true;
-                for (Object obj : objects)
+                for (Object baseEntity : objects)
                 {
-                    Object otherObj = obj;
-                    Class cls = otherObj.getClass();
+                    Object targetEntity = baseEntity;
+                    Class cls = targetEntity.getClass();
 
                     if (isRestartEntityInstance())
-                        otherObj = cls.newInstance();
+                        targetEntity = cls.newInstance();
 
                     String tableName = cls.getSimpleName().toLowerCase();
                     Object ignoreObj = null;
@@ -382,112 +380,31 @@ public class Join implements IJoin
                                 continue;
 
                             if (method.isAnnotationPresent(PrimaryKey.class))
-                                resolveResultPrimaryKeyCase(method, otherObj, resultSet, tableName);
+                                resolveResultPrimaryKeyCase(method, targetEntity, resultSet, tableName);
 
                             String[] columnMethodName = getColumnAndMethodName(method, tableName);
                             String columnName = columnMethodName[0];
                             String methodSetName = columnMethodName[1];
 
+                            try
+                            {
+                                //checking if column exists in resultset
+                                resultSet.findColumn(columnName);
+                            }
+                            catch (Exception ex)
+                            {
+                                System.err.println("Persistor: field '" + columnName + "' not exists in Result Set. Verify entity mapping.");
+                                continue;
+                            }
+
                             if (isIgnorableField(columnName))
                                 continue;
 
-                            if (method.getReturnType() == char.class)
-                            {
-                                String str = resultSet.getString(columnName);
-                                if (str == null)
-                                    continue;
-                                if (str.length() > 0)
-                                {
-                                    Method invokeMethod = obj.getClass().getMethod(methodSetName, char.class);
-                                    invokeMethod.invoke(otherObj, str.charAt(0));
-                                    continue;
-                                }
-                            }
-
-                            if (method.getReturnType() == boolean.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, boolean.class);
-                                invokeMethod.invoke(otherObj, resultSet.getBoolean(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == int.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, int.class);
-                                invokeMethod.invoke(otherObj, resultSet.getInt(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == double.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, double.class);
-                                invokeMethod.invoke(otherObj, resultSet.getDouble(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == float.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, float.class);
-                                invokeMethod.invoke(otherObj, resultSet.getFloat(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == short.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, short.class);
-                                invokeMethod.invoke(otherObj, resultSet.getShort(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == long.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, long.class);
-                                invokeMethod.invoke(otherObj, resultSet.getLong(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == String.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, String.class);
-                                invokeMethod.invoke(otherObj, resultSet.getString(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == java.util.Date.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, java.util.Date.class);
-                                invokeMethod.invoke(otherObj, resultSet.getDate(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == byte.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, byte.class);
-                                invokeMethod.invoke(otherObj, resultSet.getByte(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == BigDecimal.class)
-                            {
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, BigDecimal.class);
-                                invokeMethod.invoke(otherObj, resultSet.getBigDecimal(columnName));
-                                continue;
-                            }
-
-                            if (method.getReturnType() == InputStream.class)
-                            {
-                                InputStream is;
-                                if (iSession.getConfig().getDb_type() == DB_TYPE.SQLServer)
-                                    is = resultSet.getBlob(columnName).getBinaryStream();
-                                else
-                                    is = resultSet.getBinaryStream(columnName);
-                                Method invokeMethod = obj.getClass().getMethod(methodSetName, InputStream.class);
-                                invokeMethod.invoke(otherObj, is);
-                            }
+                            entityFiller.fillEntity(method, resultSet, methodSetName, columnName, baseEntity, targetEntity, iSession);
                         }
                     }
                     if (ignoreObj == null)
-                        resultList.add(otherObj);
+                        resultList.add(targetEntity);
                 }
             }
             if (loaded)
@@ -530,22 +447,22 @@ public class Join implements IJoin
                 {
                     if (method.getName().startsWith("is") || method.getName().startsWith("get") && !method.getName().contains("class Test"))
                     {
-                        if (method.getName().contains(joinEntity.getClass().getSimpleName()))
+                        if (method.getReturnType().equals(joinEntity.getClass()))
                         {
                             Method setJoinObjMethod = null;
                             if (method.isAnnotationPresent(OneToOne.class))
                             {
-                                String setMethodName = ("set" + joinEntity.getClass().getSimpleName());
+                                String setMethodName = "set" + method.getName().substring(3, method.getName().length());
                                 setJoinObjMethod = objBaseEntity.getClass().getMethod(setMethodName, joinEntity.getClass());
                                 setJoinObjMethod.invoke(objBaseEntity, getEntity(joinEntity.getClass()));
                             }
 
                             if (method.isAnnotationPresent(OneToMany.class))
                             {
-                                String setMethodName = ("set" + joinEntity.getClass().getSimpleName());
+                                String setMethodName = "set" + method.getName().substring(3, method.getName().length());
                                 setJoinObjMethod = objBaseEntity.getClass().getMethod(setMethodName, joinEntity.getClass());
 
-                                Class clazz = objBaseEntity.getClass().getMethod(("get" + joinEntity.getClass().getSimpleName())).getReturnType();
+                                Class clazz = method.getReturnType();
                                 Object objClazz = clazz.newInstance();
                                 Field field = objClazz.getClass().getField("ResultList");
                                 field.set(objClazz, getList(joinEntity));

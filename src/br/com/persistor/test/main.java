@@ -1,12 +1,17 @@
 package br.com.persistor.test;
 
 import br.com.persistor.enums.DB_TYPE;
+import br.com.persistor.enums.FILTER_TYPE;
+import br.com.persistor.enums.JOIN_TYPE;
+import br.com.persistor.enums.RESULT_TYPE;
 import br.com.persistor.generalClasses.ColumnProperties;
 import br.com.persistor.generalClasses.DBConfig;
 import br.com.persistor.generalClasses.MigrationsController;
+import br.com.persistor.generalClasses.Restrictions;
 import br.com.persistor.interfaces.DbMigration;
 import br.com.persistor.interfaces.Session;
 import br.com.persistor.sessionManager.SessionFactory;
+import java.util.List;
 
 public class main
 {
@@ -15,11 +20,15 @@ public class main
     {
         try
         {
-            MigrationsController mc = new MigrationsController(getConfig());
-            mc.addMigration(Versao1.class);
-            mc.addMigration(Versao2.class);
-            mc.addMigration(Versao3.class);
-            mc.migrateForVersion(2);
+            Marcas marca =  new Marcas();
+            Produtos produto = new Produtos();
+            Session session = getSession();
+            session.createCriteria(marca, RESULT_TYPE.UNIQUE)
+                    .add(JOIN_TYPE.INNER, produto, "marcas.id = produtos.marca_id")
+                    .add(Restrictions.eq(FILTER_TYPE.WHERE, "marcas.id", 1))
+                    .execute();
+            
+            System.out.println(marca);
         }
         catch (Exception ex)
         {

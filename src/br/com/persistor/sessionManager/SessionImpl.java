@@ -625,9 +625,9 @@ public class SessionImpl implements Session
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
             String auxiliarKeyName = sql_helper.getAuxiliarPK_name(cls);
-            if(auxiliarKeyName != null)
-              throw new Exception("Persistor: The method first(Class cls, String ... whereCondition) can not be executed on entities that have composite primary keys.");
-                
+            if (auxiliarKeyName != null)
+                throw new Exception("Persistor: The method first(Class cls, String ... whereCondition) can not be executed on entities that have composite primary keys.");
+
             String className = cls.getSimpleName().toLowerCase();
             sqlBase = "SELECT MIN(" + primaryKeyName + ") FROM " + className;
 
@@ -689,10 +689,9 @@ public class SessionImpl implements Session
             SQLHelper sql_helper = new SQLHelper();
             String primaryKeyName = sql_helper.getPrimaryKeyFieldName(entity);
             String auxiliarKeyName = sql_helper.getAuxiliarPK_name(cls);
-            if(auxiliarKeyName != null)
-              throw new Exception("Persistor: The method last(Class cls, String ... whereCondition) can not be executed on entities that have composite primary keys.");
+            if (auxiliarKeyName != null)
+                throw new Exception("Persistor: The method last(Class cls, String ... whereCondition) can not be executed on entities that have composite primary keys.");
 
-            
             String className = cls.getSimpleName().toLowerCase();
             sqlBase = "SELECT MAX(" + primaryKeyName + ") FROM " + className;
 
@@ -1181,6 +1180,7 @@ public class SessionImpl implements Session
         boolean result = false;
         try
         {
+            EntityFiller entityFiller = new EntityFiller();
             Class cls = entity.getClass();
             while (resultSet.next())
             {
@@ -1213,89 +1213,13 @@ public class SessionImpl implements Session
                             fieldName = "set" + method.getName().substring(3, method.getName().length());
                         }
 
-                        if (method.isAnnotationPresent(OneToOne.class));
-
-                        if (method.getReturnType() == boolean.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, boolean.class);
-                            invokeMethod.invoke(entity, resultSet.getBoolean(columnName));
+                        /*
+                        if (method.isAnnotationPresent(OneToOne.class) ||
+                                method.isAnnotationPresent(OneToMany.class))
                             continue;
-                        }
-
-                        if (method.getReturnType() == int.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, int.class);
-                            invokeMethod.invoke(entity, resultSet.getInt(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == double.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, double.class);
-                            invokeMethod.invoke(entity, resultSet.getDouble(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == float.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, float.class);
-                            invokeMethod.invoke(entity, resultSet.getFloat(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == short.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, short.class);
-                            invokeMethod.invoke(entity, resultSet.getShort(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == long.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, long.class);
-                            invokeMethod.invoke(entity, resultSet.getLong(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == String.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, String.class);
-                            invokeMethod.invoke(entity, resultSet.getString(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == java.util.Date.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, java.util.Date.class);
-                            invokeMethod.invoke(entity, resultSet.getDate(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == byte.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, byte.class);
-                            invokeMethod.invoke(entity, resultSet.getByte(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == BigDecimal.class)
-                        {
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, BigDecimal.class);
-                            invokeMethod.invoke(entity, resultSet.getBigDecimal(columnName));
-                            continue;
-                        }
-
-                        if (method.getReturnType() == InputStream.class)
-                        {
-                            InputStream is;
-                            if (config.getDb_type() == DB_TYPE.SQLServer)
-                                is = resultSet.getBlob(columnName).getBinaryStream();
-                            else
-                                is = resultSet.getBinaryStream(columnName);
-
-                            Method invokeMethod = entity.getClass().getMethod(fieldName, InputStream.class);
-                            invokeMethod.invoke(entity, is);
-                        }
+*/
+                            
+                        entityFiller.fillEntity(method, resultSet, fieldName, columnName, entity, entity, this);
                     }
                 }
             }
@@ -1416,11 +1340,14 @@ public class SessionImpl implements Session
             {
                 String table = cls.getSimpleName().toLowerCase();
                 SQLHelper helper = new SQLHelper();
+                helper.prepareBasicSelect(entity, id);
                 List<EntityKey> keys = helper.getEntityKeys(entity);
-                String where = "";
+                String where = table + "." + helper.getPrimaryKeyName() + " = " + id + " and ";
 
                 for (EntityKey key : keys)
-                    where += table + "." + key.getKeyField() + " = " + key.getKeyValue() + " and ";
+                    if (!key.getKeyField().toLowerCase().equals(helper.getPrimaryKeyName()))
+                        where += table + "." + key.getKeyField() + " = " + key.getKeyValue() + " and ";
+
                 where = "where " + where.substring(0, where.lastIndexOf("and "));
 
                 join.addFinalCondition(where);
